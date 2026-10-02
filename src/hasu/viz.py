@@ -72,14 +72,17 @@ def plotly_layout(**overrides) -> dict:
     của Streamlit; chỉ cố định bảng màu phân loại, lưới mờ, tooltip theo trục x."""
     layout = dict(
         colorway=SERIES,
-        margin=dict(l=8, r=8, t=40, b=40),
+        margin=dict(l=8, r=8, t=44, b=40),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         hovermode="x unified",
         xaxis=dict(showgrid=False, ticks=""),
         yaxis=dict(gridcolor="rgba(128,128,128,0.18)", zeroline=False, ticks=""),
         legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="left", x=0, title_text="",
                     traceorder="normal"),
         separators=",.",
-        title=dict(x=0, xanchor="left", font=dict(size=15)),
+        title=dict(x=0, xanchor="left", font=dict(size=15, color="#101828")),
+        font=dict(color="#475467"),
     )
     layout.update(overrides)
     return layout

@@ -6,7 +6,8 @@ import lib
 from hasu import viz
 from hasu.forecasting.monitor import DRIFT_FACTOR, SNAPSHOT_EVAL_SQL, drift_status
 
-lib.header("Lịch sử & đánh giá", "So sánh các dự báo đã lưu với kết quả thực tế.")
+lib.header("Lịch sử & đánh giá", "So sánh các dự báo đã lưu với kết quả thực tế, phát hiện khi mô hình kém đi.",
+           section="Dự báo")
 if not lib.has_table("fc_snapshots"):
     st.warning("Chưa có snapshot dự báo nào.")
     st.stop()
@@ -25,10 +26,10 @@ st.markdown(
 
 real = hist[hist["kind"] == "Dự báo thật"]
 status = drift_status(real if len(real) else hist, info["holdout_wmape"])
-(st.error if status["retrain"] else st.success)(status["status"])
+lib.alert("critical" if status["retrain"] else "good", f"<b>{status['status']}</b>")
 if not len(real):
-    st.info("Chưa có dự báo thật nào đủ 7 ngày thực tế. Các tuần bên dưới là **8 tuần kiểm định được ghi lại "
-            "theo đúng cơ chế snapshot** để minh hoạ. Khi bạn nạp dữ liệu tuần tiếp theo, dự báo thật sẽ xuất hiện ở đây.")
+    lib.alert("info", "Chưa có dự báo thật nào đủ 7 ngày thực tế. Các tuần bên dưới là <b>8 tuần kiểm định được ghi lại "
+            "theo đúng cơ chế snapshot</b> để minh hoạ. Khi bạn nạp dữ liệu tuần tiếp theo, dự báo thật sẽ xuất hiện ở đây.")
 
 if len(hist):
     hist["week_start"] = pd.to_datetime(hist["week_start"])
@@ -58,7 +59,7 @@ if len(hist):
         "actual_total": st.column_config.NumberColumn("Thực tế", format="%.0f"),
         "forecast_total": st.column_config.NumberColumn("Dự báo", format="%.0f")})
 
-st.subheader("Các lần dự báo đã lưu")
+lib.section("Các lần dự báo đã lưu", "history")
 st.dataframe(snaps, hide_index=True, width="stretch", column_config={
     "run_id": "Mã lần chạy", "kind": "Loại",
     "week_start": st.column_config.DateColumn("Tuần dự báo", format="DD/MM/YYYY"),

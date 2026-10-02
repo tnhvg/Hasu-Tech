@@ -95,13 +95,144 @@ def pct(x: float, digits: int = 1) -> str:
 # Giao diện
 # ---------------------------------------------------------------------------
 
-def header(title: str, caption: str | None = None) -> None:
-    st.title(title)
-    label, _ = source()
+CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,0,0');
+.block-container {padding-top: 2.2rem; padding-bottom: 3rem; max-width: 1320px;}
+.ms {font-family: 'Material Symbols Rounded'; font-weight: normal; font-style: normal; line-height: 1;
+     letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap;
+     -webkit-font-feature-settings: 'liga'; font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased;}
+
+/* Đầu trang */
+.hx-head {display: flex; flex-direction: column; align-items: flex-start; gap: 14px;
+          margin-bottom: 1.4rem; padding-bottom: 1.1rem; border-bottom: 1px solid #e3e8ef;}
+.hx-over {font-size: .74rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: #2a78d6;
+          margin-bottom: .35rem;}
+.hx-title {font-size: 2rem; font-weight: 700; line-height: 1.2; color: #101828; margin: 0;}
+.hx-sub {color: #475467; margin-top: .4rem; font-size: .95rem; max-width: 760px;}
+.hx-chips {display: flex; gap: 8px; flex-wrap: wrap;}
+.hx-chip {display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+          background: #ffffff; border: 1px solid #e3e8ef; color: #344054; font-size: .82rem; font-weight: 500;}
+.hx-chip .ms {font-size: 17px; color: #2a78d6;}
+.hx-chip.demo {background: #eef5fd; border-color: #cfe1f8; color: #1c5cab;}
+
+/* Thẻ chỉ số */
+.hx-kpis {display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin: .2rem 0 1.4rem;}
+.hx-kpi {background: #ffffff; border: 1px solid #e3e8ef; border-radius: 14px; padding: 16px 18px;
+         box-shadow: 0 1px 2px rgba(16,24,40,.04);}
+.hx-kpi-top {display: flex; align-items: center; gap: 10px; color: #475467; font-size: .85rem; font-weight: 500;}
+.hx-kpi-icon {width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+              background: #eef5fd; color: #2a78d6;}
+.hx-kpi-icon .ms {font-size: 20px;}
+.hx-kpi-icon.green {background: #e8f6ef; color: #12805c;}
+.hx-kpi-icon.orange {background: #fdf0e9; color: #c4531f;}
+.hx-kpi-icon.violet {background: #efedfb; color: #4a3aa7;}
+.hx-kpi-value {font-size: 1.75rem; font-weight: 700; color: #101828; margin-top: 10px; line-height: 1.15;}
+.hx-kpi-note {font-size: .8rem; color: #667085; margin-top: 6px;}
+.hx-up {color: #12805c; font-weight: 600;} .hx-down {color: #c4321f; font-weight: 600;}
+
+/* Cảnh báo */
+.hx-alert {display: flex; gap: 12px; align-items: flex-start; background: #ffffff; border: 1px solid #e3e8ef;
+           border-left: 4px solid #2a78d6; border-radius: 12px; padding: 13px 16px; margin-bottom: 10px;}
+.hx-alert .ms {font-size: 22px; color: #2a78d6; margin-top: 1px;}
+.hx-alert b {color: #101828;}
+.hx-alert-text {color: #344054; font-size: .92rem; line-height: 1.5;}
+.hx-alert.critical {border-left-color: #d03b3b;} .hx-alert.critical .ms {color: #d03b3b;}
+.hx-alert.warning {border-left-color: #e19a0c;} .hx-alert.warning .ms {color: #c98500;}
+.hx-alert.good {border-left-color: #12a06a;} .hx-alert.good .ms {color: #12805c;}
+
+/* Tiêu đề mục */
+.hx-section {display: flex; align-items: center; gap: 8px; font-size: 1.12rem; font-weight: 600;
+             color: #101828; margin: 1.3rem 0 .7rem;}
+.hx-section .ms {font-size: 21px; color: #2a78d6;}
+
+/* Thẻ chứa biểu đồ / bảng */
+div[class*="st-key-card"] {background: #ffffff; border: 1px solid #e3e8ef; border-radius: 14px;
+                           padding: 14px 16px 8px; box-shadow: 0 1px 2px rgba(16,24,40,.04);}
+
+div[class*="st-key-card"] h2 {font-size: 1.25rem; margin-top: .6rem;}
+div[class*="st-key-card"] h3 {font-size: 1.05rem;}
+
+/* Các thành phần có sẵn của Streamlit */
+[data-testid="stMetric"] {background: #ffffff; border: 1px solid #e3e8ef; border-radius: 14px; padding: 14px 16px;
+                          box-shadow: 0 1px 2px rgba(16,24,40,.04);}
+[data-testid="stMetricLabel"] p {color: #475467; font-weight: 500;}
+.stTabs [data-baseweb="tab-list"] {gap: 4px; border-bottom: 1px solid #e3e8ef;}
+.stTabs [data-baseweb="tab"] {padding: 8px 14px; font-weight: 500;}
+[data-testid="stExpander"] details {background: #ffffff; border-radius: 12px;}
+[data-testid="stSidebarNav"] a span {font-weight: 500;}
+[data-testid="stSidebar"] hr {border-color: #22344f;}
+.hx-foot {color: #98a2b3; font-size: .8rem; text-align: center; margin-top: 2.5rem;}
+</style>
+"""
+
+_card_counter = {"n": 0}
+
+
+def inject_css() -> None:
+    st.markdown(CSS, unsafe_allow_html=True)
+
+
+def _icon(name: str) -> str:
+    return f'<span class="ms">{name}</span>'
+
+
+def header(title: str, caption: str | None = None, section: str | None = None) -> None:
+    """Đầu trang: nhãn nhóm, tiêu đề, mô tả, và các chip nguồn dữ liệu / khoảng thời gian."""
+    _card_counter["n"] = 0
+    label, path = source()
     info = q("SELECT min(date) AS d0, max(date) AS d1 FROM dim_date") if has_table("dim_date") else None
-    period = (f" · {pd.Timestamp(info.d0[0]):%d/%m/%Y} – {pd.Timestamp(info.d1[0]):%d/%m/%Y}"
-              if info is not None and len(info) else "")
-    st.caption(f"Nguồn: **{label}**{period}" + (f" · {caption}" if caption else ""))
+    chips = [f'<span class="hx-chip{" demo" if path is None else ""}">{_icon("database")}{label}</span>']
+    if info is not None and len(info):
+        chips.append(f'<span class="hx-chip">{_icon("calendar_month")}'
+                     f'{pd.Timestamp(info.d0[0]):%d/%m/%Y} – {pd.Timestamp(info.d1[0]):%d/%m/%Y}</span>')
+    st.markdown(
+        f'<div class="hx-head"><div>'
+        + (f'<div class="hx-over">{section}</div>' if section else "")
+        + f'<div class="hx-title">{title}</div>'
+        + (f'<div class="hx-sub">{caption}</div>' if caption else "")
+        + f'</div><div class="hx-chips">{"".join(chips)}</div></div>',
+        unsafe_allow_html=True)
+
+
+def kpis(items: list[dict]) -> None:
+    """Hàng thẻ chỉ số. Mỗi phần tử: label, value, note (tuỳ chọn, cho phép HTML), icon, tone."""
+    cards = []
+    for it in items:
+        cards.append(
+            f'<div class="hx-kpi"><div class="hx-kpi-top">'
+            f'<div class="hx-kpi-icon {it.get("tone", "")}">{_icon(it.get("icon", "insights"))}</div>'
+            f'{it["label"]}</div><div class="hx-kpi-value">{it["value"]}</div>'
+            + (f'<div class="hx-kpi-note">{it["note"]}</div>' if it.get("note") else "")
+            + "</div>")
+    st.markdown(f'<div class="hx-kpis">{"".join(cards)}</div>', unsafe_allow_html=True)
+
+
+def delta(x: float, suffix: str = "") -> str:
+    """Mũi tên tăng/giảm có màu cho phần ghi chú của thẻ chỉ số."""
+    if pd.isna(x):
+        return ""
+    cls, arrow = ("hx-up", "▲") if x >= 0 else ("hx-down", "▼")
+    return f'<span class="{cls}">{arrow} {pct(abs(x))}</span>{suffix}'
+
+
+ALERT_ICONS = {"critical": "error", "warning": "warning", "info": "info", "good": "check_circle"}
+
+
+def alert(kind: str, html: str) -> None:
+    """Thẻ cảnh báo: kind là critical / warning / info / good. Nội dung cho phép HTML (<b>, <i>)."""
+    st.markdown(f'<div class="hx-alert {kind}">{_icon(ALERT_ICONS.get(kind, "info"))}'
+                f'<div class="hx-alert-text">{html}</div></div>', unsafe_allow_html=True)
+
+
+def section(title: str, icon: str = "bar_chart") -> None:
+    st.markdown(f'<div class="hx-section">{_icon(icon)}{title}</div>', unsafe_allow_html=True)
+
+
+def card():
+    """Khung thẻ trắng bo góc để đặt biểu đồ hoặc bảng: `with lib.card(): ...`."""
+    _card_counter["n"] += 1
+    return st.container(key=f"card_{_card_counter['n']}")
 
 
 def layout(fig, height: int = 360, **kw):
@@ -109,12 +240,22 @@ def layout(fig, height: int = 360, **kw):
     return fig
 
 
-def show(fig, height: int = 360, **kw) -> None:
-    st.plotly_chart(layout(fig, height, **kw), width="stretch", theme="streamlit")
+def show(fig, height: int = 360, card_frame: bool = True, **kw) -> None:
+    fig = layout(fig, height, **kw)
+    if card_frame:
+        with card():
+            st.plotly_chart(fig, width="stretch", theme="streamlit")
+    else:
+        st.plotly_chart(fig, width="stretch", theme="streamlit")
 
 
 def note(text: str) -> None:
-    st.caption("ℹ️ " + text)
+    st.caption(text)
+
+
+def footer() -> None:
+    st.markdown('<div class="hx-foot">Hasu · Phân tích bán hàng & dự báo nhu cầu cho cửa hàng bán lẻ · '
+                'Dữ liệu KiotViet</div>', unsafe_allow_html=True)
 
 
 WEEKDAY_VI = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]

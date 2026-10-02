@@ -6,7 +6,7 @@ import lib
 from hasu import viz
 
 lib.header("Giải thích dự báo",
-           "SHAP phân rã dự báo của LightGBM thành đóng góp của từng yếu tố.")
+           "SHAP phân rã dự báo của LightGBM thành đóng góp của từng yếu tố.", section="Dự báo")
 if not lib.has_table("fc_shap_global"):
     st.warning("Chưa có kết quả dự báo.")
     st.stop()
@@ -22,7 +22,7 @@ fig = go.Figure(go.Bar(x=g["mean_abs_shap"], y=g["group"], orientation="h", mark
 lib.show(fig, 360, title="Yếu tố quan trọng nhất trên toàn bộ dữ liệu (mức ảnh hưởng trung bình)",
          hovermode="closest", xaxis_title="|SHAP| trung bình (thang log)")
 
-st.subheader("Vì sao dự báo ra con số này?")
+lib.section("Vì sao dự báo ra con số này?", "psychology")
 loc = lib.q("SELECT * FROM fc_shap_local")
 loc["ds"] = pd.to_datetime(loc["ds"])
 c1, c2 = st.columns([2, 1])
@@ -61,12 +61,12 @@ lib.show(fig, 400, title=f"{uid}, {lib.day_label(day)}: từ mức bán thườn
 if len(fc):
     r = fc.iloc[0]
     parts = {k: r[k] for k in ["LightGBM", "AutoETS", "IMAPA"] if k in r and pd.notna(r[k])}
-    st.markdown("**Dự báo cuối cùng** là trung bình các thành phần: "
-                + " · ".join(f"{k} {lib.num(v, 1)}" for k, v in parts.items())
-                + f" → **{lib.num(r['forecast'], 1)}** sản phẩm.")
+    lib.alert("good", "<b>Dự báo cuối cùng</b> là trung bình các thành phần: "
+              + " · ".join(f"{k} {lib.num(v, 1)}" for k, v in parts.items())
+              + f" → <b>{lib.num(r['forecast'], 1)} sản phẩm</b>.")
 lib.note("**Mức bán thường** gộp xu hướng nền 28 ngày, mức bán dài hạn, ngành hàng và độ biến động. Phần trăm trên "
          "mỗi thanh: yếu tố đó làm dự báo tăng (+) hoặc giảm (−) bao nhiêu. LightGBM dự báo trên thang log nên các "
          "tác động nhân với nhau.")
-st.markdown("**Vì sao không có yếu tố khuyến mãi?** Giá bán chỉ quan sát được ở ngày có bán, nên đưa giá vào "
-            "mô hình sẽ \"lộ đề\" thông tin hôm đó có bán hay không. Ảnh hưởng của giảm giá được ước lượng riêng "
-            "ở trang *Kịch bản mô phỏng*.")
+lib.alert("info", "<b>Vì sao không có yếu tố khuyến mãi?</b> Giá bán chỉ quan sát được ở ngày có bán, nên đưa giá "
+          "vào mô hình sẽ \"lộ đề\" thông tin hôm đó có bán hay không. Ảnh hưởng của giảm giá được ước lượng riêng "
+          "ở trang <i>Kịch bản mô phỏng</i>.")

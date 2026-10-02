@@ -7,13 +7,10 @@ import pandas as pd
 import streamlit as st
 
 import lib
-from hasu.forecasting.data import tet_offset
-from hasu.forecasting.monitor import drift_status, evaluate_snapshots
-from hasu.forecasting.run import run_forecasting
 from hasu.ingest import COLUMN_MAP, REQUIRED_FIELDS, detect_mapping, missing_required
-from hasu.pipeline import build_database
 
-lib.header("Nạp dữ liệu")
+lib.header("Nạp dữ liệu", "Tải file báo cáo bán hàng từ KiotViet, xác nhận cột, hệ thống tự làm sạch, phân tích và dự báo.",
+           section="Dữ liệu")
 st.markdown(
     "Tải lên file **Báo cáo bán hàng theo lợi nhuận** xuất từ KiotViet (định dạng `.xlsx`). Có thể tải nhiều "
     "file một lúc, hoặc tải file mới nối tiếp dữ liệu cũ: hệ thống tự ghép và **khử trùng lặp** theo khoá "
@@ -32,11 +29,12 @@ OPTIONS = [SKIP, *COLUMN_MAP.values()]
 
 files = st.file_uploader("Chọn file Excel", type=["xlsx"], accept_multiple_files=True)
 if not files:
-    st.info("Chưa có file nào. Trong lúc chờ, ứng dụng đang hiển thị dữ liệu demo của cửa hàng BHS Đại Phúc.")
+    lib.alert("info", "Chưa có file nào. Trong lúc chờ, ứng dụng đang hiển thị <b>dữ liệu demo</b> của cửa hàng "
+                      "BHS Đại Phúc.")
     st.stop()
 
 # ---- Bước 1: xác nhận ánh xạ cột ----
-st.subheader("1. Xác nhận ánh xạ cột")
+lib.section("Bước 1 · Xác nhận ánh xạ cột", "table_view")
 st.caption("Hệ thống tự nhận diện cột theo từ điển KiotViet và từ điển đồng nghĩa. Kiểm tra lại, đặc biệt các "
            "cột bắt buộc: " + ", ".join(FIELD_LABELS.get(f, f) for f in REQUIRED_FIELDS) + ".")
 mappings, ok = {}, True
@@ -62,13 +60,19 @@ if not ok:
     st.stop()
 
 # ---- Bước 2: xử lý ----
-st.subheader("2. Xử lý dữ liệu và dự báo")
+lib.section("Bước 2 · Xử lý dữ liệu và dự báo", "rocket_launch")
 _, source_db = lib.source()   # None nếu đang dùng dữ liệu demo
 merge = source_db is not None
 st.caption("Dữ liệu mới sẽ được **ghép vào dữ liệu hiện có**." if merge else
            "Bản triển khai công khai không chứa dữ liệu gốc, nên hệ thống xử lý riêng các file bạn tải lên.")
 if not st.button("Xử lý", type="primary"):
     st.stop()
+
+# Thư viện dự báo rất nặng: chỉ nạp khi người dùng bấm "Xử lý" để trang mở nhanh.
+from hasu.forecasting.data import tet_offset  # noqa: E402
+from hasu.forecasting.monitor import drift_status, evaluate_snapshots  # noqa: E402
+from hasu.forecasting.run import run_forecasting  # noqa: E402
+from hasu.pipeline import build_database  # noqa: E402
 
 work = Path(tempfile.mkdtemp(prefix="hasu_"))
 db_path = work / "hasu.duckdb"

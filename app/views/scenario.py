@@ -7,7 +7,8 @@ import streamlit as st
 import lib
 from hasu import viz
 
-lib.header("Kịch bản mô phỏng", "Đặt câu hỏi \"nếu... thì...\" và xem nhu cầu dự kiến thay đổi thế nào.")
+lib.header("Kịch bản mô phỏng", "Đặt câu hỏi \"nếu... thì...\" và xem nhu cầu dự kiến thay đổi thế nào.",
+           section="Dự báo")
 if not lib.has_table("fc_order_plan"):
     st.warning("Chưa có kết quả dự báo.")
     st.stop()
@@ -30,10 +31,13 @@ with tab1:
     net = 1 + (gross - 1) * (1 - cannibal / 100)
     base = plan[plan["cat_l1"] == l1]
     tot_base = base["forecast_week"].sum()
-    k1, k2, k3 = st.columns(3)
-    k1.metric("Nhu cầu tuần hiện tại", lib.num(tot_base))
-    k2.metric("Nhu cầu tuần theo kịch bản", lib.num(tot_base * net), lib.pct(net - 1, 0))
-    k3.metric("Cần nhập thêm (ước tính)", lib.num(max(base["order_qty"].sum() * (net - 1), 0)))
+    lib.kpis([
+        {"label": "Nhu cầu tuần hiện tại", "value": lib.num(tot_base), "icon": "inventory"},
+        {"label": "Nhu cầu tuần theo kịch bản", "value": lib.num(tot_base * net), "icon": "trending_up",
+         "tone": "green", "note": lib.delta(net - 1, " so với hiện tại")},
+        {"label": "Cần nhập thêm (ước tính)", "value": lib.num(max(base["order_qty"].sum() * (net - 1), 0)),
+         "icon": "add_shopping_cart", "tone": "orange", "note": "So với đề xuất nhập hiện tại"},
+    ])
     top = base.nlargest(10, "forecast_week")
     fig = go.Figure()
     fig.add_bar(y=top["unique_id"], x=top["forecast_week"], name="Hiện tại", orientation="h", marker_color=viz.NEUTRAL)
@@ -42,10 +46,10 @@ with tab1:
     lib.show(fig, 380, barmode="group", title=f"{l1}: dự báo tuần, 10 nhóm lớn nhất", hovermode="y unified",
              yaxis=dict(autorange="reversed"))
     src = "của chính ngành hàng" if r["reliable"] else "chung toàn cửa hàng (ngành này có dưới 30 ngày khuyến mãi)"
-    st.warning(
-        f"**Độ tin cậy thấp: hãy coi đây là mức trần.** Hệ số phản ứng giá ({lib.num(slope * 100, 1)}% lượng bán "
+    lib.alert("warning",
+        f"<b>Độ tin cậy thấp: hãy coi đây là mức trần.</b> Hệ số phản ứng giá ({lib.num(slope * 100, 1)}% lượng bán "
         f"cho mỗi 1% giảm giá) được ước lượng {src}, từ {lib.num(r['discount_days'])} ngày có chiết khấu. Ở cửa "
-        "hàng tạp hoá, giá thấp hơn giá phổ biến thường do khách **mua theo thùng/lốc**: mua nhiều mới được giá "
+        "hàng tạp hoá, giá thấp hơn giá phổ biến thường do khách <b>mua theo thùng/lốc</b>: mua nhiều mới được giá "
         "thấp, chứ không phải giá thấp làm khách mua nhiều. Dữ liệu chưa tách được hai hiệu ứng này.")
 
 # ---------------------------------------------------------------- Tết
@@ -64,10 +68,12 @@ with tab2:
     s["extra_closed"] = s["daily_base"] * max(closed - 7, 0) * stock_share / 100
     s["total"] = s["pre_tet_2w"] + s["extra_closed"]
     s = s.sort_values("total", ascending=False)
-    k1, k2 = st.columns(2)
-    k1.metric("Nhu cầu 14 ngày trước Tết", lib.num(s["total"].sum()),
-              lib.pct(s["total"].sum() / (s["daily_base"].sum() * 14) - 1, 0) + " so với 2 tuần thường")
-    k2.metric("Phần tăng do nghỉ dài hơn 7 ngày", lib.num(s["extra_closed"].sum()))
+    lib.kpis([
+        {"label": "Nhu cầu 14 ngày trước Tết", "value": lib.num(s["total"].sum()), "icon": "celebration",
+         "note": lib.delta(s["total"].sum() / (s["daily_base"].sum() * 14) - 1, " so với 2 tuần thường")},
+        {"label": "Phần tăng do nghỉ dài hơn 7 ngày", "value": lib.num(s["extra_closed"].sum()),
+         "icon": "event_busy", "tone": "orange", "note": "Khách mua tích trữ trước kỳ nghỉ"},
+    ])
     fig = go.Figure()
     fig.add_bar(x=s["cat_l1"], y=s["daily_base"] * 14, name="2 tuần bình thường", marker_color=viz.NEUTRAL)
     fig.add_bar(x=s["cat_l1"], y=s["total"], name="2 tuần trước Tết (kịch bản)", marker_color=viz.SERIES[0])

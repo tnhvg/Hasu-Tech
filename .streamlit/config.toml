@@ -1,9 +1,28 @@
 [theme]
 base = "light"
+font = "Be Vietnam Pro:https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+headingFontWeights = [700, 700, 600, 600, 600, 600]
+baseFontSize = 15
 primaryColor = "#2a78d6"
-backgroundColor = "#fcfcfb"
-secondaryBackgroundColor = "#f0efec"
-textColor = "#0b0b0b"
+backgroundColor = "#f5f7fa"
+secondaryBackgroundColor = "#eef1f5"
+textColor = "#101828"
+borderColor = "#e3e8ef"
+dataframeBorderColor = "#e3e8ef"
+dataframeHeaderBackgroundColor = "#f5f7fa"
+baseRadius = "10px"
+showWidgetBorder = true
+chartCategoricalColors = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
+
+[theme.sidebar]
+backgroundColor = "#0f1d33"
+secondaryBackgroundColor = "#1a2b45"
+textColor = "#dbe4f0"
+primaryColor = "#6aa9f4"
+borderColor = "#22344f"
+
+[client]
+toolbarMode = "minimal"
 
 [server]
 maxUploadSize = 50
