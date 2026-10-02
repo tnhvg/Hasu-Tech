@@ -4,7 +4,17 @@
 
 ## Bài toán kinh doanh
 
-_(sẽ viết)_
+Chủ cửa hàng BHS Đại Phúc phải tự quyết định nhập hàng cho 2.521 mã thuộc 196 nhóm hàng mà chưa có công cụ dự báo nào hỗ trợ, trong khi 94% số mã chỉ phát sinh bán ra dưới 10% số ngày nên không thể nhẩm ra quy luật. Dữ liệu bán hàng hiện cũng không ghi nhận tồn kho, nên thiệt hại do nhập sai không được đo trực tiếp ở bất kỳ đâu.
+
+Nhập thiếu thì mất doanh thu của lần khách hỏi mua, và có thể mất luôn khách sang cửa hàng khác. Nhập dư thì vốn nằm chết trong kho, hàng cận hạn phải đổi trả hoặc bán tháo, và với nhóm hàng có hạn sử dụng ngắn thì phần dư gần như mất trắng.
+
+Dự án xây dựng mô hình dự báo nhu cầu theo nhóm hàng cấp 3, phân tầng theo mức độ đầy đủ dữ liệu, để trả lời một câu hỏi cụ thể mà chủ cửa hàng phải quyết mỗi tuần: tuần tới nhóm hàng nào cần nhập, với số lượng bao nhiêu.
+
+Thành công được đo bằng ba chỉ tiêu:
+
+1. **WMAPE so với mức nền.** Mức nền là dự báo bằng trung bình lịch sử. Chọn WMAPE vì dữ liệu có rất nhiều ngày bán bằng 0: MAPE chia cho lượng bán từng ngày nên không tính được, còn WMAPE chia cho tổng lượng bán cả kỳ nên luôn xác định.
+2. **Tỷ lệ nhóm hàng đủ dữ liệu có WMAPE cải thiện so với mức nền**, để tránh trường hợp con số tổng đẹp nhờ vài nhóm lớn trong khi phần lớn nhóm còn lại tệ đi. Nhóm quá thưa được báo cáo riêng, không tính vào tỷ lệ này.
+3. **Mô phỏng nhập hàng trên 8 tuần cuối.** So sánh số ngày thiếu hàng và lượng hàng dư ước tính khi nhập theo dự báo với khi nhập theo trung bình lịch sử. Đây là kết quả mô phỏng trên dữ liệu quá khứ, không phải kết quả áp dụng thực tế tại cửa hàng.
 
 ## Dữ liệu
 
