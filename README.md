@@ -7,6 +7,8 @@ cầu tuần tới theo nhóm hàng, đề xuất số lượng nhập kèm nhã
 chiếu dự báo với thực tế khi có dữ liệu mới. Xây dựng trên dữ liệu thật của cửa hàng tạp hoá **BHS Đại Phúc**:
 27.068 dòng giao dịch, 11/09/2025 – 30/06/2026.
 
+**▶ Dùng thử ứng dụng: https://hasu-tech-qchbdh88vladebqzacagr8.streamlit.app** (dữ liệu demo đã ẩn danh)
+
 ![Tổng quan](docs/screenshots/01_tong_quan.png)
 
 ## Bài toán kinh doanh
