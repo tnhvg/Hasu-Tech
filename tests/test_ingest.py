@@ -50,3 +50,26 @@ def test_read_fails_clearly_when_a_column_is_missing(tmp_path):
 
     with pytest.raises(ValueError, match="quantity"):
         read_kiotviet_excel(path)
+
+
+def test_synonyms_and_optional_columns(tmp_path):
+    """File từ phần mềm khác: tên cột khác, không có các cột tổng tháng / tổng hoá đơn."""
+    path = tmp_path / "other.xlsx"
+    pd.DataFrame([{
+        "Mã hóa đơn": "B001", "Ngày bán": "2026-06-01 10:00", "Mã SP": "007", "Tên sản phẩm": "Nước",
+        "Danh mục": "Đồ uống>>Nước ngọt>>Nước giải khát", "Số lượng": 3, "Đơn giá": 10000, "Giá vốn": 8000,
+    }]).to_excel(path, index=False)
+
+    df = read_kiotviet_excel(path)
+
+    assert df.loc[0, "sku"] == "007"
+    assert df.loc[0, "quantity"] == 3
+    assert pd.isna(df.loc[0, "month_revenue"])
+
+
+def test_detect_mapping_reports_missing_required():
+    from hasu.ingest import detect_mapping, missing_required
+
+    mapping = detect_mapping(["Mã giao dịch", "SL", "Cột lạ"])
+    assert mapping["Cột lạ"] is None
+    assert "unit_price" in missing_required(mapping)

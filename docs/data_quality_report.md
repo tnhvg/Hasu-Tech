@@ -1,6 +1,6 @@
 # Báo cáo chất lượng dữ liệu
 
-_Sinh tự động bởi `python -m hasu.pipeline` lúc 02/10/2026 10:37._
+_Sinh tự động bởi `python -m hasu.pipeline` lúc 02/10/2026 10:49._
 
 ## 1. Tổng quan
 

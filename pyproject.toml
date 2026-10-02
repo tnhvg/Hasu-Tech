@@ -13,6 +13,8 @@ dependencies = [
     "mlforecast>=1.0",
     "lightgbm>=4.0",
     "shap>=0.45",
+    "streamlit>=1.40",
+    "plotly>=5.20",
 ]
 
 [project.optional-dependencies]

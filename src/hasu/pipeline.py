@@ -11,6 +11,8 @@ Các bước:
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import duckdb
 
 from hasu.analysis import build_analysis_tables
@@ -23,8 +25,25 @@ SQL_LAYERS = ["staging", "marts"]
 
 def run_sql_layer(con: duckdb.DuckDBPyConnection, layer: str) -> None:
     for sql_file in sorted((SQL_DIR / layer).glob("*.sql")):
-        print(f"  chạy {layer}/{sql_file.name}")
         con.execute(sql_file.read_text(encoding="utf-8"))
+
+
+def build_database(con: duckdb.DuckDBPyConnection, files: list[Path], log=print) -> str:
+    """Nạp các file vào bảng raw (cộng dồn, không nhân đôi), rồi dựng lại staging, mart
+    và các bảng phân tích. Trả về báo cáo chất lượng dữ liệu (markdown)."""
+    log("1. Nạp dữ liệu raw")
+    for f in files:
+        log(f"  {f.name}: {load_raw(con, f):,} dòng")
+
+    log("2. Làm sạch và tổng hợp")
+    for layer in SQL_LAYERS:
+        run_sql_layer(con, layer)
+
+    log("3. Phân tích giỏ hàng, nghi ngờ hết hàng")
+    build_analysis_tables(con)
+
+    log("4. Báo cáo chất lượng dữ liệu")
+    return build_report(con)
 
 
 def main() -> None:
@@ -34,21 +53,10 @@ def main() -> None:
         raise SystemExit(f"Không tìm thấy file .xlsx nào trong {DATA_RAW}")
 
     with duckdb.connect(str(DB_PATH)) as con:
-        print("1. Nạp dữ liệu raw")
-        for f in files:
-            print(f"  {f.name}: {load_raw(con, f):,} dòng")
-
-        print("2. Làm sạch và tổng hợp")
-        for layer in SQL_LAYERS:
-            run_sql_layer(con, layer)
-
-        print("3. Phân tích giỏ hàng, nghi ngờ hết hàng")
-        build_analysis_tables(con)
-
-        print("4. Báo cáo chất lượng dữ liệu")
-        report_path = DOCS_DIR / "data_quality_report.md"
-        report_path.write_text(build_report(con), encoding="utf-8")
-        print(f"  đã ghi {report_path.relative_to(DOCS_DIR.parent)}")
+        report = build_database(con, files)
+    report_path = DOCS_DIR / "data_quality_report.md"
+    report_path.write_text(report, encoding="utf-8")
+    print(f"  đã ghi {report_path.relative_to(DOCS_DIR.parent)}")
 
 
 if __name__ == "__main__":

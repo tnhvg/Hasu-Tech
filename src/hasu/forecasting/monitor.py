@@ -40,36 +40,40 @@ def save_snapshot(con: duckdb.DuckDBPyConnection, fc_daily: pd.DataFrame, plan: 
     return run_id
 
 
+# Đối chiếu mọi snapshot đã có đủ 7 ngày thực tế (dùng chung cho ứng dụng).
+SNAPSHOT_EVAL_SQL = """
+    WITH actual AS (
+        SELECT s.run_id, s.unique_id, sum(f.quantity) AS actual_week, count(DISTINCT f.date) AS open_days
+        FROM fc_snapshots s
+        JOIN fct_retail_daily_category f
+          ON f.cat_l3 = s.unique_id
+         AND f.date >= CAST(s.week_start AS DATE)
+         AND f.date < CAST(s.week_start AS DATE) + INTERVAL 7 DAY
+        GROUP BY ALL
+    ),
+    complete AS (
+        SELECT run_id FROM fc_snapshots s
+        WHERE CAST(s.week_start AS DATE) + INTERVAL 6 DAY <= (SELECT max(date) FROM dim_date)
+        GROUP BY 1
+    )
+    SELECT s.run_id, any_value(s.kind) AS kind, any_value(s.week_start) AS week_start,
+           any_value(s.model) AS model,
+           sum(abs(a.actual_week - s.forecast_week)) / nullif(sum(a.actual_week), 0) AS wmape,
+           sum(s.forecast_week - a.actual_week) / nullif(sum(a.actual_week), 0) AS bias,
+           sum(a.actual_week) AS actual_total, sum(s.forecast_week) AS forecast_total,
+           count(*) AS n_series
+    FROM fc_snapshots s
+    JOIN actual a USING (run_id, unique_id)
+    WHERE s.run_id IN (SELECT run_id FROM complete)
+    GROUP BY s.run_id
+    ORDER BY week_start
+"""
+
+
 def evaluate_snapshots(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     """Đối chiếu mọi snapshot đã có đủ 7 ngày thực tế."""
     con.execute(SNAPSHOT_DDL)
-    return con.execute("""
-        WITH actual AS (
-            SELECT s.run_id, s.unique_id, sum(f.quantity) AS actual_week, count(DISTINCT f.date) AS open_days
-            FROM fc_snapshots s
-            JOIN fct_retail_daily_category f
-              ON f.cat_l3 = s.unique_id
-             AND f.date >= CAST(s.week_start AS DATE)
-             AND f.date < CAST(s.week_start AS DATE) + INTERVAL 7 DAY
-            GROUP BY ALL
-        ),
-        complete AS (
-            SELECT run_id FROM fc_snapshots s
-            WHERE CAST(s.week_start AS DATE) + INTERVAL 6 DAY <= (SELECT max(date) FROM dim_date)
-            GROUP BY 1
-        )
-        SELECT s.run_id, any_value(s.kind) AS kind, any_value(s.week_start) AS week_start,
-               any_value(s.model) AS model,
-               sum(abs(a.actual_week - s.forecast_week)) / nullif(sum(a.actual_week), 0) AS wmape,
-               sum(s.forecast_week - a.actual_week) / nullif(sum(a.actual_week), 0) AS bias,
-               sum(a.actual_week) AS actual_total, sum(s.forecast_week) AS forecast_total,
-               count(*) AS n_series
-        FROM fc_snapshots s
-        JOIN actual a USING (run_id, unique_id)
-        WHERE s.run_id IN (SELECT run_id FROM complete)
-        GROUP BY s.run_id
-        ORDER BY week_start
-    """).df()
+    return con.execute(SNAPSHOT_EVAL_SQL).df()
 
 
 def drift_status(history: pd.DataFrame, reference_wmape: float) -> dict:

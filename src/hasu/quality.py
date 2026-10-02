@@ -64,6 +64,10 @@ def build_report(con: duckdb.DuckDBPyConnection) -> str:
 
     # --- Đối soát doanh thu ---
     add("\n## 2. Đối soát doanh thu\n")
+    has_totals = _one(con, "SELECT count(month_revenue) > 0 AND count(invoice_revenue) > 0 FROM raw_sales_lines")[0]
+    if not has_totals:
+        add("File không có các cột tổng tháng / tổng hoá đơn nên bỏ qua bước đối soát.\n")
+        return _rest_of_report(con, out, total_rev, d0)
     add("Doanh thu được tính lại ở mức dòng (`số lượng × giá bán`) rồi so với các con số "
         "tổng mà KiotViet đã tính sẵn. Nếu khớp, việc làm sạch không làm mất hay nhân đôi tiền.\n")
     monthly = _df(con, """
@@ -100,6 +104,11 @@ def build_report(con: duckdb.DuckDBPyConnection) -> str:
         f"{_pct(inv_match[1])} khớp trong phạm vi 100 đ. Điều này xác nhận **giá bán trên từng dòng "
         "đã là giá sau giảm giá hoá đơn**, nên doanh thu dòng = số lượng × giá bán là đúng.\n")
 
+    return _rest_of_report(con, out, total_rev, d0)
+
+
+def _rest_of_report(con, out: list[str], total_rev: float, d0) -> str:
+    add = out.append
     # --- Các vấn đề phát hiện ---
     add("## 3. Các vấn đề phát hiện và cách xử lý\n")
     issues = _df(con, """

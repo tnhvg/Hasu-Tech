@@ -50,8 +50,27 @@ COLUMN_MAP = {
     "tổng lợi nhuận hàng hóa": "line_profit",
 }
 
-# Các cột mã phải đọc dưới dạng chữ để không mất số 0 ở đầu (vd "02000758").
-TEXT_COLUMNS = ["Mã giao dịch", "Mã hàng", "Mã vạch"]
+# Tên gọi khác thường gặp (file từ phần mềm bán hàng khác, hoặc tự đổi tên cột).
+SYNONYMS = {
+    "số lượng": "quantity", "sl bán": "quantity", "qty": "quantity",
+    "mã hóa đơn": "invoice_id", "mã hoá đơn": "invoice_id", "số hóa đơn": "invoice_id", "mã hđ": "invoice_id",
+    "ngày bán": "sold_at", "thời gian bán": "sold_at", "ngày giờ": "sold_at",
+    "mã sản phẩm": "sku", "mã sp": "sku", "sku": "sku",
+    "tên sản phẩm": "product_name", "tên sp": "product_name",
+    "nhóm hàng": "category_path", "danh mục": "category_path", "ngành hàng": "category_path",
+    "đơn giá": "unit_price", "giá bán": "unit_price", "giá vốn": "unit_cost",
+    "nhân viên": "seller", "nhân viên bán": "seller", "thu ngân": "seller",
+    "cửa hàng": "branch", "barcode": "barcode",
+}
+
+# Cột bắt buộc ở mức dòng sản phẩm. Các cột còn lại (tổng tháng, tổng hoá đơn...)
+# chỉ dùng để đối soát, thiếu thì vẫn xử lý được.
+REQUIRED_FIELDS = [
+    "invoice_id", "sold_at", "sku", "product_name", "category_path", "quantity", "unit_price", "unit_cost",
+]
+
+# Các cột mã (invoice_id, sku, barcode) luôn được đọc dưới dạng chữ để không mất
+# số 0 ở đầu (vd "02000758").
 
 # Kiểu dữ liệu của từng cột chuẩn. Ép kiểu tường minh thay vì để pandas tự đoán:
 # một cột toàn ô trống (vd thương hiệu) sẽ bị đoán sai thành kiểu số.
@@ -74,24 +93,44 @@ def file_fingerprint(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def read_kiotviet_excel(path: Path) -> pd.DataFrame:
-    """Đọc file Excel và đổi tên cột theo COLUMN_MAP.
+def detect_mapping(headers: list[str]) -> dict[str, str | None]:
+    """Đoán cột chuẩn cho từng cột của file, theo từ điển KiotViet rồi từ điển đồng nghĩa."""
+    mapping = {}
+    for h in headers:
+        key = normalize_header(h)
+        mapping[h] = COLUMN_MAP.get(key) or SYNONYMS.get(key)
+    return mapping
 
-    Báo lỗi rõ ràng nếu file thiếu cột, thay vì để lỗi xảy ra ở bước sau.
+
+def missing_required(mapping: dict[str, str | None]) -> list[str]:
+    return [f for f in REQUIRED_FIELDS if f not in set(mapping.values())]
+
+
+def read_kiotviet_excel(path: Path, mapping: dict[str, str | None] | None = None) -> pd.DataFrame:
+    """Đọc file Excel và đổi tên cột theo ánh xạ (mặc định: tự nhận diện).
+
+    Báo lỗi rõ ràng nếu thiếu cột bắt buộc, thay vì để lỗi xảy ra ở bước sau.
+    Cột không bắt buộc bị thiếu sẽ được thêm vào với giá trị trống.
     """
-    df = pd.read_excel(path, dtype={c: str for c in TEXT_COLUMNS})
-    renamed = {col: COLUMN_MAP.get(normalize_header(col)) for col in df.columns}
+    headers = pd.read_excel(path, nrows=0).columns.tolist()
+    mapping = mapping or detect_mapping(headers)
+    text_cols = [h for h, std in mapping.items() if std in ("invoice_id", "sku", "barcode")]
+    df = pd.read_excel(path, dtype={c: str for c in text_cols})
 
-    missing = set(COLUMN_MAP.values()) - {v for v in renamed.values() if v}
+    missing = missing_required(mapping)
     if missing:
-        raise ValueError(f"File thiếu các cột bắt buộc: {sorted(missing)}")
+        raise ValueError(f"File thiếu các cột bắt buộc: {missing}")
 
-    unknown = [col for col, new in renamed.items() if new is None]
+    unknown = [h for h, std in mapping.items() if std is None]
     if unknown:
         print(f"[cảnh báo] Bỏ qua các cột không nhận diện được: {unknown}")
 
-    df = df.rename(columns=renamed)[list(COLUMN_MAP.values())]
-    return coerce_types(df)
+    df = df.rename(columns={h: std for h, std in mapping.items() if std})
+    df = df.loc[:, ~df.columns.duplicated()]
+    for col in COLUMN_MAP.values():
+        if col not in df.columns:
+            df[col] = None
+    return coerce_types(df[list(COLUMN_MAP.values())])
 
 
 def coerce_types(df: pd.DataFrame) -> pd.DataFrame:
@@ -107,9 +146,10 @@ def coerce_types(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def load_raw(con: duckdb.DuckDBPyConnection, path: Path) -> int:
+def load_raw(con: duckdb.DuckDBPyConnection, path: Path,
+             mapping: dict[str, str | None] | None = None) -> int:
     """Nạp một file vào bảng raw. Nạp lại cùng một file sẽ không bị nhân đôi."""
-    df = read_kiotviet_excel(path)
+    df = read_kiotviet_excel(path, mapping)
     fingerprint = file_fingerprint(path)
     df["source_file"] = path.name
     df["source_hash"] = fingerprint

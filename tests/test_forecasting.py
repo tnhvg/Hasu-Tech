@@ -81,3 +81,16 @@ def test_simulation_counts_shortage_and_excess():
     assert sim.units_short == 4 and sim.units_excess == 2
     assert sim.fill_rate == pytest.approx(1 - 4 / 14)
     assert sim.excess_value == 2000
+
+
+def test_drift_status_triggers_retrain():
+    from hasu.forecasting.monitor import drift_status
+
+    ok = pd.DataFrame({"wmape": [0.5, 0.55], "actual_total": [100, 110], "forecast_total": [105, 100]})
+    assert not drift_status(ok, reference_wmape=0.55)["retrain"]
+    bad = ok.assign(wmape=[0.5, 0.9])
+    assert drift_status(bad, reference_wmape=0.55)["retrain"]
+    # luôn dự báo thiếu -> lệch hệ thống
+    biased = pd.DataFrame({"wmape": [0.3] * 6, "actual_total": [100] * 6, "forecast_total": [80] * 6})
+    assert drift_status(biased, reference_wmape=0.55)["retrain"]
+    assert not drift_status(pd.DataFrame(), reference_wmape=0.55)["retrain"]

@@ -35,6 +35,16 @@ tests/           kiểm thử tự động
 docs/            mockup giao diện, báo cáo
 ```
 
+## Ứng dụng web
+
+Ứng dụng Streamlit gồm 8 màn hình: **Tổng quan** (chỉ số, cảnh báo) · **Nạp dữ liệu** (tải file KiotViet, xác nhận ánh xạ cột, tự ghép và khử trùng lặp) · **Chất lượng dữ liệu** · **Phân tích kinh doanh** · **Dự báo & đề xuất nhập** (nhãn độ tin cậy, phân bổ xuống mã hàng, tải CSV) · **Giải thích dự báo** (SHAP) · **Kịch bản mô phỏng** (giảm giá, kỳ nghỉ Tết) · **Lịch sử & đánh giá** (đối chiếu dự báo đã lưu với thực tế, cảnh báo suy giảm mô hình).
+
+```bash
+streamlit run app/streamlit_app.py
+```
+
+Bản triển khai công khai dùng **bộ dữ liệu demo** trong `app/demo_data/`: chỉ gồm bảng tổng hợp theo ngày × nhóm hàng và kết quả mô hình, không có tên nhân viên, tên khách hay ghi chú hoá đơn (`python -m hasu.export_demo` từ chối xuất nếu bảng chứa các cột này). Cửa hàng muốn dùng thật thì tải file KiotViet của mình lên, dữ liệu chỉ nằm trong phiên làm việc.
+
 ## Kết quả chính
 
 - [Báo cáo phân tích kinh doanh](docs/business_analysis.md): xu hướng, ABC, giờ × thứ, biên lợi nhuận, Tết, giỏ hàng, nghi ngờ hết hàng, kèm khuyến nghị.

@@ -68,19 +68,18 @@ def fmt_int(x: float, _pos=None) -> str:
 
 
 def plotly_layout(**overrides) -> dict:
-    """Bố cục Plotly đồng bộ với kiểu matplotlib ở trên (dùng trong ứng dụng)."""
+    """Bố cục Plotly cho ứng dụng: không cố định màu chữ/nền để tự theo giao diện sáng/tối
+    của Streamlit; chỉ cố định bảng màu phân loại, lưới mờ, tooltip theo trục x."""
     layout = dict(
-        font=dict(family="Inter, Segoe UI, sans-serif", size=13, color=TEXT_2),
-        title=dict(font=dict(size=15, color=TEXT), x=0, xanchor="left"),
         colorway=SERIES,
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=8, r=8, t=48, b=8),
+        margin=dict(l=8, r=8, t=40, b=40),
         hovermode="x unified",
-        xaxis=dict(showgrid=False, linecolor=GRID, ticks=""),
-        yaxis=dict(gridcolor=GRID, zeroline=False, ticks=""),
-        legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="left", x=0),
+        xaxis=dict(showgrid=False, ticks=""),
+        yaxis=dict(gridcolor="rgba(128,128,128,0.18)", zeroline=False, ticks=""),
+        legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="left", x=0, title_text="",
+                    traceorder="normal"),
         separators=",.",
+        title=dict(x=0, xanchor="left", font=dict(size=15)),
     )
     layout.update(overrides)
     return layout
