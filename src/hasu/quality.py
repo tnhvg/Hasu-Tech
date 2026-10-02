@@ -186,7 +186,7 @@ def build_report(con: duckdb.DuckDBPyConnection) -> str:
         FROM stg_sales_lines GROUP BY 1 ORDER BY rev DESC""")
     labels = {
         "retail": "Bán lẻ",
-        "bulk": "Đơn số lượng lớn (≥ 48 và ≥ 10 lần mức mua điển hình của mã hàng)",
+        "bulk": "Đơn lớn (hoá đơn ≥ 100 sản phẩm hoặc ≥ 3 triệu đ; hoặc dòng ≥ 48 và ≥ 10 lần mức mua điển hình)",
         "organization": "Đơn tổ chức / công ty (theo ghi chú)",
         "internal": "Nội bộ: hàng mẫu, trả NCC, chuyển kho (theo ghi chú)",
     }

@@ -33,6 +33,8 @@ def stg():
         _line("TH001", "A", -1, 10000, 8000),                                  # trả hàng
         _line("HD005.01", "A", 1, 10000, 8000, note="Xuất dùng nội bộ"),
         _line("HD006", "C", 1, 20000, 15000, category="Thực phẩm đông mát>>Kem"),
+        _line("HD007", "C", 30, 60000, 50000),                                 # 1,8 triệu
+        _line("HD007", "A", 40, 40000, 30000),                                 # + 1,6 triệu
     ]
     con = duckdb.connect()
     raw = pd.DataFrame(rows)
@@ -45,7 +47,7 @@ def stg():
 
 
 def test_duplicates_are_removed(stg):
-    assert len(stg) == 7
+    assert len(stg) == 9
 
 
 def test_return_invoice_is_flagged(stg):
@@ -81,6 +83,8 @@ def test_seller_names_are_anonymised(stg):
 
 def test_transaction_channels(stg):
     assert stg.loc["HD003", "txn_channel"] == "bulk"
+    # mỗi dòng không lớn, nhưng cả hoá đơn 3,4 triệu -> đơn lớn
+    assert (stg.loc["HD007", "txn_channel"] == "bulk").all()
     assert stg.loc["HD005.01", "txn_channel"] == "internal"
     assert stg.loc["HD001", "txn_channel"] == "retail"
     assert stg.loc["HD005.01", "invoice_base_id"] == "HD005"

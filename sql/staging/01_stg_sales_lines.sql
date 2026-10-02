@@ -90,6 +90,14 @@ sku_qty AS (
     GROUP BY sku
 ),
 
+-- Quy mô của cả hoá đơn, để phát hiện đơn đặt lớn gồm nhiều mặt hàng
+-- (mỗi dòng không quá lớn nhưng cả hoá đơn thì lớn bất thường).
+invoice_size AS (
+    SELECT invoice_id, sum(quantity) AS invoice_qty, sum(quantity * unit_price) AS invoice_value
+    FROM base
+    GROUP BY invoice_id
+),
+
 lines AS (
     SELECT
         -- Định danh hoá đơn
@@ -142,16 +150,19 @@ lines AS (
         -- Ghi chú (giữ ở tầng staging, KHÔNG đưa ra ứng dụng vì có tên người thật)
         b.note,
         b.note_lc,
-        q.median_qty
+        q.median_qty,
+        i.invoice_qty,
+        i.invoice_value
     FROM base b
     LEFT JOIN seller_codes s USING (seller)
     LEFT JOIN sku_cost     c ON c.sku = b.sku
     LEFT JOIN category_cost_ratio r ON r.category_clean = b.category_clean
     LEFT JOIN sku_qty      q ON q.sku = b.sku
+    LEFT JOIN invoice_size i ON i.invoice_id = b.invoice_id
 )
 
 SELECT
-    * EXCLUDE (note_lc, median_qty),
+    * EXCLUDE (note_lc, median_qty, invoice_qty, invoice_value),
 
     -- Doanh thu, giá vốn, lợi nhuận tính lại ở mức dòng
     quantity * unit_price                                       AS line_revenue,
@@ -172,8 +183,12 @@ SELECT
         WHEN regexp_matches(coalesce(note_lc, ''),
              'cty|công ty|công đoàn|ub xã|huyndai|hyundai|vinfast|hải thịnh|dolee|set quà|dính kế')
             THEN 'organization'
-        -- Ngưỡng 48 = 2 thùng 24: mua 1 thùng (24 lon/chai) vẫn là hành vi bán lẻ
-        -- bình thường ở cửa hàng tạp hoá, đặc biệt dịp lễ Tết.
+        -- Đơn lớn, xét theo cả hoá đơn: >= 100 sản phẩm hoặc >= 3 triệu đồng
+        -- (hoá đơn bán lẻ điển hình: trung vị 2 sản phẩm, ~28 nghìn đồng).
+        WHEN invoice_type = 'sale' AND (invoice_qty >= 100 OR invoice_value >= 3000000)
+            THEN 'bulk'
+        -- Đơn lớn, xét theo từng dòng. Ngưỡng 48 = 2 thùng 24: mua 1 thùng vẫn là
+        -- hành vi bán lẻ bình thường ở cửa hàng tạp hoá, đặc biệt dịp lễ Tết.
         WHEN invoice_type = 'sale' AND quantity >= 48 AND quantity >= 10 * median_qty
             THEN 'bulk'
         ELSE 'retail'

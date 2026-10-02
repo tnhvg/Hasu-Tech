@@ -1,6 +1,6 @@
 # Báo cáo chất lượng dữ liệu
 
-_Sinh tự động bởi `python -m hasu.pipeline` lúc 02/10/2026 10:17._
+_Sinh tự động bởi `python -m hasu.pipeline` lúc 02/10/2026 10:25._
 
 ## 1. Tổng quan
 
@@ -62,8 +62,8 @@ Ghi chú hoá đơn và số lượng bất thường cho thấy một phần gi
 
 | Loại | Số dòng | Số hoá đơn | Tỷ lệ số lượng | Tỷ lệ doanh thu |
 |---|---|---|---|---|
-| Bán lẻ | 26.651 | 12.411 | 72,9% | 84,0% |
-| Đơn số lượng lớn (≥ 48 và ≥ 10 lần mức mua điển hình của mã hàng) | 202 | 168 | 20,5% | 10,8% |
+| Bán lẻ | 25.820 | 12.320 | 50,5% | 62,9% |
+| Đơn lớn (hoá đơn ≥ 100 sản phẩm hoặc ≥ 3 triệu đ; hoặc dòng ≥ 48 và ≥ 10 lần mức mua điển hình) | 1.033 | 206 | 42,9% | 31,9% |
 | Đơn tổ chức / công ty (theo ghi chú) | 157 | 16 | 6,4% | 4,4% |
 | Nội bộ: hàng mẫu, trả NCC, chuyển kho (theo ghi chú) | 58 | 13 | 0,2% | 0,9% |
 
@@ -80,8 +80,8 @@ Ghi chú hoá đơn và số lượng bất thường cho thấy một phần gi
 
 Chỉ tính bán lẻ, trên các ngày cửa hàng mở cửa:
 
-- 94,3% mã hàng bán ra dưới 10% số ngày.
+- 94,1% mã hàng bán ra dưới 10% số ngày.
 - Chỉ 3 mã hàng bán ra từ 50% số ngày trở lên.
-- Ở cấp nhóm hàng 3: 16/187 nhóm bán ra từ 50% số ngày trở lên.
+- Ở cấp nhóm hàng 3: 16/185 nhóm bán ra từ 50% số ngày trở lên.
 
 → Cần dự báo phân tầng theo mức độ đầy đủ dữ liệu, và dùng mô hình cho nhu cầu gián đoạn (intermittent demand) ở các nhóm thưa.
