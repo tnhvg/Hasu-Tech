@@ -51,9 +51,10 @@ if svc:
 view["interval"] = [f"{lib.num(a)} – {lib.num(b)}" if pd.notna(a) else "–"
                     for a, b in zip(view["lower_80"], view["upper_80"])]
 view["conf_label"] = view["confidence"].map(lib.CONF_ICON)
+view["order_value"] = view["order_value"].round(0)
 st.dataframe(
     view[["unique_id", "cat_l1", "forecast_week", "interval", "order_qty", "order_value", "conf_label", "service_class"]],
-    hide_index=True, use_container_width=True, height=420, column_config={
+    hide_index=True, width="stretch", height=420, column_config={
         "unique_id": "Nhóm hàng", "cat_l1": "Ngành",
         "forecast_week": st.column_config.NumberColumn("Dự báo tuần", format="%.0f"),
         "interval": "Khoảng 80%",
@@ -94,7 +95,7 @@ alloc = lib.q("SELECT * FROM fc_sku_allocation WHERE cat_l3 = ? ORDER BY share D
 if len(alloc):
     st.markdown("**Phân bổ xuống mã hàng** theo thị phần 8 tuần gần nhất trong nhóm:")
     st.dataframe(alloc[["product_name", "share", "sku_forecast_week", "sku_order_qty"]], hide_index=True,
-                 use_container_width=True, column_config={
+                 width="stretch", column_config={
         "product_name": "Mã hàng", "share": st.column_config.ProgressColumn("Thị phần", format="%.0f%%",
                                                                            min_value=0, max_value=1),
         "sku_forecast_week": st.column_config.NumberColumn("Dự báo tuần", format="%.1f"),

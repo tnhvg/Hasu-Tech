@@ -51,7 +51,7 @@ if len(hist):
     st.metric(f"Độ chính xác tổng tuần đã kiểm chứng ({len(hist)} tuần)", lib.pct(1 - tot_err, 0),
               help="1 − (tổng |dự báo − thực tế| / tổng thực tế), cộng ở mức toàn cửa hàng")
     st.dataframe(hist[["week_start", "kind", "wmape", "bias", "actual_total", "forecast_total"]], hide_index=True,
-                 use_container_width=True, column_config={
+                 width="stretch", column_config={
         "week_start": st.column_config.DateColumn("Tuần bắt đầu", format="DD/MM/YYYY"), "kind": "Loại",
         "wmape": st.column_config.NumberColumn("WMAPE", format="percent"),
         "bias": st.column_config.NumberColumn("Bias", format="percent"),
@@ -59,7 +59,7 @@ if len(hist):
         "forecast_total": st.column_config.NumberColumn("Dự báo", format="%.0f")})
 
 st.subheader("Các lần dự báo đã lưu")
-st.dataframe(snaps, hide_index=True, use_container_width=True, column_config={
+st.dataframe(snaps, hide_index=True, width="stretch", column_config={
     "run_id": "Mã lần chạy", "kind": "Loại",
     "week_start": st.column_config.DateColumn("Tuần dự báo", format="DD/MM/YYYY"),
     "created_at": st.column_config.DatetimeColumn("Thời điểm lưu", format="DD/MM/YYYY HH:mm"),

@@ -110,7 +110,7 @@ def layout(fig, height: int = 360, **kw):
 
 
 def show(fig, height: int = 360, **kw) -> None:
-    st.plotly_chart(layout(fig, height, **kw), use_container_width=True, theme="streamlit")
+    st.plotly_chart(layout(fig, height, **kw), width="stretch", theme="streamlit")
 
 
 def note(text: str) -> None:

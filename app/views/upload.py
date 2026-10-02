@@ -48,7 +48,7 @@ for f in files:
                      expanded=bool(missing_required(auto))):
         table = pd.DataFrame({"Cột trong file": headers, "Cột chuẩn": [v or SKIP for v in auto.values()]})
         edited = st.data_editor(
-            table, key=f"map_{f.name}", hide_index=True, use_container_width=True, disabled=["Cột trong file"],
+            table, key=f"map_{f.name}", hide_index=True, width="stretch", disabled=["Cột trong file"],
             column_config={"Cột chuẩn": st.column_config.SelectboxColumn(options=OPTIONS, required=True)},
         )
         mapping = {h: (None if v == SKIP else v) for h, v in zip(edited["Cột trong file"], edited["Cột chuẩn"])}

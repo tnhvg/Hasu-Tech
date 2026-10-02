@@ -56,8 +56,8 @@ with tabs[1]:
              xaxis_title="Số mã hàng (xếp theo số lượng giảm dần)", hovermode="closest")
     cls = st.segmented_control("Lọc nhóm", ["A", "B", "C"], default="A")
     view = abc[abc["abc_class"] == (cls or "A")][["qty_rank", "product_name", "cat_l3", "quantity", "revenue",
-                                                  "sell_day_ratio", "last_sale"]]
-    st.dataframe(view, hide_index=True, use_container_width=True, column_config={
+                                                  "sell_day_ratio", "last_sale"]].round({"revenue": 0})
+    st.dataframe(view, hide_index=True, width="stretch", column_config={
         "qty_rank": "Hạng", "product_name": "Mã hàng", "cat_l3": "Nhóm hàng",
         "quantity": st.column_config.NumberColumn("Số lượng", format="%.0f"),
         "revenue": st.column_config.NumberColumn("Doanh thu (đ)", format="localized"),
@@ -103,7 +103,7 @@ with tabs[3]:
              xaxis=dict(type="log", title="Doanh thu (thang log)", showgrid=False),
              yaxis=dict(tickformat=".0%", title="Biên lợi nhuận gộp", gridcolor="rgba(128,128,128,0.18)"))
     st.dataframe(cm[["cat_l2", "cat_l1", "quadrant", "revenue", "profit", "margin", "retail_share"]]
-                 .sort_values("profit"), hide_index=True, use_container_width=True, column_config={
+                 .round({"revenue": 0, "profit": 0}).sort_values("profit"), hide_index=True, width="stretch", column_config={
         "cat_l2": "Nhóm hàng", "cat_l1": "Ngành", "quadrant": "Phân nhóm",
         "revenue": st.column_config.NumberColumn("Doanh thu (đ)", format="localized"),
         "profit": st.column_config.NumberColumn("Lợi nhuận gộp (đ)", format="localized"),
@@ -137,7 +137,7 @@ with tabs[5]:
     st.caption(f"FP-Growth trên {lib.num(rules['total_multi_item_baskets'].iloc[0])} hoá đơn bán lẻ có từ 2 nhóm hàng, "
                "đã loại các dòng bán dưới giá phổ biến (khuyến mãi).")
     st.dataframe(rules[["antecedent", "consequent", "n_baskets", "confidence", "lift"]], hide_index=True,
-                 use_container_width=True, column_config={
+                 width="stretch", column_config={
         "antecedent": "Nếu mua", "consequent": "Thì thường mua", "n_baskets": "Số hoá đơn",
         "confidence": st.column_config.NumberColumn("Độ tin cậy", format="percent"),
         "lift": st.column_config.NumberColumn("Lift", format="%.2f")})
@@ -154,7 +154,7 @@ with tabs[6]:
     status = st.multiselect("Đánh giá", so["status"].unique().tolist(), default=so["status"].unique().tolist())
     st.dataframe(so[so["status"].isin(status)][["product_name", "cat_l3", "gap_start", "gap_end", "gap_open_days",
                                                 "sell_day_ratio", "status"]],
-                 hide_index=True, use_container_width=True, column_config={
+                 hide_index=True, width="stretch", column_config={
         "product_name": "Mã hàng", "cat_l3": "Nhóm hàng", "gap_start": "Từ", "gap_end": "Đến",
         "gap_open_days": "Số ngày không bán", "sell_day_ratio": st.column_config.NumberColumn("% ngày có bán", format="percent"),
         "status": "Đánh giá"})
