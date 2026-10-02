@@ -8,6 +8,9 @@
 --    thì quantity = 0. Ngày đóng cửa KHÔNG có dòng nào (không phải nhu cầu 0).
 --  - promo_qty_share: tỷ lệ số lượng bán với giá thấp hơn giá phổ biến trong
 --    tháng của chính mã hàng từ 5% trở lên (dấu hiệu khuyến mãi / giảm giá).
+--  - discount_depth: mức chiết khấu bình quân so với giá phổ biến
+--    = 1 - sum(giá bán x SL) / sum(giá phổ biến x SL). Dùng làm biến giá cho
+--    mô hình và kịch bản "giảm giá X%". Trống khi ngày đó không bán được.
 -- =====================================================================
 
 CREATE OR REPLACE TABLE fct_retail_daily_category AS
@@ -28,7 +31,8 @@ sku_month_price AS (
 lines AS (
     SELECT
         r.*,
-        r.unit_price < 0.95 * p.usual_price AS is_discounted
+        r.unit_price < 0.95 * p.usual_price AS is_discounted,
+        p.usual_price
     FROM retail r
     JOIN sku_month_price p
       ON p.sku = r.sku AND p.month = date_trunc('month', r.sale_date)
@@ -41,7 +45,8 @@ agg AS (
         sum(line_revenue)                               AS revenue,
         sum(line_profit)                                AS profit,
         count(DISTINCT invoice_id)                      AS n_invoices,
-        sum(quantity) FILTER (is_discounted)            AS discounted_qty
+        sum(quantity) FILTER (is_discounted)            AS discounted_qty,
+        1 - sum(unit_price * quantity) / nullif(sum(usual_price * quantity), 0) AS discount_depth
     FROM lines
     GROUP BY ALL
 ),
@@ -62,7 +67,8 @@ SELECT
     coalesce(a.revenue, 0)                              AS revenue,
     coalesce(a.profit, 0)                               AS profit,
     coalesce(a.n_invoices, 0)                           AS n_invoices,
-    coalesce(a.discounted_qty, 0) / nullif(a.quantity, 0) AS promo_qty_share
+    coalesce(a.discounted_qty, 0) / nullif(a.quantity, 0) AS promo_qty_share,
+    a.discount_depth
 FROM grid g
 LEFT JOIN agg a ON a.date = g.date AND a.cat_l3 = g.cat_l3
 ORDER BY g.cat_l3, g.date;

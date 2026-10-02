@@ -9,10 +9,16 @@ dependencies = [
     "openpyxl>=3.1",
     "matplotlib>=3.8",
     "mlxtend>=0.23",
+    "statsforecast>=2.0",
+    "mlforecast>=1.0",
+    "lightgbm>=4.0",
+    "shap>=0.45",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+# Mô hình nền tảng Chronos (tuỳ chọn, cần tải mô hình từ Hugging Face)
+chronos = ["chronos-forecasting>=1.5"]
 
 [build-system]
 requires = ["setuptools>=68"]

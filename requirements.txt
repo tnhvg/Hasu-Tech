@@ -5,3 +5,7 @@ duckdb>=1.1
 openpyxl>=3.1
 matplotlib>=3.8
 mlxtend>=0.23
+statsforecast>=2.0
+mlforecast>=1.0
+lightgbm>=4.0
+shap>=0.45
