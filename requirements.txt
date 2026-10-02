@@ -1,4 +1,5 @@
-# Thư viện sẽ được bổ sung dần theo từng bước của dự án.
+# Danh sách thư viện chính được khai báo trong pyproject.toml.
+# File này dùng khi triển khai (Streamlit Cloud đọc requirements.txt).
 pandas>=2.2
 duckdb>=1.1
 openpyxl>=3.1

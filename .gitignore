@@ -27,3 +27,5 @@ venv/
 .DS_Store
 .vscode/
 .idea/
+*.egg-info/
+.pytest_cache/
