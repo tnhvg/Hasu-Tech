@@ -35,6 +35,11 @@ tests/           kiểm thử tự động
 docs/            mockup giao diện, báo cáo
 ```
 
+## Kết quả chính
+
+- [Báo cáo phân tích kinh doanh](docs/business_analysis.md): xu hướng, ABC, giờ × thứ, biên lợi nhuận, Tết, giỏ hàng, nghi ngờ hết hàng, kèm khuyến nghị.
+- [Báo cáo chất lượng dữ liệu](docs/data_quality_report.md): đối soát doanh thu với KiotViet, các vấn đề phát hiện và cách xử lý.
+
 ## Luồng xử lý dữ liệu
 
 ```
@@ -48,6 +53,8 @@ File Excel KiotViet ──► raw_sales_lines ──► stg_sales_lines ──�
 |---|---|---|
 | raw | `src/hasu/ingest.py` | Đọc Excel, đổi tên cột theo từ điển ánh xạ, ép kiểu dữ liệu. Nạp lại cùng một file không bị nhân đôi. |
 | staging | `sql/staging/*.sql` | Khử trùng lặp, tính lại doanh thu ở mức dòng, điền giá vốn thiếu, chuẩn hoá nhóm hàng, phân loại giao dịch (bán lẻ / số lượng lớn / tổ chức / nội bộ). |
+| mart | `sql/marts/*.sql` | Bảng tổng hợp cho phân tích và dự báo: nhu cầu bán lẻ theo ngày × nhóm hàng, ABC, giờ × thứ, biên lợi nhuận, hiệu ứng Tết. |
+| phân tích | `src/hasu/analysis.py` | Phân tích giỏ hàng (FP-Growth), phát hiện nghi ngờ hết hàng. |
 | kiểm tra | `src/hasu/quality.py` | Đối soát doanh thu với số tổng của KiotViet và sinh [báo cáo chất lượng dữ liệu](docs/data_quality_report.md). |
 
 ## Cách chạy
@@ -55,6 +62,7 @@ File Excel KiotViet ──► raw_sales_lines ──► stg_sales_lines ──�
 ```bash
 pip install -e ".[dev]"          # cài dự án và thư viện
 # đặt file Excel xuất từ KiotViet vào data/raw/
-python -m hasu.pipeline          # nạp, làm sạch, sinh báo cáo chất lượng
+python -m hasu.pipeline          # nạp, làm sạch, tổng hợp, sinh báo cáo chất lượng
+python -m hasu.business_report   # sinh báo cáo phân tích kinh doanh + biểu đồ
 python -m pytest                 # chạy kiểm thử
 ```

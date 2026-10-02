@@ -5,18 +5,20 @@
 Các bước:
   1. Nạp mọi file .xlsx trong data/raw vào bảng raw_sales_lines.
   2. Chạy lần lượt các file SQL trong sql/staging (theo thứ tự tên file).
-  3. Ghi báo cáo chất lượng dữ liệu ra docs/data_quality_report.md.
+  3. Chạy các phân tích cần Python (giỏ hàng, nghi ngờ hết hàng).
+  4. Ghi báo cáo chất lượng dữ liệu ra docs/data_quality_report.md.
 """
 
 from __future__ import annotations
 
 import duckdb
 
+from hasu.analysis import build_analysis_tables
 from hasu.config import DATA_PROCESSED, DATA_RAW, DB_PATH, DOCS_DIR, SQL_DIR
 from hasu.ingest import load_raw
 from hasu.quality import build_report
 
-SQL_LAYERS = ["staging"]
+SQL_LAYERS = ["staging", "marts"]
 
 
 def run_sql_layer(con: duckdb.DuckDBPyConnection, layer: str) -> None:
@@ -40,7 +42,10 @@ def main() -> None:
         for layer in SQL_LAYERS:
             run_sql_layer(con, layer)
 
-        print("3. Báo cáo chất lượng dữ liệu")
+        print("3. Phân tích giỏ hàng, nghi ngờ hết hàng")
+        build_analysis_tables(con)
+
+        print("4. Báo cáo chất lượng dữ liệu")
         report_path = DOCS_DIR / "data_quality_report.md"
         report_path.write_text(build_report(con), encoding="utf-8")
         print(f"  đã ghi {report_path.relative_to(DOCS_DIR.parent)}")
