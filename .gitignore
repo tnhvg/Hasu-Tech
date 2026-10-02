@@ -1,0 +1,29 @@
+# --- Dữ liệu: KHÔNG BAO GIỜ đưa lên GitHub ---
+# Dữ liệu chứa tên nhân viên và tên khách nợ thật.
+# Bỏ qua mọi file trong data/, nhưng giữ lại file .gitkeep để thư mục vẫn tồn tại.
+data/**
+!data/**/
+!data/**/.gitkeep
+
+# Phòng trường hợp ai đó lỡ để file dữ liệu ở chỗ khác
+*.xlsx
+*.xls
+*.csv
+*.duckdb
+*.duckdb.wal
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# --- Bí mật (mật khẩu, khoá API) ---
+.env
+.streamlit/secrets.toml
+
+# --- Hệ điều hành / trình soạn thảo ---
+.DS_Store
+.vscode/
+.idea/

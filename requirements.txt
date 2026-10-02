@@ -1,0 +1,4 @@
+# Thư viện sẽ được bổ sung dần theo từng bước của dự án.
+pandas>=2.2
+duckdb>=1.1
+openpyxl>=3.1
