@@ -8,7 +8,7 @@ _(sẽ viết)_
 
 ## Dữ liệu
 
-- Nguồn: file xuất báo cáo bán hàng theo lợi nhuận từ phần mềm KiotViet của một cửa hàng tạp hoá.
+- Nguồn: file xuất báo cáo bán hàng theo lợi nhuận từ phần mềm KiotViet của cửa hàng tạp hoá **BHS Đại Phúc** (chủ cửa hàng đã đồng ý công khai tên cửa hàng).
 - Phạm vi: 27.068 dòng giao dịch, 11/09/2025 – 30/06/2026, 1 chi nhánh.
 - Dữ liệu gốc **không được đưa lên repo** vì chứa thông tin cá nhân (tên nhân viên, tên khách nợ).
 
