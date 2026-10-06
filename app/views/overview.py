@@ -15,8 +15,10 @@ info = lib.q("SELECT * FROM fc_run_info").iloc[0] if lib.has_table("fc_run_info"
 sales = monthly[monthly["channel"] != "Nội bộ"]
 rev, profit = sales["revenue"].sum(), sales["profit"].sum()
 daily = lib.q("""
-    SELECT date, sum(quantity) AS qty, sum(revenue) AS revenue, sum(n_invoices) AS n_invoices
-    FROM fct_retail_daily_category GROUP BY 1 ORDER BY 1""")
+    SELECT f.date, f.qty, f.revenue, t.n_invoices
+    FROM (SELECT date, sum(quantity) AS qty, sum(revenue) AS revenue FROM fct_retail_daily_category GROUP BY 1) f
+    JOIN mart_daily_traffic t USING (date)
+    ORDER BY 1""")
 daily["date"] = pd.to_datetime(daily["date"])
 last4 = daily[daily["date"] > daily["date"].max() - pd.Timedelta(days=28)]
 prev4 = daily[(daily["date"] <= daily["date"].max() - pd.Timedelta(days=28))

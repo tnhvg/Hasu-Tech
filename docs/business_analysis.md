@@ -1,13 +1,13 @@
 # Phân tích kinh doanh — Cửa hàng BHS Đại Phúc
 
-_Sinh tự động bởi `python -m hasu.business_report` lúc 02/10/2026 10:31. Dữ liệu: 11/09/2025 – 30/06/2026. Mọi con số được truy vấn trực tiếp từ dữ liệu đã làm sạch (xem [báo cáo chất lượng dữ liệu](data_quality_report.md))._
+_Sinh tự động bởi `python -m hasu.business_report` lúc 06/10/2026 03:43. Dữ liệu: 11/09/2025 – 30/06/2026. Mọi con số được truy vấn trực tiếp từ dữ liệu đã làm sạch (xem [báo cáo chất lượng dữ liệu](data_quality_report.md))._
 
 **Nguyên tắc đo lường:** quyết định vận hành và tồn kho (nhập bao nhiêu, xếp ca) dùng **số lượng** và **số hoá đơn**; quyết định tài chính (định giá, chọn nhóm hàng) dùng **doanh thu** và **lợi nhuận**.
 
 ## Tóm tắt cho chủ cửa hàng
 
 1. **Đơn lớn chỉ chiếm 1,8% số hoá đơn nhưng mang về 36% doanh thu**, với biên lợi nhuận 5,6% (bán lẻ: 8,4%). Đây là một kênh bán riêng, cần được quản lý và dự báo riêng.
-2. **Lượng khách bán lẻ giảm rõ trong tháng 5–6/2026**: từ khoảng 79 hoá đơn/ngày xuống 58 hoá đơn/ngày (-27%), trong khi giá trị mỗi hoá đơn gần như không đổi (38.638 đ → 37.244 đ). Nguyên nhân là **ít khách hơn**, không phải khách mua ít đi.
+2. **Lượng khách bán lẻ giảm rõ trong tháng 5–6/2026**: từ khoảng 47 hoá đơn/ngày xuống 34 hoá đơn/ngày (-26%), trong khi giá trị mỗi hoá đơn gần như không đổi (65.929 đ → 63.145 đ). Nguyên nhân là **ít khách hơn**, không phải khách mua ít đi.
 3. **7 nhóm hàng đang bán lỗ**, tập trung ở dầu ăn và các sản phẩm từ sữa. Riêng HASUKOOK dầu đậu nành NK Nga can 5L/3 (Can) được bán khoảng 200.000 đ trong khi giá vốn ghi nhận 280.000 đ, lỗ 5,6 triệu đ. Cần kiểm tra lại giá vốn hoặc giá bán.
 4. **Tết làm tăng doanh thu bán lẻ 1,76 lần nhưng số lượng chỉ tăng 1,13 lần** trong 14 ngày trước Tết: khách mua hàng đắt hơn (quà biếu, thùng nước, bánh kẹo hộp) chứ không mua nhiều món hơn hẳn.
 5. **Cao điểm lúc 17h** (5,1 hoá đơn/giờ), thấp điểm 14h–15h. Chủ nhật vắng nhất (36 hoá đơn/ngày so với 45 các ngày khác).
@@ -20,16 +20,16 @@ Biểu đồ dùng **doanh thu trung bình mỗi ngày mở cửa** thay cho t�
 
 | Tháng | Bán lẻ / ngày | Biên bán lẻ | Đơn lớn / ngày | Hoá đơn bán lẻ / ngày | Giá trị / hoá đơn |
 |---|---|---|---|---|---|
-| 2025-09 | 3,1 triệu đ | 10,9% | 1,6 triệu đ | 74 | 42.850 đ |
-| 2025-10 | 3,0 triệu đ | 12,1% | 0,6 triệu đ | 86 | 35.448 đ |
-| 2025-11 | 3,0 triệu đ | 10,5% | 0,2 triệu đ | 89 | 33.732 đ |
-| 2025-12 | 3,4 triệu đ | 7,0% | 1,5 triệu đ | 89 | 38.670 đ |
-| 2026-01 | 2,8 triệu đ | 9,8% | 2,3 triệu đ | 73 | 37.777 đ |
-| 2026-02 | 4,8 triệu đ | 4,6% | 3,7 triệu đ | 78 | 61.777 đ |
-| 2026-03 | 2,9 triệu đ | 2,9% | 0,9 triệu đ | 73 | 40.085 đ |
-| 2026-04 | 3,1 triệu đ | 5,5% | 3,0 triệu đ | 73 | 41.901 đ |
-| 2026-05 | 2,0 triệu đ | 11,5% | 2,0 triệu đ | 56 | 36.251 đ |
-| 2026-06 | 2,3 triệu đ | 11,7% | 2,1 triệu đ | 60 | 38.236 đ |
+| 2025-09 | 3,1 triệu đ | 10,9% | 1,6 triệu đ | 42 | 74.193 đ |
+| 2025-10 | 3,0 triệu đ | 12,1% | 0,6 triệu đ | 52 | 59.126 đ |
+| 2025-11 | 3,0 triệu đ | 10,5% | 0,2 triệu đ | 51 | 59.368 đ |
+| 2025-12 | 3,4 triệu đ | 7,0% | 1,5 triệu đ | 52 | 66.470 đ |
+| 2026-01 | 2,8 triệu đ | 9,8% | 2,3 triệu đ | 41 | 67.747 đ |
+| 2026-02 | 4,8 triệu đ | 4,6% | 3,7 triệu đ | 41 | 117.252 đ |
+| 2026-03 | 2,9 triệu đ | 2,9% | 0,9 triệu đ | 45 | 64.799 đ |
+| 2026-04 | 3,1 triệu đ | 5,5% | 3,0 triệu đ | 44 | 69.804 đ |
+| 2026-05 | 2,0 triệu đ | 11,5% | 2,0 triệu đ | 33 | 62.705 đ |
+| 2026-06 | 2,3 triệu đ | 11,7% | 2,1 triệu đ | 36 | 63.586 đ |
 
 **Nhận xét.** Doanh thu bán lẻ ổn định quanh 3,0 triệu đ/ngày từ tháng 9 đến tháng 4 (trừ tháng Tết), rồi giảm còn 2,1 triệu đ/ngày trong tháng 5–6. Số hoá đơn mỗi ngày giảm tương ứng trong khi giá trị mỗi hoá đơn không đổi, nên sụt giảm đến từ **lượng khách**. Dữ liệu bán hàng không cho biết lý do (mùa hè, đối thủ mới, thay đổi giờ mở cửa...): **cần chủ cửa hàng xác nhận**.
 
@@ -129,23 +129,23 @@ Hệ số = trung bình mỗi ngày mở cửa trong giai đoạn / trung bình 
 
 ## 6. Phân tích giỏ hàng
 
-Thuật toán FP-Growth (cùng kết quả với Apriori, chạy nhanh hơn) trên 4.651 hoá đơn bán lẻ có từ 2 nhóm hàng trở lên, **đã loại các dòng bán dưới giá phổ biến** để luật phản ánh hành vi mua tự nhiên chứ không phải tác động của khuyến mãi. Phân tích ở cấp nhóm hàng 3 vì từng mã hàng quá thưa.
+Thuật toán FP-Growth (cùng kết quả với Apriori, chạy nhanh hơn) trên 4.654 hoá đơn bán lẻ có từ 2 nhóm hàng trở lên, **đã loại các dòng bán dưới giá phổ biến** để luật phản ánh hành vi mua tự nhiên chứ không phải tác động của khuyến mãi. Phân tích ở cấp nhóm hàng 3 vì từng mã hàng quá thưa.
 
 - **Độ tin cậy (confidence)**: trong các hoá đơn có A, bao nhiêu % có cả B.
 - **Lift**: khả năng mua B khi đã mua A cao gấp bao nhiêu lần so với bình thường. Lift > 1 là có liên kết.
 
 | Nếu mua | Thì thường mua | Số hoá đơn | Độ tin cậy | Lift |
 |---|---|---|---|---|
-| Dụng cụ bếp khác | Thuốc Lá | 65 | 77,4% | 8,43 |
-| Mì ăn liền | Mì, bún, phở, cháo ăn liên, bánh gạo | 163 | 53,4% | 2,99 |
-| Kẹo Tổng Hợp | Kẹo | 87 | 43,3% | 2,79 |
-| Trà, Cà phê, cacao | Thuốc Lá | 48 | 22,5% | 2,45 |
+| Dụng cụ bếp khác | Thuốc Lá | 65 | 77,4% | 8,39 |
+| Mì ăn liền | Mì, bún, phở, cháo ăn liên, bánh gạo | 164 | 53,4% | 3,00 |
+| Kẹo Tổng Hợp | Kẹo | 87 | 43,3% | 2,80 |
+| Trà, Cà phê, cacao | Thuốc Lá | 48 | 22,5% | 2,44 |
 | Lạp xưởng, xúc xích ăn liền | Mì, bún, phở, cháo ăn liên, bánh gạo | 190 | 43,0% | 2,41 |
-| Bánh, kẹo, snack | Snack các loại | 64 | 31,8% | 2,29 |
-| Snack Bim bim | Snack các loại | 121 | 30,2% | 2,17 |
-| Mì ăn liền | Lạp xưởng, xúc xích ăn liền | 57 | 18,7% | 1,97 |
-| Thuốc Lá | Nước giải khát | 226 | 52,9% | 1,67 |
-| Trà, Cà phê, cacao | Nước giải khát | 102 | 47,9% | 1,51 |
+| Bánh, kẹo, snack | Snack các loại | 64 | 31,8% | 2,30 |
+| Snack Bim bim | Snack các loại | 121 | 30,2% | 2,18 |
+| Mì ăn liền | Lạp xưởng, xúc xích ăn liền | 57 | 18,6% | 1,95 |
+| Thuốc Lá | Nước giải khát | 228 | 53,1% | 1,68 |
+| Kẹo Tổng Hợp | Bánh Tổng Hợp | 55 | 27,4% | 1,52 |
 
 **Đọc kết quả cẩn thận:** một số luật có lift cao nhưng thực chất là **cùng một loại hàng bị chia làm hai nhóm** trong KiotViet: `Mì ăn liền` và `Mì, bún, phở, cháo ăn liền`, `Kẹo Tổng Hợp` và `Kẹo`, `Snack Bim bim` và `Snack các loại`. Đây là dấu hiệu cây nhóm hàng cần gộp lại, không phải hành vi mua kèm. Các khuyến nghị dưới đây chỉ dựa trên những cặp khác loại hàng.
 

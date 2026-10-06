@@ -46,5 +46,5 @@ sàng, máy chủ thử nghiệm chặn tải mô hình). (3) Gộp các nhóm h
 lặp đối chiếu qua vài tháng để công bố độ chính xác đã kiểm chứng.
 
 **8. Phát hiện kinh doanh nào bạn thấy giá trị nhất?**
-Lượng khách bán lẻ giảm 27% từ tháng 5 trong khi giá trị mỗi hoá đơn không đổi. Đây là vấn đề lưu lượng khách,
+Lượng khách bán lẻ giảm 26% từ tháng 5 (từ 47 xuống 34 hoá đơn mỗi ngày) trong khi giá trị mỗi hoá đơn không đổi. Đây là vấn đề lưu lượng khách,
 không phải chi tiêu, nên giải pháp nằm ở thu hút khách chứ không phải tăng giá trị giỏ hàng.

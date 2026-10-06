@@ -16,9 +16,9 @@ tabs = st.tabs(["Xu hướng", "ABC", "Giờ × thứ", "Biên lợi nhuận", "
 with tabs[0]:
     m = lib.q("SELECT * FROM mart_monthly WHERE channel <> 'Nội bộ' ORDER BY year_month")
     traffic = lib.q("""
-        SELECT strftime(date, '%Y-%m') AS year_month, sum(n_invoices) / count(DISTINCT date) AS inv_per_day,
+        SELECT strftime(date, '%Y-%m') AS year_month, sum(n_invoices) / count(*) AS inv_per_day,
                sum(revenue) / sum(n_invoices) AS basket
-        FROM fct_retail_daily_category GROUP BY 1 ORDER BY 1""")
+        FROM mart_daily_traffic GROUP BY 1 ORDER BY 1""")
     metric = st.radio("Thước đo", ["Doanh thu / ngày mở cửa", "Lợi nhuận gộp", "Số hoá đơn"], horizontal=True)
     col = {"Doanh thu / ngày mở cửa": "revenue_per_open_day", "Lợi nhuận gộp": "profit", "Số hoá đơn": "n_invoices"}[metric]
     fig = go.Figure()

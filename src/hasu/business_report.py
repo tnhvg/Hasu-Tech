@@ -193,14 +193,13 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     tet = q("SELECT * FROM mart_tet_effect")
     rules = q("SELECT * FROM mart_basket_rules")
     stock = q("SELECT * FROM mart_stockout_suspects")
-    daily = q("SELECT date, sum(revenue) AS revenue, sum(quantity) AS quantity, "
-              "sum(n_invoices) AS n_invoices FROM fct_retail_daily_category GROUP BY 1 ORDER BY 1")
+    daily = q("SELECT date, revenue, quantity, n_invoices FROM mart_daily_traffic ORDER BY 1")
     daily["date"] = pd.to_datetime(daily["date"])
     closed = pd.to_datetime(q("SELECT date FROM dim_date WHERE NOT is_open")["date"])
     traffic = q("""
-        SELECT strftime(date, '%Y-%m') AS ym, sum(n_invoices) / count(DISTINCT date) AS inv_per_day,
+        SELECT strftime(date, '%Y-%m') AS ym, sum(n_invoices) / count(*) AS inv_per_day,
                sum(revenue) / sum(n_invoices) AS basket
-        FROM fct_retail_daily_category GROUP BY 1 ORDER BY 1""")
+        FROM mart_daily_traffic GROUP BY 1 ORDER BY 1""")
 
     # ---- Số liệu chính ----
     ch = monthly.groupby("channel")[["revenue", "profit", "n_invoices"]].sum()

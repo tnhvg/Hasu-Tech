@@ -44,7 +44,7 @@ báo cấp cao đáng tin, chính sách nhập hàng theo phân vị, và khả 
 
 - **1,8% số hoá đơn (đơn lớn, đơn công ty) mang về 36% doanh thu**, biên lợi nhuận 5,6% so với 8,4% của bán lẻ.
   Đây là một kênh riêng, cần kế hoạch nhập và giá sỉ riêng.
-- **Lượng khách bán lẻ giảm 27% từ tháng 5/2026** trong khi giá trị mỗi hoá đơn không đổi: vấn đề nằm ở lưu lượng khách.
+- **Lượng khách bán lẻ giảm 26% từ tháng 5/2026 (từ 47 xuống 34 hoá đơn/ngày)** trong khi giá trị mỗi hoá đơn không đổi: vấn đề nằm ở lưu lượng khách.
 - **7 nhóm hàng bán lỗ**, tập trung ở sữa và dầu ăn. Riêng một mã dầu ăn bán thấp hơn giá vốn ghi nhận khoảng 29%.
 - **Tết: doanh thu ×1,76 nhưng số lượng chỉ ×1,13.** Nhập hàng Tết theo hệ số doanh thu sẽ dư gần gấp rưỡi.
 - **Bật lửa bị xếp nhầm vào "dụng cụ bếp"**, và là món mua kèm thuốc lá mạnh nhất (lift 8,5).

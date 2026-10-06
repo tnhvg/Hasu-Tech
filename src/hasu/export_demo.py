@@ -16,7 +16,7 @@ from hasu.config import DB_PATH, ROOT
 DEMO_DIR = ROOT / "app" / "demo_data"
 
 DEMO_TABLES = [
-    "dim_date", "fct_retail_daily_category", "mart_monthly", "mart_sku_abc", "mart_hour_weekday",
+    "dim_date", "fct_retail_daily_category", "mart_daily_traffic", "mart_monthly", "mart_sku_abc", "mart_hour_weekday",
     "mart_category_margin", "mart_tet_effect", "mart_basket_rules", "mart_stockout_suspects",
     "fc_profile", "fc_metrics", "fc_metrics_levels", "fc_backtest_weekly", "fc_simulation",
     "fc_ratio_quantiles", "fc_forecast_daily", "fc_order_plan", "fc_sku_allocation",
