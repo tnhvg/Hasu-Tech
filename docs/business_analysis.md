@@ -1,6 +1,6 @@
 # Phân tích kinh doanh — Cửa hàng BHS Đại Phúc
 
-_Sinh tự động bởi `python -m hasu.business_report` lúc 06/10/2026 03:43. Dữ liệu: 11/09/2025 – 30/06/2026. Mọi con số được truy vấn trực tiếp từ dữ liệu đã làm sạch (xem [báo cáo chất lượng dữ liệu](data_quality_report.md))._
+_Sinh tự động bởi `python -m hasu.business_report` lúc 06/10/2026 04:10. Dữ liệu: 11/09/2025 – 30/06/2026. Mọi con số được truy vấn trực tiếp từ dữ liệu đã làm sạch (xem [báo cáo chất lượng dữ liệu](data_quality_report.md))._
 
 **Nguyên tắc đo lường:** quyết định vận hành và tồn kho (nhập bao nhiêu, xếp ca) dùng **số lượng** và **số hoá đơn**; quyết định tài chính (định giá, chọn nhóm hàng) dùng **doanh thu** và **lợi nhuận**.
 
@@ -129,23 +129,23 @@ Hệ số = trung bình mỗi ngày mở cửa trong giai đoạn / trung bình 
 
 ## 6. Phân tích giỏ hàng
 
-Thuật toán FP-Growth (cùng kết quả với Apriori, chạy nhanh hơn) trên 4.654 hoá đơn bán lẻ có từ 2 nhóm hàng trở lên, **đã loại các dòng bán dưới giá phổ biến** để luật phản ánh hành vi mua tự nhiên chứ không phải tác động của khuyến mãi. Phân tích ở cấp nhóm hàng 3 vì từng mã hàng quá thưa.
+Thuật toán FP-Growth (cùng kết quả với Apriori, chạy nhanh hơn) trên 4.590 hoá đơn bán lẻ có từ 2 nhóm hàng trở lên, **đã loại các dòng bán dưới giá phổ biến** để luật phản ánh hành vi mua tự nhiên chứ không phải tác động của khuyến mãi. Phân tích ở cấp nhóm hàng 3 vì từng mã hàng quá thưa.
 
 - **Độ tin cậy (confidence)**: trong các hoá đơn có A, bao nhiêu % có cả B.
 - **Lift**: khả năng mua B khi đã mua A cao gấp bao nhiêu lần so với bình thường. Lift > 1 là có liên kết.
 
 | Nếu mua | Thì thường mua | Số hoá đơn | Độ tin cậy | Lift |
 |---|---|---|---|---|
-| Dụng cụ bếp khác | Thuốc Lá | 65 | 77,4% | 8,39 |
-| Mì ăn liền | Mì, bún, phở, cháo ăn liên, bánh gạo | 164 | 53,4% | 3,00 |
-| Kẹo Tổng Hợp | Kẹo | 87 | 43,3% | 2,80 |
-| Trà, Cà phê, cacao | Thuốc Lá | 48 | 22,5% | 2,44 |
-| Lạp xưởng, xúc xích ăn liền | Mì, bún, phở, cháo ăn liên, bánh gạo | 190 | 43,0% | 2,41 |
-| Bánh, kẹo, snack | Snack các loại | 64 | 31,8% | 2,30 |
-| Snack Bim bim | Snack các loại | 121 | 30,2% | 2,18 |
-| Mì ăn liền | Lạp xưởng, xúc xích ăn liền | 57 | 18,6% | 1,95 |
-| Thuốc Lá | Nước giải khát | 228 | 53,1% | 1,68 |
-| Kẹo Tổng Hợp | Bánh Tổng Hợp | 55 | 27,4% | 1,52 |
+| Dụng cụ bếp khác | Thuốc Lá | 65 | 77,4% | 8,34 |
+| Mì ăn liền | Mì, bún, phở, cháo ăn liên, bánh gạo | 162 | 53,6% | 2,99 |
+| Kẹo Tổng Hợp | Kẹo | 86 | 43,0% | 2,77 |
+| Trà, Cà phê, cacao | Thuốc Lá | 48 | 22,6% | 2,44 |
+| Lạp xưởng, xúc xích ăn liền | Mì, bún, phở, cháo ăn liên, bánh gạo | 190 | 43,0% | 2,40 |
+| Bánh, kẹo, snack | Snack các loại | 64 | 31,8% | 2,28 |
+| Snack Bim bim | Snack các loại | 121 | 30,2% | 2,16 |
+| Mì ăn liền | Lạp xưởng, xúc xích ăn liền | 57 | 18,9% | 1,96 |
+| Thuốc Lá | Nước giải khát | 225 | 52,8% | 1,67 |
+| Trà, Cà phê, cacao | Nước giải khát | 102 | 48,1% | 1,52 |
 
 **Đọc kết quả cẩn thận:** một số luật có lift cao nhưng thực chất là **cùng một loại hàng bị chia làm hai nhóm** trong KiotViet: `Mì ăn liền` và `Mì, bún, phở, cháo ăn liền`, `Kẹo Tổng Hợp` và `Kẹo`, `Snack Bim bim` và `Snack các loại`. Đây là dấu hiệu cây nhóm hàng cần gộp lại, không phải hành vi mua kèm. Các khuyến nghị dưới đây chỉ dựa trên những cặp khác loại hàng.
 

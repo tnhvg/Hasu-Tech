@@ -36,14 +36,21 @@ def stg():
         _line("HD007", "C", 30, 60000, 50000),                                 # 1,8 triệu
         _line("HD007", "A", 40, 40000, 30000),                                 # + 1,6 triệu
     ]
+    con = _staging(rows)
+    return con.execute("SELECT * FROM stg_sales_lines ORDER BY invoice_id").df().set_index("invoice_id")
+
+
+def _staging(rows, files=("01_stg_sales_lines.sql",)):
+    """Nạp các dòng tự tạo vào raw_sales_lines rồi chạy các file SQL staging được chỉ định."""
     con = duckdb.connect()
     raw = pd.DataFrame(rows)
     raw = pd.concat([coerce_types(raw[list(COLUMN_MAP.values())]),
                      raw[["source_file", "source_hash", "loaded_at"]]], axis=1)
     con.register("rows", raw)
     con.execute("CREATE TABLE raw_sales_lines AS SELECT * FROM rows")
-    con.execute((SQL_DIR / "staging" / "01_stg_sales_lines.sql").read_text(encoding="utf-8"))
-    return con.execute("SELECT * FROM stg_sales_lines ORDER BY invoice_id").df().set_index("invoice_id")
+    for f in files:
+        con.execute((SQL_DIR / "staging" / f).read_text(encoding="utf-8"))
+    return con
 
 
 def test_duplicates_are_removed(stg):
@@ -93,3 +100,12 @@ def test_transaction_channels(stg):
 def test_flags_are_never_null(stg):
     flags = [c for c in stg.columns if c.startswith("is_")]
     assert not stg[flags].isna().any().any()
+
+
+def test_usual_price_tie_takes_higher_price():
+    # Hai mức giá bán số lần bằng nhau: luôn lấy giá cao hơn (giá chưa giảm),
+    # để mỗi lần chạy cho cùng một kết quả.
+    rows = [_line(f"HD{i}", "T", 1, price, 5000, sold_at=f"2026-06-0{i} 10:00:00")
+            for i, price in enumerate([10000, 9000, 10000, 9000], start=1)]
+    con = _staging(rows, files=("01_stg_sales_lines.sql", "03_sku_month_price.sql"))
+    assert con.execute("SELECT usual_price FROM sku_month_price WHERE sku = 'T'").fetchone()[0] == 10000

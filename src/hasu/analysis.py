@@ -22,14 +22,10 @@ BASKET_SQL = """
 WITH retail AS (
     SELECT * FROM stg_sales_lines
     WHERE txn_channel = 'retail' AND NOT is_return AND NOT is_zero_price AND NOT is_opening_promo
-),
-usual AS (
-    SELECT sku, date_trunc('month', sale_date) AS month, mode(unit_price) AS usual_price
-    FROM retail GROUP BY ALL
 )
 SELECT DISTINCT r.invoice_id, r.cat_l3
 FROM retail r
-JOIN usual u ON u.sku = r.sku AND u.month = date_trunc('month', r.sale_date)
+JOIN sku_month_price u ON u.sku = r.sku AND u.month = date_trunc('month', r.sale_date)
 -- Bỏ các dòng bán dưới giá phổ biến (khuyến mãi) để luật phản ánh hành vi mua tự nhiên
 WHERE r.unit_price >= 0.95 * u.usual_price
 """

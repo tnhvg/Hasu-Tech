@@ -1,6 +1,6 @@
 # Mô hình dự báo nhu cầu
 
-_Sinh tự động bởi `python -m hasu.forecast_report` lúc 02/10/2026 10:46. Dữ liệu tới 30/06/2026._
+_Sinh tự động bởi `python -m hasu.forecast_report` lúc 06/10/2026 04:13. Dữ liệu tới 30/06/2026._
 
 ## Kết quả chính
 
@@ -136,18 +136,18 @@ SHAP phân rã mỗi dự báo của LightGBM thành đóng góp của từng y�
 
 | Ngành hàng | Số ngày có chiết khấu | Chiết khấu TB | Lượng bán / ngày thường | Đủ tin cậy (≥ 30 ngày) |
 |---|---|---|---|---|
-| Đồ uống | 98 | 13,7% | 1,84 lần | Có |
-| Sữa, sản phẩm từ sữa | 94 | 19,8% | 1,91 lần | Có |
-| Gạo, bột và thực phẩm khô | 86 | 16,2% | 1,88 lần | Có |
-| Bánh, kẹo, snack | 78 | 14,2% | 1,63 lần | Có |
-| Chăm sóc cá nhân | 65 | 14,6% | 2,19 lần | Có |
-| Thực phẩm đông mát | 64 | 16,5% | 1,34 lần | Có |
-| Dầu ăn, nước chấm, gia vị | 56 | 21,2% | 1,68 lần | Có |
-| Chăm sóc nhà cửa | 46 | 20,4% | 0,99 lần | Có |
-| Nhà cửa và đời sống | 13 | 15,6% | 1,14 lần | Không |
-| Rau, củ, trái cây | 4 | 17,5% | 0,70 lần | Không |
+| Sữa, sản phẩm từ sữa | 133 | 21,1% | 2,01 lần | Có |
+| Đồ uống | 106 | 13,4% | 1,89 lần | Có |
+| Gạo, bột và thực phẩm khô | 99 | 17,0% | 2,09 lần | Có |
+| Bánh, kẹo, snack | 94 | 14,5% | 1,64 lần | Có |
+| Chăm sóc cá nhân | 84 | 15,9% | 2,21 lần | Có |
+| Thực phẩm đông mát | 81 | 20,5% | 1,25 lần | Có |
+| Dầu ăn, nước chấm, gia vị | 75 | 21,4% | 2,22 lần | Có |
+| Chăm sóc nhà cửa | 52 | 22,6% | 0,99 lần | Có |
+| Nhà cửa và đời sống | 16 | 16,1% | 1,06 lần | Không |
+| Rau, củ, trái cây | 7 | 22,1% | 1,10 lần | Không |
 | Thịt, trứng, thủy hải sản tươi | 3 | 10,7% | 0,79 lần | Không |
-| Dụng cụ bảo hộ | 1 | 21,1% | 0,63 lần | Không |
+| Dụng cụ bảo hộ | 2 | 22,3% | 2,33 lần | Không |
 
 **Cảnh báo quan trọng:** con số này **có thể bị phóng đại**. Ở cửa hàng tạp hoá, giá thấp hơn giá phổ biến thường do khách **mua theo thùng hoặc lốc** (giá sỉ). Khi đó mua nhiều mới được giá thấp, chứ không phải giá thấp khiến khách mua nhiều. Dữ liệu hiện tại chưa tách được hai hiệu ứng này. Ứng dụng hiển thị kết quả kịch bản kèm cảnh báo, và nên coi đó là **mức trần**.
 

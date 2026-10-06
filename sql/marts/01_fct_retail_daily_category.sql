@@ -22,12 +22,7 @@ WITH retail AS (
       AND NOT is_zero_price
       AND NOT is_opening_promo
 ),
--- Giá phổ biến (mode) của mỗi mã hàng trong từng tháng.
-sku_month_price AS (
-    SELECT sku, date_trunc('month', sale_date) AS month, mode(unit_price) AS usual_price
-    FROM retail
-    GROUP BY ALL
-),
+-- Giá phổ biến của mỗi mã hàng trong tháng: bảng sku_month_price (sql/staging/03).
 lines AS (
     SELECT
         r.*,
