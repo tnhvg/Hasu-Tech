@@ -62,8 +62,8 @@ def ve_dinh_gia() -> None:
     ax.set_ylim(-0.6, 2.8)
     ax.xaxis.set_major_formatter(lambda x, _: f"{x:+.0f}%")
     ax.set_xlabel("Chênh lệch so với giá đóng cửa 21–22/10/2026", color=TEXT_2)
-    ax.set_title("Vùng giá hợp lý so với giá hiện tại (dải mờ: vùng định giá, chấm: mức nhóm chọn)",
-                 color=TEXT, fontsize=10.5)
+    ax.set_title("Dải mờ: vùng giá trị theo các phương pháp định giá; chấm: mức giá hợp lý nhóm chọn",
+                 color=TEXT_2, fontsize=9.5, fontweight="normal")
     THU_MUC.mkdir(exist_ok=True)
     fig.savefig(THU_MUC / "01_vung_gia_hop_ly.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
