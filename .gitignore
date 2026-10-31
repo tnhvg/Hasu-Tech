@@ -29,3 +29,7 @@ venv/
 .idea/
 *.egg-info/
 .pytest_cache/
+
+# Bài tập Đầu tư tài chính: dữ liệu giá cổ phiếu công khai và file Excel nộp bài được phép đưa lên
+!bai_tap_dau_tu_tai_chinh/**/*.xlsx
+!bai_tap_dau_tu_tai_chinh/**/*.csv
