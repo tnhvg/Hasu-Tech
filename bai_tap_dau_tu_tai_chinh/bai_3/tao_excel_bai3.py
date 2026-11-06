@@ -258,7 +258,8 @@ def cong_thuc_sigma(dong, cot_w="C:E"):
     return f"=SQRT(SUMPRODUCT({w},MMULT({w},{HPS}!$B$12:$D$14)))"
 
 
-def trang_duong_bien(wb, cac_diem, dong_gmv_trong_bang):
+def trang_duong_bien(wb, cac_diem, dong_gmv_trong_bang, cot_dau_mut):
+    """cot_dau_mut: cột (trang Thống kê) của cổ phiếu có E(R) thấp nhất và cao nhất, ví dụ ("B", "D")."""
     ws = wb.create_sheet("Đường biên")
     ws["A1"] = "ĐƯỜNG BIÊN PHƯƠNG SAI BÉ NHẤT VÀ ĐƯỜNG BIÊN HIỆU QUẢ (không bán khống)"
     ws["A1"].font = f(dam=True, co=13)
@@ -271,7 +272,12 @@ def trang_duong_bien(wb, cac_diem, dong_gmv_trong_bang):
     for k, (muc_tieu, w) in enumerate(cac_diem):
         d = dau + k
         ws[f"A{d}"] = k + 1
-        ws[f"B{d}"] = float(round(muc_tieu, 6))
+        # Hai đầu mút của đường biên là chính cổ phiếu có E(R) thấp nhất / cao nhất (100% một mã).
+        # Lấy E(R) chính xác từ trang Thống kê: số làm tròn có thể nằm ngoài miền khả thi, Solver báo lỗi.
+        if k in (0, len(cac_diem) - 1):
+            ws[f"B{d}"] = f"={TK}!" + O_E_NAM.format(c=cot_dau_mut[0 if k == 0 else 1])
+        else:
+            ws[f"B{d}"] = float(round(muc_tieu, 6))
         for j, c in enumerate("CDE"):
             ws[f"{c}{d}"] = float(round(w[j], 6))
         ws[f"F{d}"] = f"=SUM(C{d}:E{d})"
@@ -283,6 +289,8 @@ def trang_duong_bien(wb, cac_diem, dong_gmv_trong_bang):
             o.border = VIEN
             o.font = f(XANH_DUONG) if c in "BCDE" else f()
             o.number_format = "0" if c == "A" else ("0.00%" if c != "I" else "General")
+        if k in (0, len(cac_diem) - 1):
+            ws[f"B{d}"].font = f(XANH_LA)  # liên kết trang khác
         if d == dau + dong_gmv_trong_bang:
             for c in "ABCDEFGHI":
                 ws[f"{c}{d}"].fill = NEN_GIA_DINH
@@ -514,7 +522,8 @@ def main():
     trang_solver(wb, "Solver 2 - Đường biên", "bien",
                  cac_diem[dong_gmv_trong_bang + 6][1], muc_mau)
     trang_solver(wb, "Solver 3 - DM chọn", "chon", w_chon, None)
-    ws_bien, dau_b, cuoi_b = trang_duong_bien(wb, cac_diem, dong_gmv_trong_bang)
+    cot_dau_mut = ("BCD"[int(np.argmin(mu))], "BCD"[int(np.argmax(mu))])
+    ws_bien, dau_b, cuoi_b = trang_duong_bien(wb, cac_diem, dong_gmv_trong_bang, cot_dau_mut)
     ws_chon = trang_danh_muc_chon(wb, TY_TRONG_BAI_1)
     them_do_thi(ws_bien, dau_b, cuoi_b, dau_b + dong_gmv_trong_bang, ws_chon)
     wb.save(DICH)
