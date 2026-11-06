@@ -23,8 +23,10 @@ mở ra là có sẵn.
 **Chạy toàn bộ bằng Excel Solver:** file `chay_solver.bas` là macro VBA gọi Excel Solver giải Solver 1,
 Solver 3 và lần lượt 26 điểm của đường biên, rồi ghi "Excel Solver" vào cột J trang Đường biên.
 Cách chạy: mở file Excel → Alt + F11 → File → Import File… chọn `chay_solver.bas` → đặt con trỏ trong
-`ChayToanBoSolver` → F5. Cần bật Solver Add-in trước. Tỷ trọng đang có trong file được giải trước bằng Python (scipy, cùng bài toán) để kiểm
-tra chéo; nhóm chạy lại Solver trong Excel để kiểm chứng (hướng dẫn ở trang Giới thiệu).
+`ChayToanBoSolver` → F5. Cần bật Solver Add-in trước.
+
+Tỷ trọng ban đầu trong file được giải bằng Python (scipy, cùng bài toán) để đối chiếu; dòng nào có chữ
+"Excel Solver" ở cột J trang Đường biên là đã được Solver giải lại.
 
 ## Kết quả chính (theo năm)
 
