@@ -18,7 +18,12 @@ chọn danh mục đầu tư cho 10 tỷ đồng. Đầu vào là lợi tức k�
 | Danh mục chọn | So sánh 4 danh mục, lý do chọn, phân bổ 10 tỷ đồng thành số cổ phiếu |
 
 Cài đặt Solver (ô mục tiêu, ô thay đổi, ràng buộc) đã lưu sẵn trong từng trang Solver, nên Data → Solver
-mở ra là có sẵn. Tỷ trọng đang có trong file được giải trước bằng Python (scipy, cùng bài toán) để kiểm
+mở ra là có sẵn.
+
+**Chạy toàn bộ bằng Excel Solver:** file `chay_solver.bas` là macro VBA gọi Excel Solver giải Solver 1,
+Solver 3 và lần lượt 26 điểm của đường biên, rồi ghi "Excel Solver" vào cột J trang Đường biên.
+Cách chạy: mở file Excel → Alt + F11 → File → Import File… chọn `chay_solver.bas` → đặt con trỏ trong
+`ChayToanBoSolver` → F5. Cần bật Solver Add-in trước. Tỷ trọng đang có trong file được giải trước bằng Python (scipy, cùng bài toán) để kiểm
 tra chéo; nhóm chạy lại Solver trong Excel để kiểm chứng (hướng dẫn ở trang Giới thiệu).
 
 ## Kết quả chính (theo năm)

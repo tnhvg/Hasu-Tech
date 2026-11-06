@@ -106,8 +106,11 @@ def trang_gioi_thieu(wb, so_phien):
          "Chọn phương pháp GRG Nonlinear, tích \"Make Unconstrained Variables Non-Negative\" → Solve → Keep Solver Solution.", f()),
         ("• Trang Đường biên: lần lượt nhập từng mức E(Rp) mục tiêu vào ô B20 trang Solver 2, Solve, rồi chép "
          "3 tỷ trọng vào dòng tương ứng.", f()),
-        ("• Tỷ trọng đang có trong file đã được giải sẵn bằng Python (scipy, cùng bài toán và ràng buộc) để kiểm tra "
-         "chéo; kết quả Solver có thể lệch ở chữ số thập phân thứ 4 do sai số dừng của thuật toán.", f()),
+        ("• Cách nhanh: chạy macro ChayToanBoSolver (file chay_solver.bas, nộp kèm). Macro gọi Excel Solver giải "
+         "Solver 1, Solver 3 và toàn bộ các điểm trên đường biên, ghi \"Excel Solver\" vào cột J trang Đường biên.", f()),
+        ("• Tỷ trọng ban đầu trong file được giải bằng Python (scipy, cùng bài toán và ràng buộc) để đối chiếu. Dòng nào "
+         "có chữ \"Excel Solver\" ở cột J trang Đường biên là đã được Solver giải lại; kết quả hai cách chỉ lệch ở "
+         "chữ số thập phân thứ 4 do sai số dừng của thuật toán.", f()),
         ("", None),
         ("4. Chú thích màu", f(dam=True)),
         ("Chữ xanh dương: số liệu nhập tay / kết quả đã giải", f(XANH_DUONG)),
@@ -262,7 +265,8 @@ def trang_duong_bien(wb, cac_diem, dong_gmv_trong_bang):
     ws["A2"] = ("Mỗi dòng là một lần chạy Solver 2: với mức E(Rp) mục tiêu ở cột B, tìm tỷ trọng có σp nhỏ nhất. "
                 "Cột G, H tính lại E(Rp) và σp từ tỷ trọng bằng công thức để kiểm tra.")
     ws["A2"].font = f(nghieng=True, co=11)
-    tieu_de_cot(ws, 4, ["STT", "E(Rp) mục tiêu", "w MBB", "w MWG", "w GAS", "Tổng w", "E(Rp)", "σp", "Phần đường biên"])
+    tieu_de_cot(ws, 4, ["STT", "E(Rp) mục tiêu", "w MBB", "w MWG", "w GAS", "Tổng w", "E(Rp)", "σp", "Phần đường biên",
+                         "Kiểm chứng"])
     dau = 5
     for k, (muc_tieu, w) in enumerate(cac_diem):
         d = dau + k
@@ -310,6 +314,7 @@ def trang_duong_bien(wb, cac_diem, dong_gmv_trong_bang):
     for c in "BCDEFGH":
         ws.column_dimensions[c].width = 11
     ws.column_dimensions["I"].width = 16
+    ws.column_dimensions["J"].width = 20
     ws.column_dimensions["K"].width = 36
     ws.column_dimensions["L"].width = 11
     ws.freeze_panes = "A5"
