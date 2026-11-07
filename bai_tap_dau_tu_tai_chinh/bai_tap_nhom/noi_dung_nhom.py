@@ -252,7 +252,9 @@ NOI_DUNG = [
       ("Kế hoạch năm 2026", "", "", "Doanh thu 185.000; LNST 9.200 (+30%)")],
      [3.7, 2.4, 3.7, 6.7], (1,), "Nhóm tổng hợp từ [23], [24], [26]."),
     ("p", "**Ý nghĩa:** lợi nhuận MWG gần như **tăng gấp đôi** trong năm 2025 [23], [24] và tiếp tục tăng mạnh năm 2026. Riêng "
-          "quý III/2026 doanh thu tăng 32%, Bách Hóa Xanh tăng 34% [24], [25]."),
+          "quý III/2026 doanh thu tăng 32%, Bách Hóa Xanh tăng 34% [24], [25]. Về tài chính, MWG đủ tiền mặt "
+          "để chi khoảng 3.000 tỷ đồng trả cổ tức năm 2026, mức cao nhất từ trước đến nay, trong khi lợi nhuận "
+          "vẫn tăng mạnh; điều này cho thấy tình hình tài chính lành mạnh [26]."),
     ("h3", "2.3.3. Chính sách cổ tức, rủi ro và triển vọng tăng trưởng"),
     ("p", "**Cổ tức:** năm 2026 MWG chi khoảng 3.000 tỷ đồng tiền mặt, mức cao nhất từ trước đến nay, "
           "tương đương khoảng 2.000 đ/cổ phiếu (**2,6%** giá cổ phiếu) [26]. **Rủi ro:** các nhà đầu tư khác đang sở "
