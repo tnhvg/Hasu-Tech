@@ -42,7 +42,7 @@ CO = 12
 CO_BANG = 11
 RONG_TRANG = 16.5  # 21 − 2,5 − 2 (cm)
 THUT = Cm(1.0)
-FOOTER_TRAI = "Thứ …_Tiết …_Nhóm 7"  # nhóm điền Thứ và Tiết
+FOOTER_TRAI = "Thứ 3_Tiết 789_Nhóm 7"
 
 
 # ======================= Định dạng chữ =======================

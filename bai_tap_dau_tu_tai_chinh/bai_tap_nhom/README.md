@@ -11,8 +11,11 @@ lợi nhuận, xây dựng danh mục 10 tỷ đồng bằng Solver.
 | `Nhom7_FIN3002_2_BaiTapNhom.xlsx` | E-study (dữ liệu giá, bảng tính, biểu đồ, kết quả Solver) |
 | `chay_solver.bas` | Nộp kèm nếu cần: macro VBA chạy Excel Solver cho 26 điểm đường biên |
 
-**Trước khi nộp, nhóm cần điền:** Thứ và Tiết (trang bìa và footer), nhiệm vụ thực tế và mức độ đóng góp
-của từng thành viên (trang Báo cáo hoạt động).
+**Trước khi nộp, nhóm cần điền:** nhiệm vụ thực tế và mức độ đóng góp của từng thành viên (trang Báo cáo
+hoạt động). Lớp học Thứ 3 – Tiết 789 đã điền ở bìa và footer.
+
+Báo cáo viết cho người đọc chưa học về đầu tư: thuật ngữ được giải thích ở lần dùng đầu tiên, sau mỗi bảng
+có đoạn "Ý nghĩa", chi tiết kỹ thuật của Excel (tên hàm, thuật toán) chỉ nằm trong file Excel.
 
 ## Nguồn số liệu
 

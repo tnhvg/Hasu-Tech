@@ -1,6 +1,9 @@
 """Nội dung báo cáo Bài tập nhóm Đầu tư tài chính – Nhóm 7 – FIN3002_2 (dùng bởi tao_bao_cao_nhom.py).
 
-Khối nội dung: ("phan", tiêu đề[, ngắt trang]) · ("h2"/"h3", tiêu đề) · ("p", đoạn) · ("abc"/"gach", [ý])
+Viết cho người đọc chưa học về đầu tư: định nghĩa thuật ngữ ở lần dùng đầu tiên, sau mỗi kết quả có câu
+"Ý nghĩa", câu ngắn, trích dẫn gom ở cuối đoạn, chi tiết kỹ thuật của Excel để trong file Excel.
+
+Khối nội dung: ("phan", tiêu đề) · ("h2"/"h3", tiêu đề) · ("p", đoạn) · ("abc"/"gach", [ý])
 ("ct", công thức, số) · ("bang", số, tên, hàng (hàng đầu là tiêu đề), độ rộng cột cm, cột căn phải, nguồn)
 ("hinh", số, tên, file trong figures/, nguồn).
 Đánh dấu chữ: **đậm**, *nghiêng*, _{chỉ số dưới}, ^{chỉ số trên}. [n] trỏ tới TAI_LIEU.
@@ -16,7 +19,7 @@ from noi_dung import TAI_LIEU as TAI_LIEU_BAI_1  # noqa: E402  (danh mục [1]�
 BIA = {
     "loai_bao_cao": "BÁO CÁO BÀI TẬP NHÓM",
     "hoc_phan": "ĐẦU TƯ TÀI CHÍNH",
-    "thu_tiet": "Thứ … – Tiết …",
+    "thu_tiet": "Thứ 3 – Tiết 789",
     "nhom": "NHÓM 7",
     "de_tai": ["PHÂN TÍCH, LỰA CHỌN CỔ PHIẾU VÀ XÂY DỰNG", "DANH MỤC ĐẦU TƯ 10 TỶ ĐỒNG"],
     "gvhd": "TS. Nguyễn Thanh Hương",
@@ -49,357 +52,439 @@ HOAT_DONG = {
 NOI_DUNG = [
     # ============================== PHẦN 1 ==============================
     ("phan", "PHẦN 1. PHÂN TÍCH BỐI CẢNH ĐẦU TƯ"),
-    ("p", "Nhóm đóng vai trò công ty quản lý quỹ, xây dựng danh mục cổ phiếu niêm yết với vốn **10 tỷ đồng**, "
-          "thời gian đầu tư **1 tháng** (26/10 – 25/11/2026), số liệu cập nhật đến 23/10/2026. Nhóm áp dụng "
-          "phương pháp **top-down** [39]: phân tích vĩ mô để xác định ngành tăng trưởng, chọn doanh nghiệp tốt "
-          "trong ngành, rồi dùng mô hình Markowitz để phân bổ vốn."),
+    ("p", "Nhóm đóng vai một công ty quản lý quỹ, nhận **10 tỷ đồng** để đầu tư vào cổ phiếu trong **1 tháng** "
+          "(26/10 – 25/11/2026). Báo cáo trả lời ba câu hỏi theo thứ tự: nền kinh tế đang thuận lợi hay khó khăn "
+          "cho thị trường chứng khoán (Phần 1); nên mua cổ phiếu của công ty nào (Phần 2); mỗi cổ phiếu lời và "
+          "rủi ro đến đâu (Phần 3); và nên chia 10 tỷ đồng cho từng cổ phiếu bao nhiêu (Phần 4). Cách đi từ bức "
+          "tranh chung của nền kinh tế xuống ngành, rồi xuống từng công ty được gọi là phương pháp **từ trên "
+          "xuống (top-down)** [39]."),
+    ("p", "**Tóm tắt kết quả:** nhóm chọn cổ phiếu của Ngân hàng Quân đội (MBB), Thế Giới Di Động (MWG) và Tổng "
+          "Công ty Khí Việt Nam (GAS), chia vốn theo tỷ lệ **56,84% – 15,20% – 27,97%**. Danh mục này có lợi nhuận "
+          "kỳ vọng khoảng 10,8%/năm (khoảng 0,9%/tháng) với mức rủi ro nhóm chấp nhận được."),
     ("h2", "1.1. Đánh giá các yếu tố kinh tế vĩ mô"),
+    ("p", "Giá cổ phiếu phụ thuộc vào lợi nhuận doanh nghiệp và vào mặt bằng lãi suất, nên nhóm xem xét sáu yếu "
+          "tố của nền kinh tế (yếu tố **vĩ mô**) có ảnh hưởng trực tiếp đến hai điều này."),
     ("h3", "1.1.1. Tăng trưởng kinh tế"),
-    ("p", "GDP quý III/2026 tăng **9,95%**, cao nhất kể từ năm 2022; 9 tháng tăng 9,01%, trong đó công nghiệp – "
-          "xây dựng tăng 12,5%, dịch vụ tăng 9,5% [1], [2]. Tổng mức bán lẻ hàng hóa và dịch vụ 9 tháng tăng "
-          "13,4% (loại trừ giá tăng 7,8%) [40]. Tăng trưởng mạnh làm doanh thu, lợi nhuận doanh nghiệp và nhu cầu "
-          "vay vốn tăng: **tích cực** cho thị trường, nhất là ngân hàng và bán lẻ."),
+    ("p", "GDP (tổng giá trị hàng hóa, dịch vụ cả nước làm ra) quý III/2026 tăng **9,95%**, cao nhất kể từ năm "
+          "2022. Tính chung 9 tháng, GDP tăng 9,01%; riêng công nghiệp – xây dựng tăng 12,5%. Người dân cũng chi "
+          "tiêu nhiều hơn: tổng doanh thu bán lẻ 9 tháng tăng 13,4% [1], [2], [40]. **Ý nghĩa:** kinh tế tăng "
+          "nhanh thì doanh nghiệp bán được nhiều hàng hơn, lợi nhuận tăng, nhu cầu vay vốn tăng. Đây là yếu tố "
+          "**có lợi** cho thị trường, nhất là ngân hàng và bán lẻ."),
     ("h3", "1.1.2. Lạm phát"),
-    ("p", "CPI tháng 9/2026 tăng **5,08%**, bình quân 9 tháng 4,52%, **vượt mục tiêu 4,5%** [1], [3]. Nguyên nhân "
-          "chính là giá dầu: Brent bình quân tháng 9 lên 114 USD/thùng do xung đột ở Trung Đông; EIA dự báo quý "
-          "IV/2026 khoảng 105 USD và năm 2027 giảm về 84 USD/thùng [10]. Lạm phát cao làm giảm sức mua và hạn chế "
-          "nới lỏng tiền tệ: **tiêu cực**."),
+    ("p", "Lạm phát (mức tăng giá chung của hàng hóa, đo bằng chỉ số giá tiêu dùng CPI) tháng 9/2026 là **5,08%**, "
+          "**cao hơn mục tiêu 4,5%** của Chính phủ. Nguyên nhân chính là giá dầu thế giới tăng mạnh do xung đột ở "
+          "Trung Đông: giá dầu Brent bình quân tháng 9 lên 114 USD/thùng. Cơ quan Thông tin Năng lượng Mỹ (EIA) "
+          "dự báo giá dầu còn khoảng 105 USD trong quý IV/2026 rồi giảm về 84 USD năm 2027 [1], [3], [10]. "
+          "**Ý nghĩa:** giá cả tăng làm người dân bớt mua sắm, và Nhà nước khó hạ lãi suất. Đây là yếu tố **bất lợi**."),
     ("h3", "1.1.3. Lãi suất và chính sách tiền tệ"),
-    ("p", "Ngân hàng Nhà nước giữ lãi suất tái cấp vốn 4,5% [4]. Do tín dụng tăng nhanh hơn huy động, lãi suất huy "
-          "động 6–12 tháng tăng khoảng 1,2 điểm % đến tháng 3/2026, lãi suất liên ngân hàng qua đêm từng lên "
-          "16,39% (2/2026) [9], [41]; gần đây khoảng 20 ngân hàng đã giảm lãi suất huy động 0,5 điểm % [8]. Định "
-          "hướng tín dụng cả năm khoảng 15% [6]. Theo mô hình chiết khấu cổ tức V_{0} = D_{1}/(k − g), lãi suất "
-          "cao làm tăng tỷ suất lợi tức yêu cầu k nên làm giảm giá trị cổ phiếu. Chính sách tiền tệ ở trạng thái "
-          "**trung tính, khó nới lỏng thêm**."),
+    ("p", "Ngân hàng Nhà nước giữ nguyên lãi suất điều hành (lãi suất tái cấp vốn 4,5%, mức Nhà nước cho các ngân "
+          "hàng vay). Tuy vậy, đầu năm 2026 các ngân hàng phải tăng lãi suất huy động thêm khoảng 1,2 điểm % vì "
+          "cho vay ra nhanh hơn nhận tiền gửi vào. Gần đây áp lực đã giảm: khoảng 20 ngân hàng hạ lãi suất huy động "
+          "0,5 điểm % [4], [8], [41]. **Ý nghĩa:** khi lãi suất gửi tiết kiệm cao, nhà đầu tư đòi hỏi cổ "
+          "phiếu phải sinh lời cao hơn mới chịu mua, nên giá cổ phiếu khó tăng. Chính sách tiền tệ đang ở mức "
+          "**trung tính, khó nới lỏng thêm** vì lạm phát cao."),
     ("h3", "1.1.4. Tỷ giá"),
-    ("p", "Tỷ giá trung tâm USD/VND ngày 23/10/2026 là **25.627**, giảm nhẹ trong tháng [7]. Tỷ giá ổn định giảm "
-          "rủi ro mất giá cho nhà đầu tư nước ngoài, **hỗ trợ** dòng vốn ngoại."),
+    ("p", "Tỷ giá trung tâm ngày 23/10/2026 là **25.627 đồng/USD**, giảm nhẹ trong tháng [7]. **Ý nghĩa:** tiền "
+          "đồng ổn định giúp nhà đầu tư nước ngoài yên tâm không bị lỗ do tỷ giá, nên dễ đưa vốn vào Việt Nam. "
+          "Đây là yếu tố **hỗ trợ**."),
     ("h3", "1.1.5. Diễn biến thị trường chứng khoán"),
-    ("p", "VN-Index lập đỉnh 1.902,93 điểm (13/1/2026), về gần 1.600 điểm trong tháng 3 rồi dao động 1.680–1.780 "
-          "điểm; ngày 22/10 đóng cửa **1.760,63 điểm** [11], [13]. P/E thị trường khoảng 13,1 lần, thấp hơn bình "
-          "quân 5 năm (14,4 lần) [14]. FTSE Russell nâng hạng Việt Nam lên thị trường mới nổi từ 21/9/2026, giải "
-          "ngân 4 đợt đến 9/2027, dòng vốn dự kiến 3–10 tỷ USD [15], [16]; tuy vậy thanh khoản từ tháng 6 giảm "
-          "khoảng 41% so với quý I và khối ngoại vẫn bán ròng giữa tháng 10 [12], [13]."),
-    ("p", "**Nhận xét chung.** Vĩ mô có hai mặt đối lập: tăng trưởng thực rất mạnh nhưng lạm phát giữ lãi suất ở "
-          "mức cao, tức g đang tăng còn k khó giảm. Cổ phiếu có lợi thế là cổ phiếu **có lợi nhuận tăng trưởng "
-          "thật và định giá còn thấp**."),
+    ("p", "VN-Index (chỉ số đo biến động giá chung của các cổ phiếu trên sàn TP.HCM) lập đỉnh 1.902,93 điểm ngày "
+          "13/1/2026, giảm về gần 1.600 điểm trong tháng 3, và đóng cửa ngày 22/10 ở **1.760,63 điểm**. Thị "
+          "trường đang ở mức giá **rẻ hơn bình thường**: hệ số P/E chung khoảng 13,1 lần, thấp hơn mức trung "
+          "bình 5 năm là 14,4 lần (P/E giải thích ở mục 2.3.4) [11], [13], [14]. Điểm sáng lớn là ngày 21/9/2026, "
+          "tổ chức xếp hạng quốc tế FTSE Russell đã **nâng hạng** Việt Nam lên nhóm \"thị trường mới nổi\". Nhờ đó, "
+          "các quỹ toàn cầu đầu tư theo bộ chỉ số của FTSE sẽ phải mua cổ phiếu Việt Nam, dự kiến 3–10 tỷ USD đến "
+          "năm 2027 [15], [16]. Mặt hạn chế là lượng giao dịch đã giảm khoảng 41% so với quý I, và nhà đầu tư nước "
+          "ngoài vẫn bán ra nhiều hơn mua vào giữa tháng 10 [12], [13]."),
+    ("p", "**Nhận xét chung.** Nền kinh tế có hai mặt trái ngược: doanh nghiệp làm ăn tốt hơn, nhưng lạm phát giữ "
+          "lãi suất ở mức cao. Vì vậy cổ phiếu đáng mua là cổ phiếu của công ty **có lợi nhuận tăng thật** và "
+          "**đang có giá còn rẻ**, thay vì cổ phiếu chỉ tăng nhờ kỳ vọng lãi suất giảm."),
 
     ("h2", "1.2. Triển vọng thị trường và triển vọng ngành"),
     ("h3", "1.2.1. Triển vọng thị trường trong thời gian đầu tư"),
-    ("p", "Ba chất xúc tác trong tháng đầu tư là mùa báo cáo tài chính quý III, giải ngân của các quỹ theo chỉ số "
-          "FTSE và số liệu CPI tháng 10. Nhóm xây dựng ba kịch bản (Bảng 1.1); kịch bản cơ sở là thị trường đi "
-          "ngang và phân hóa, nên nhóm ưu tiên cổ phiếu vốn hóa lớn, thanh khoản cao, có kết quả quý III tốt."),
-    ("bang", "1.1", "Kịch bản VN-Index đến ngày 25/11/2026",
-     [("Kịch bản", "VN-Index", "Điều kiện xảy ra", "Xác suất (nhận định)"),
-      ("Tích cực", "1.850 – 1.900", "Kết quả quý III tốt, dòng vốn FTSE giải ngân, giá dầu hạ", "30%"),
-      ("Cơ sở", "1.720 – 1.820", "Kết quả quý III đúng kỳ vọng, lãi suất đi ngang", "50%"),
-      ("Tiêu cực", "1.620 – 1.680", "CPI vượt 5,5%, NHNN thắt chặt, xung đột Trung Đông leo thang", "20%")],
+    ("p", "Trong tháng đầu tư có ba sự kiện có thể làm giá biến động: các công ty công bố kết quả kinh doanh quý "
+          "III, các quỹ ngoại giải ngân sau khi nâng hạng, và số liệu lạm phát tháng 10. Nhóm dự kiến ba khả năng "
+          "(Bảng 1.1). Khả năng cao nhất là thị trường đi ngang, cổ phiếu tốt tăng còn cổ phiếu yếu giảm. Vì vậy "
+          "nhóm ưu tiên cổ phiếu của **công ty lớn, dễ mua bán** và **có kết quả kinh doanh quý III tốt**."),
+    ("bang", "1.1", "Ba kịch bản cho VN-Index đến ngày 25/11/2026",
+     [("Kịch bản", "VN-Index (điểm)", "Điều kiện xảy ra", "Khả năng (nhận định)"),
+      ("Tích cực", "1.850 – 1.900", "Kết quả quý III tốt, quỹ ngoại mua vào, giá dầu hạ", "30%"),
+      ("Cơ sở", "1.720 – 1.820", "Kết quả quý III đúng dự kiến, lãi suất đi ngang", "50%"),
+      ("Tiêu cực", "1.620 – 1.680", "Lạm phát vượt 5,5%, Nhà nước thắt chặt tiền tệ, xung đột leo thang", "20%")],
      [2.2, 2.8, 8.6, 2.9], (3,), "Nhóm nhận định dựa trên [1], [10], [13], [15]."),
     ("h3", "1.2.2. Triển vọng ngành"),
+    ("p", "Nhóm so sánh năm ngành để tìm ngành **sẽ còn tăng trưởng trong tương lai**, không chỉ tốt trong lúc này "
+          "(Bảng 1.2)."),
     ("bang", "1.2", "Đánh giá triển vọng các ngành ứng viên",
-     [("Ngành", "Động lực tăng trưởng trong tương lai", "Rủi ro chính", "Kết luận"),
-      ("Ngân hàng", "GDP tăng gần 10% kéo theo nhu cầu vốn, tín dụng cả năm 15–18%; nợ xấu giảm nhờ Nghị quyết 42 "
-       "được luật hóa; tỷ trọng lớn nhất trong chỉ số nên hưởng lợi đầu tiên từ dòng vốn FTSE",
-       "Chi phí vốn tăng làm biên lãi ròng giảm", "Chọn"),
-      ("Bán lẻ", "Dân số trẻ, thu nhập tăng; bán lẻ 9 tháng +13,4%; chuỗi hiện đại còn chiếm thị phần nhỏ so với "
-       "chợ truyền thống", "Lạm phát làm giảm sức mua", "Chọn"),
-      ("Khí đốt, năng lượng", "Cầu điện tăng theo kinh tế; điện khí LNG là trụ cột Quy hoạch điện VIII đến 2030; "
-       "giá dầu cao làm tăng giá bán khí", "Giá dầu đảo chiều; giá bán bị điều tiết", "Chọn"),
-      ("Thép", "Hưởng lợi đầu tư công, xây dựng +12,5%", "Dư cung lớn đến 2029 (VinMetal)", "Không chọn"),
-      ("Công nghệ", "Chuyển đổi số, AI", "Lo ngại AI làm giảm nhu cầu gia công phần mềm", "Theo dõi")],
+     [("Ngành", "Vì sao sẽ tăng trưởng", "Rủi ro chính", "Kết luận"),
+      ("Ngân hàng", "Kinh tế tăng gần 10% thì doanh nghiệp và người dân vay nhiều hơn (dư nợ cả năm dự kiến tăng "
+       "15–18%); nợ xấu đang giảm; quỹ ngoại thường mua cổ phiếu ngân hàng trước", "Chi phí huy động vốn tăng", "Chọn"),
+      ("Bán lẻ", "Dân số trẻ, thu nhập tăng, bán lẻ 9 tháng +13,4%; người dân chuyển dần từ chợ sang chuỗi cửa hàng",
+       "Lạm phát làm giảm sức mua", "Chọn"),
+      ("Khí đốt, năng lượng", "Kinh tế tăng thì cần nhiều điện; nhà máy điện khí là trụ cột của quy hoạch điện "
+       "đến 2030; giá dầu cao làm giá bán khí cao", "Giá dầu giảm trở lại", "Chọn"),
+      ("Thép", "Hưởng lợi từ đầu tư xây dựng", "Sắp dư thừa nguồn cung do nhà máy mới", "Không chọn"),
+      ("Công nghệ", "Chuyển đổi số, trí tuệ nhân tạo", "Lo ngại AI làm giảm nhu cầu gia công phần mềm", "Theo dõi")],
      [2.6, 7.4, 4.4, 2.1], (), "Nhóm tổng hợp từ [1], [6], [10], [35], [37], [40]."),
-    ("p", "Ba ngành được chọn đều có động lực tăng trưởng dài hạn gắn với số liệu vĩ mô ở mục 1.1, và phản ứng "
-          "**khác nhau** trước cùng một cú sốc: giá dầu tăng gây bất lợi cho bán lẻ (qua lạm phát) nhưng có lợi "
-          "cho khí đốt. Đây là cơ sở để đa dạng hóa danh mục."),
+    ("p", "**Ý nghĩa:** ba ngành được chọn đều có lý do tăng trưởng lâu dài. Điều quan trọng hơn là chúng **phản "
+          "ứng khác nhau** trước cùng một biến cố: giá dầu tăng thì bán lẻ gặp khó (người dân chi tiêu ít đi) "
+          "nhưng ngành khí lại có lợi. Nhờ vậy, khi một cổ phiếu giảm giá, cổ phiếu khác chưa chắc giảm theo."),
     ("h2", "1.3. Chiến lược đầu tư của nhóm"),
-    ("p", "Nhóm chọn **chiến lược cân bằng**, kết hợp cổ phiếu **giá trị** (MBB: P/B khoảng 1,0 lần trong khi ROE "
-          "khoảng 20%), **tăng trưởng** (MWG: lợi nhuận 6 tháng +88%) và **thu nhập cổ tức, đa dạng hóa** (GAS: "
-          "lợi nhuận tăng theo giá dầu, cổ tức tiền mặt đều). Lý do: (1) vĩ mô có rủi ro hai chiều nên danh mục "
-          "cần thành phần chịu được kịch bản tiêu cực; (2) theo Markowitz, kết hợp tài sản tương quan thấp giúp "
-          "giảm rủi ro danh mục [44]. Tỷ trọng sơ bộ ban đầu là 40% MBB, 35% MWG, 25% GAS; tỷ trọng cuối cùng "
-          "được xác định bằng tối ưu hóa ở Phần 4."),
+    ("p", "Có năm phong cách đầu tư phổ biến: **tăng trưởng** (mua công ty lớn nhanh), **giá trị** (mua công ty "
+          "tốt đang bị định giá rẻ), **thu nhập cổ tức** (mua công ty trả nhiều tiền lãi hằng năm cho cổ đông), "
+          "**phòng thủ** (mua công ty ít bị ảnh hưởng khi kinh tế xấu) và **cân bằng** (kết hợp các phong cách). "
+          "Nhóm chọn **chiến lược cân bằng**: MBB đại diện cho phong cách giá trị, MWG cho tăng trưởng, GAS cho thu "
+          "nhập cổ tức và đa dạng hóa. Lý do là nền kinh tế có cả mặt tốt lẫn mặt xấu, nên không nên đặt cược hết "
+          "vào một kịch bản. Nguyên tắc này giống câu \"không bỏ hết trứng vào một giỏ\", và được chứng minh bằng "
+          "mô hình Markowitz ở Phần 4 [44]. Ban đầu nhóm dự kiến chia vốn 40% MBB, 35% MWG, 25% GAS; tỷ lệ cuối "
+          "cùng được tính lại bằng phương pháp tối ưu ở Phần 4."),
 
     # ============================== PHẦN 2 ==============================
     ("phan", "PHẦN 2. PHÂN TÍCH CỔ PHIẾU"),
-    ("h2", "2.1. Tiêu chí lựa chọn cổ phiếu và giả định định giá"),
-    ("p", "Nhóm lọc cổ phiếu theo năm tiêu chí: (1) niêm yết HOSE, vốn hóa lớn, thanh khoản cao; (2) lợi nhuận 2026 "
-          "tăng trưởng hai chữ số; (3) giá **ổn định**, không trong xu hướng giảm kéo dài; (4) định giá không cao "
-          "hơn trung bình lịch sử; (5) có lịch sử giá đủ dài để ước lượng lợi tức và rủi ro."),
+    ("h2", "2.1. Tiêu chí lựa chọn cổ phiếu và cách định giá"),
+    ("p", "Nhóm chọn cổ phiếu theo năm tiêu chí: (1) công ty lớn, niêm yết trên sàn TP.HCM (HOSE), dễ mua bán; "
+          "(2) lợi nhuận năm 2026 tăng trên 10%; (3) giá cổ phiếu **ổn định**, không giảm liên tục; (4) giá không "
+          "đắt hơn mức bình thường trong quá khứ; (5) có đủ dữ liệu giá để đo lợi nhuận và rủi ro. Bảng 2.1 dùng "
+          "hai chữ viết tắt: **LNTT** là lợi nhuận trước thuế, **LNST** là lợi nhuận sau thuế."),
     ("bang", "2.1", "Kết quả sàng lọc cổ phiếu ứng viên",
      [("Mã", "Lợi nhuận gần nhất", "Diễn biến giá", "Kết quả"),
-      ("MBB", "LNTT 6 tháng +27,1%", "Đi ngang so với đầu năm (đã điều chỉnh cổ tức cổ phiếu 15% tháng 8)", "Đạt"),
-      ("MWG", "LNST 6 tháng +88%", "Thấp hơn đỉnh 52 tuần khoảng 21%, đang hồi lại", "Đạt"),
+      ("MBB", "LNTT 6 tháng +27,1%", "Đi ngang so với đầu năm", "Đạt"),
+      ("MWG", "LNST 6 tháng +88%", "Thấp hơn mức cao nhất 1 năm khoảng 21%, đang hồi lại", "Đạt"),
       ("GAS", "LNTT 9 tháng +31%", "Dao động 76.000 – 82.000 đ trong tháng 10", "Đạt"),
-      ("HPG", "LNST quý II +51%", "−12,2% từ đầu năm, 16 quỹ bán ròng 4 tháng liên tiếp", "Loại"),
-      ("FPT", "LNST 9 tháng +13,3%", "Từ khoảng 98.000 đ đầu năm còn 57.400 đ", "Loại")],
+      ("HPG", "LNST quý II +51%", "Giảm 12% từ đầu năm, 16 quỹ bán ra liên tục 4 tháng", "Loại"),
+      ("FPT", "LNST 9 tháng +13,3%", "Giảm từ khoảng 98.000 đ đầu năm còn 57.400 đ", "Loại")],
      [1.5, 3.8, 9.1, 2.1], (), "Nhóm tổng hợp từ [17], [24], [28], [35], [36], [37]."),
-    ("p", "HPG và FPT có lợi nhuận tăng nhưng giá giảm kéo dài; với kỳ hạn 1 tháng, nhóm không có cơ sở để tin xu "
-          "hướng đảo chiều nên loại hai mã này. Tỷ suất lợi tức yêu cầu k được tính theo **CAPM** [45]:"),
+    ("p", "HPG và FPT vẫn lãi tăng nhưng giá giảm kéo dài. Trong 1 tháng, nhóm không có căn cứ cho rằng giá sẽ "
+          "quay đầu tăng, nên loại hai mã này."),
+    ("p", "**Cách xác định giá hợp lý.** Một cổ phiếu đáng mua khi giá thị trường thấp hơn **giá hợp lý** (giá trị "
+          "thật ước tính từ khả năng sinh lời của công ty). Để tính giá hợp lý, trước hết cần biết nhà đầu tư đòi "
+          "hỏi lợi nhuận tối thiểu bao nhiêu, ký hiệu **k**. Theo mô hình định giá tài sản vốn **CAPM** [45], "
+          "mức này bằng lãi suất an toàn cộng với phần thưởng cho việc chấp nhận rủi ro:"),
     ("ct", "k = R_{f} + β × [E(R_{M}) − R_{f}]", "2.1"),
-    ("p", "với R_{f} = 4,36% (lợi suất trái phiếu Chính phủ 10 năm, tháng 7/2026 [5]), phần bù rủi ro thị trường "
-          "giả định 8% và β thận trọng theo ngành: MBB 1,1; MWG 1,2; GAS 0,8. Giá hiện tại là giá đóng cửa ngày "
-          "23/10/2026: MBB 19.800 đ, MWG 75.500 đ, GAS 78.300 đ [43]."),
+    ("p", "Trong đó R_{f} = 4,36% là **lãi suất phi rủi ro** (lợi suất trái phiếu Chính phủ 10 năm, khoản đầu tư "
+          "gần như không thể mất tiền) [5]. E(R_{M}) − R_{f} là phần lợi nhuận thị trường cổ phiếu trả thêm so với "
+          "trái phiếu, nhóm giả định bằng 8%. **β** đo mức độ cổ phiếu biến động theo thị trường: β = 1 nghĩa là "
+          "cổ phiếu lên xuống cùng mức với VN-Index, β > 1 là biến động mạnh hơn. Ở Phần 2, nhóm dùng β thận "
+          "trọng theo ngành: MBB 1,1; MWG 1,2; GAS 0,8 (β tính từ dữ liệu thực tế được trình bày ở Phần 3). Giá "
+          "hiện tại là giá đóng cửa ngày 23/10/2026: MBB 19.800 đ, MWG 75.500 đ, GAS 78.300 đ [43]."),
 
     ("h2", "2.2. Ngân hàng TMCP Quân đội (MBB – HOSE)"),
     ("h3", "2.2.1. Mô hình kinh doanh"),
-    ("p", "MB là ngân hàng thương mại cổ phần có cổ đông lớn là các doanh nghiệp thuộc Bộ Quốc phòng. Nguồn thu "
-          "chính là **chênh lệch lãi suất**: huy động tiền gửi, đặc biệt tiền gửi không kỳ hạn (CASA) nhờ ứng dụng "
-          "ngân hàng số gần 40 triệu khách hàng, rồi cho vay với lãi suất cao hơn. Hệ sinh thái gồm Chứng khoán "
-          "MBS (76,35%), tài chính tiêu dùng MCredit (50%), bảo hiểm và ngân hàng MBV (100%) [20]."),
+    ("p", "MB kiếm tiền chủ yếu từ **chênh lệch lãi suất**: nhận tiền gửi của khách hàng với lãi suất thấp, rồi cho "
+          "vay với lãi suất cao hơn. Lợi thế của MB là ứng dụng ngân hàng số gần 40 triệu khách hàng. Ứng dụng này "
+          "giúp MB có nhiều tiền gửi không kỳ hạn (tiền khách để trong tài khoản thanh toán), loại tiền gửi mà "
+          "ngân hàng chỉ phải trả lãi rất thấp. Ngoài ra, MB sở hữu công ty chứng khoán MBS, công ty tài chính tiêu "
+          "dùng MCredit, công ty bảo hiểm và ngân hàng MBV [20]."),
     ("h3", "2.2.2. Kết quả kinh doanh và tình hình tài chính"),
     ("bang", "2.2", "Kết quả kinh doanh chính của MBB",
-     [("Chỉ tiêu", "Năm 2025", "6 tháng 2026", "Tăng trưởng"),
-      ("LNTT hợp nhất (tỷ đồng)", "34.268", "20.188", "+18,9% / +27,1%"),
-      ("Thu nhập lãi thuần (tỷ đồng)", "–", "31.807", "+32,2%"),
-      ("Dư nợ tín dụng (nghìn tỷ đồng)", "–", "1.256", "+13% so với đầu năm"),
-      ("Tỷ lệ nợ xấu", "1,29%", "1,40%", "Bao phủ nợ xấu 93,6%"),
-      ("Kế hoạch LNTT 2026 (tỷ đồng)", "", "39.500", "+15%; đạt 51,1% sau 6 tháng")],
-     [5.4, 2.5, 2.8, 5.8], (1, 2), "Nhóm tổng hợp từ [17], [18]."),
-    ("p", "Lợi nhuận vượt tiến độ kế hoạch nhờ thu nhập lãi thuần tăng 32,2% và chi phí dự phòng giảm; ROE duy trì "
-          "khoảng 20–21%, thuộc nhóm cao nhất ngành [18], [21]."),
+     [("Chỉ tiêu", "Năm 2025", "6 tháng 2026", "Tăng so với cùng kỳ"),
+      ("LNTT (tỷ đồng)", "34.268", "20.188", "+18,9% / +27,1%"),
+      ("Thu nhập từ cho vay sau khi trừ chi phí lãi (tỷ đồng)", "–", "31.807", "+32,2%"),
+      ("Dư nợ cho vay (nghìn tỷ đồng)", "–", "1.256", "+13% so với đầu năm"),
+      ("Tỷ lệ nợ xấu (khoản vay khó đòi)", "1,29%", "1,40%", "Đã trích lập dự phòng 93,6%"),
+      ("Kế hoạch LNTT năm 2026 (tỷ đồng)", "", "39.500", "Đã đạt 51,1% sau 6 tháng")],
+     [6.4, 2.2, 2.5, 5.4], (1, 2), "Nhóm tổng hợp từ [17], [18]."),
+    ("p", "**Ý nghĩa:** MB làm ăn tốt hơn kế hoạch: mới qua nửa năm đã đạt hơn nửa chỉ tiêu lợi nhuận. Chỉ số "
+          "**ROE** (lợi nhuận trên vốn chủ sở hữu, tức mỗi 100 đồng vốn của cổ đông tạo ra bao nhiêu đồng lãi mỗi "
+          "năm) của MB khoảng 20–21%, thuộc nhóm cao nhất ngành ngân hàng [18], [21]."),
     ("h3", "2.2.3. Chính sách cổ tức, rủi ro và triển vọng tăng trưởng"),
-    ("p", "**Cổ tức:** kế hoạch 2026 chia 25%, gồm 10% tiền mặt (1.000 đ/cp) và 15% cổ phiếu [21]; tỷ suất cổ tức "
-          "tiền mặt khoảng **5,1%**. **Rủi ro:** biên lãi ròng dự phóng giảm còn 3,95% do cho vay tăng nhanh hơn huy "
-          "động [20]; nợ nhóm 5 năm 2025 tăng 39,4% lên 6.421 tỷ đồng theo Kiểm toán Nhà nước [19]. **Triển vọng:** "
-          "hưởng lợi trực tiếp từ tín dụng tăng 15–18% và dòng vốn FTSE vào nhóm ngân hàng vốn hóa lớn."),
+    ("p", "**Cổ tức** (phần lợi nhuận công ty chia cho cổ đông): năm 2026 MB chia 10% bằng tiền (1.000 đ/cổ phiếu) "
+          "và 15% bằng cổ phiếu. Phần tiền mặt tương đương **5,1%** giá cổ phiếu, cao hơn lãi tiết kiệm [21]. "
+          "**Rủi ro:** chênh lệch lãi suất cho vay và huy động đang bị thu hẹp vì ngân hàng phải trả lãi tiền gửi "
+          "cao hơn [20]; Kiểm toán Nhà nước ghi nhận nợ có khả năng mất vốn năm 2025 tăng 39,4%, lên 6.421 tỷ đồng "
+          "[19]. **Triển vọng:** hưởng lợi trực tiếp khi kinh tế tăng trưởng làm nhu cầu vay vốn tăng, và khi quỹ "
+          "ngoại mua cổ phiếu ngân hàng lớn sau nâng hạng."),
     ("h3", "2.2.4. Nhận định về mức giá hợp lý"),
-    ("p", "Từ mô hình cổ tức tăng trưởng đều V_{0} = D_{1}/(k − g), với D_{1} = E_{1}(1 − b), E_{1} = ROE × B_{0} "
-          "và g = ROE × b (Chương 4), suy ra hệ số P/B hợp lý:"),
-    ("ct", "P/B = (ROE − g) / (k − g)", "2.2"),
-    ("p", "Với β = 1,1: k = 4,36% + 1,1 × 8% = 13,16%; giá trị sổ sách mỗi cổ phiếu B_{0} = 19.462 đ [22]."),
+    ("p", "Với ngân hàng, cách định giá phổ biến là so giá cổ phiếu với **giá trị sổ sách**, tức phần vốn thực có "
+          "của ngân hàng tính trên mỗi cổ phiếu (MBB: 19.462 đ) [22]. Tỷ số giữa hai con số này gọi là **P/B**. "
+          "P/B = 1 nghĩa là nhà đầu tư đang mua cổ phiếu đúng bằng giá trị vốn thực có. Ngân hàng có ROE càng cao "
+          "thì càng đáng được trả P/B cao. Mức P/B \"đáng có\" được suy ra từ mô hình định giá theo cổ tức "
+          "(Chương 4):"),
+    ("ct", "P/B hợp lý = (ROE − g) / (k − g)", "2.2"),
+    ("p", "Trong đó g là tốc độ tăng trưởng lợi nhuận lâu dài, và k = 4,36% + 1,1 × 8% = 13,16% theo công thức "
+          "(2.1). Nhóm tính ba kịch bản (Bảng 2.3)."),
     ("bang", "2.3", "Định giá MBB theo P/B hợp lý",
-     [("Kịch bản", "ROE bền vững", "g dài hạn", "P/B hợp lý", "Giá trị (đ/cp)"),
+     [("Kịch bản", "ROE lâu dài", "Tăng trưởng g", "P/B hợp lý", "Giá trị (đ/cổ phiếu)"),
       ("Thận trọng", "15%", "6%", "1,26", "24.500"),
       ("Cơ sở", "17%", "6%", "1,54", "29.900"),
       ("Lạc quan", "20%", "7%", "2,11", "41.000")],
-     [3.2, 3.2, 3.0, 3.2, 3.9], (1, 2, 3, 4), "Nhóm tính toán."),
-    ("p", "Ở P/B hiện tại 1,02 lần, thị trường ngầm định ROE bền vững chỉ khoảng 13%, thấp hơn nhiều mức 20% đang "
-          "đạt, tức rủi ro nợ xấu đã phản ánh khá đầy đủ vào giá. Nhóm chọn **giá hợp lý 25.000 đ/cp (+26%)**, gần "
-          "kịch bản thận trọng và mức 26.700 đ của FUNAN [20]."),
+     [3.2, 3.0, 3.0, 3.0, 4.3], (1, 2, 3, 4), "Nhóm tính toán."),
+    ("p", "**Ý nghĩa:** MBB đang đạt ROE khoảng 20% nhưng chỉ được trả P/B 1,02. Nói cách khác, thị trường đang "
+          "định giá MBB như một ngân hàng chỉ đạt ROE khoảng 13%. Giá đang thấp hơn chất lượng thật, vì nhà đầu tư "
+          "lo ngại nợ xấu. Do chưa loại trừ được rủi ro này, nhóm chọn kịch bản gần thận trọng: **giá hợp lý "
+          "25.000 đ, cao hơn giá hiện tại 26%**, tương đương mức 26.700 đ của công ty phân tích FUNAN [20]."),
 
     ("h2", "2.3. CTCP Đầu tư Thế Giới Di Động (MWG – HOSE)"),
     ("h3", "2.3.1. Mô hình kinh doanh"),
-    ("p", "MWG là nhà bán lẻ lớn nhất Việt Nam với ba trụ cột: (1) **Thế Giới Di Động, Điện Máy Xanh** (điện thoại, "
-          "điện máy, khoảng 3.000 cửa hàng), tạo dòng tiền ổn định và đang chuẩn bị IPO Điện Máy Xanh; (2) **Bách "
-          "Hóa Xanh** (thực phẩm, hàng tiêu dùng, hơn 2.100 cửa hàng), đã có lãi từ 2025 và là động lực tăng trưởng "
-          "chính; (3) **EraBlue** tại Indonesia [26], [42]. Lợi thế cạnh tranh là quy mô mua hàng và logistics."),
+    ("p", "MWG là công ty bán lẻ lớn nhất Việt Nam, gồm ba mảng: (1) chuỗi **Thế Giới Di Động** và **Điện Máy "
+          "Xanh** bán điện thoại, điện máy (khoảng 3.000 cửa hàng), mang lại dòng tiền ổn định; (2) chuỗi **Bách "
+          "Hóa Xanh** bán thực phẩm, hàng tiêu dùng (hơn 2.100 cửa hàng), bắt đầu có lãi từ 2025 và là mảng tăng "
+          "trưởng chính; (3) chuỗi **EraBlue** ở Indonesia [26], [42]. Lợi thế của MWG là quy mô lớn, nên mua hàng "
+          "được giá tốt và vận chuyển hiệu quả hơn đối thủ."),
     ("h3", "2.3.2. Kết quả kinh doanh và tình hình tài chính"),
     ("bang", "2.4", "Kết quả kinh doanh chính của MWG",
      [("Chỉ tiêu (tỷ đồng)", "Năm 2024", "Năm 2025", "Năm 2026"),
-      ("Doanh thu thuần", "134.341", "156.457 (+16,4%)", "9 tháng: 147.953 (+30%)"),
-      ("Lợi nhuận sau thuế", "3.733", "7.075 (+89,5%)", "6 tháng: 6.017 (+88%)"),
-      ("Kế hoạch 2026", "", "", "Doanh thu 185.000; LNST 9.200 (+30%)")],
+      ("Doanh thu", "134.341", "156.457 (+16,4%)", "9 tháng: 147.953 (+30%)"),
+      ("LNST", "3.733", "7.075 (+89,5%)", "6 tháng: 6.017 (+88%)"),
+      ("Kế hoạch năm 2026", "", "", "Doanh thu 185.000; LNST 9.200 (+30%)")],
      [3.7, 2.4, 3.7, 6.7], (1,), "Nhóm tổng hợp từ [23], [24], [26]."),
-    ("p", "Doanh thu quý III/2026 ước 52.648 tỷ đồng (+32%), Bách Hóa Xanh tăng 34% [24]; các công ty chứng khoán "
-          "dự phóng LNST quý III tăng 43–95% so với cùng kỳ [25]."),
+    ("p", "**Ý nghĩa:** lợi nhuận MWG gần như **tăng gấp đôi** trong năm 2025 và tiếp tục tăng mạnh năm 2026. Riêng "
+          "quý III/2026 doanh thu tăng 32%, Bách Hóa Xanh tăng 34% [24], [25]."),
     ("h3", "2.3.3. Chính sách cổ tức, rủi ro và triển vọng tăng trưởng"),
-    ("p", "**Cổ tức:** năm 2026 dự kiến chi khoảng 3.000 tỷ đồng tiền mặt, cao nhất từ trước đến nay [26], ước "
-          "khoảng 2.000 đ/cp (tỷ suất **2,6%**). **Rủi ro:** từ quý III phải chia khoảng 14% lợi nhuận Điện Máy "
-          "Xanh cho cổ đông thiểu số [25]; lợi nhuận 2027 có thể đi ngang; lạm phát làm giảm sức mua hàng không "
-          "thiết yếu. **Triển vọng:** Bách Hóa Xanh tiếp tục mở rộng, IPO Điện Máy Xanh giúp định giá lại các mảng."),
+    ("p", "**Cổ tức:** năm 2026 MWG dự kiến chia khoảng 3.000 tỷ đồng tiền mặt, mức cao nhất từ trước đến nay, "
+          "tương đương khoảng 2.000 đ/cổ phiếu (**2,6%** giá cổ phiếu) [26]. **Rủi ro:** các nhà đầu tư khác đang sở "
+          "hữu khoảng 14% công ty Điện Máy Xanh, nên từ quý III MWG phải chia phần lợi nhuận tương ứng cho họ "
+          "[25]; lạm phát có thể làm người dân hoãn mua điện thoại, điện máy. **Triển vọng:** Bách Hóa Xanh tiếp tục "
+          "mở rộng; Điện Máy Xanh dự kiến lên sàn chứng khoán (IPO), giúp thị trường định giá lại các mảng của MWG."),
     ("h3", "2.3.4. Nhận định về mức giá hợp lý"),
-    ("p", "Nhóm dùng phương pháp P/E (Chương 4): giá trị = P/E chuẩn × EPS dự phóng. EPS 2026 ước khoảng 6.000 đ "
-          "(kế hoạch LNST sau khi trừ cổ đông thiểu số), nên giá 75.500 đ tương ứng P/E dự phóng khoảng 12,6 lần, "
-          "thấp hơn bình quân lịch sử khoảng 17 lần [27]. Chọn **P/E chuẩn 15 lần** để trừ hao rủi ro lợi nhuận "
-          "2027 chững lại, giá hợp lý = 15 × 6.000 = **90.000 đ/cp (+19%)**. Kiểm tra bằng công thức:"),
-    ("ct", "P_{0}/E_{1} = (D_{1}/E_{1}) / (k − g)", "2.3"),
-    ("p", "với k = 4,36% + 1,2 × 8% = 13,96% và tỷ lệ chi trả 33%, P/E 15 lần tương ứng tăng trưởng dài hạn g ≈ "
-          "11,7%/năm, phù hợp tốc độ tăng của bán lẻ. Giá mục tiêu của các công ty chứng khoán: 94.400 – 109.000 đ [27]."),
+    ("p", "Với công ty đang tăng trưởng, nhóm dùng hệ số **P/E** (giá cổ phiếu chia cho lợi nhuận mỗi cổ phiếu, "
+          "**EPS**). P/E cho biết nhà đầu tư sẵn sàng trả bao nhiêu đồng cho 1 đồng lợi nhuận mỗi năm của công "
+          "ty. Giá hợp lý = P/E chuẩn × EPS dự kiến. EPS năm 2026 của MWG ước khoảng 6.000 đ, nên với giá 75.500 đ, "
+          "nhà đầu tư đang trả khoảng 12,6 đồng cho 1 đồng lợi nhuận, thấp hơn mức thường thấy của MWG là khoảng "
+          "17 [27]. Nhóm chọn P/E chuẩn **15** (thấp hơn 17 để trừ hao rủi ro lợi nhuận năm 2027 chững lại):"),
+    ("ct", "Giá hợp lý = P/E chuẩn × EPS = 15 × 6.000 = 90.000 đ", "2.3"),
+    ("p", "**Ý nghĩa:** giá hợp lý **cao hơn giá hiện tại 19%**. Mức 15 lần cũng hợp lý theo công thức P/E = "
+          "(tỷ lệ chia cổ tức)/(k − g) ở Chương 4: với k = 13,96% và tỷ lệ chia cổ tức 33%, P/E 15 tương ứng lợi "
+          "nhuận tăng khoảng 11,7%/năm, thấp hơn tốc độ tăng 13,4% của ngành bán lẻ. Các công ty chứng khoán đưa "
+          "ra giá mục tiêu từ 94.400 đến 109.000 đ [27]."),
 
     ("h2", "2.4. Tổng Công ty Khí Việt Nam (GAS – HOSE)"),
     ("h3", "2.4.1. Mô hình kinh doanh"),
-    ("p", "PV GAS nắm gần như toàn bộ chuỗi giá trị khí trong nước: thu gom, vận chuyển bằng đường ống, xử lý và "
-          "phân phối **khí khô** cho nhà máy điện, đạm; kinh doanh **LPG**; nhập khẩu, phân phối **LNG**. Quý I/2026 "
-          "khí khô và LNG chiếm khoảng 55% doanh thu, LPG hơn 40% [31]. Giá bán gắn với giá dầu nên lợi nhuận tăng "
-          "khi giá dầu tăng."),
+    ("p", "PV GAS là đơn vị chủ lực của ngành khí Việt Nam: đưa khí đốt từ mỏ ngoài biển vào bờ bằng đường ống, xử "
+          "lý và bán cho nhà máy điện, nhà máy phân bón. PV GAS còn kinh doanh **LPG** (khí hóa lỏng dùng nấu ăn, "
+          "thường gọi là gas bình) và nhập khẩu **LNG** (khí thiên nhiên hóa lỏng, nhiên liệu cho nhà máy điện "
+          "khí) [31]. Giá bán khí được tính theo giá dầu, nên **giá dầu tăng thì lợi nhuận PV GAS tăng**."),
     ("h3", "2.4.2. Kết quả kinh doanh và tình hình tài chính"),
     ("bang", "2.5", "Kết quả kinh doanh chính của GAS",
      [("Chỉ tiêu", "Năm 2025", "9 tháng 2026"),
-      ("Doanh thu hợp nhất (tỷ đồng)", "135.129 (+30%)", "Trên 120.900 (+30%)"),
+      ("Doanh thu (tỷ đồng)", "135.129 (+30%)", "Trên 120.900 (+30%)"),
       ("Lợi nhuận (tỷ đồng)", "LNST 11.571 (+9%)", "LNTT trên 16.600 (+31%); quý III +68%"),
-      ("So với kế hoạch năm", "", "LNTT đạt 197% kế hoạch"),
-      ("Tiền mặt và đầu tư ngắn hạn", "Gần 40.000 tỷ đồng", "")],
+      ("So với kế hoạch năm", "", "Đạt 197% kế hoạch lợi nhuận"),
+      ("Tiền mặt và tiền gửi ngắn hạn", "Gần 40.000 tỷ đồng", "")],
      [5.4, 4.6, 6.5], (), "Nhóm tổng hợp từ [28], [29], [30]."),
+    ("p", "**Ý nghĩa:** chỉ sau 9 tháng, PV GAS đã đạt gần **gấp đôi** kế hoạch lợi nhuận cả năm nhờ giá dầu cao. "
+          "Công ty có gần 40.000 tỷ đồng tiền mặt nên gần như không có rủi ro thiếu tiền."),
     ("h3", "2.4.3. Chính sách cổ tức, rủi ro và triển vọng tăng trưởng"),
-    ("p", "**Cổ tức:** cổ tức tiền mặt năm 2025 là 25% (2.500 đ/cp, chốt quyền 23/9/2026) [33], tỷ suất **3,2%**. "
-          "**Rủi ro:** giá dầu đảo chiều [10]; biên gộp LPG quý I giảm từ 7,5% xuống 5,3% [31]; Tập đoàn Dầu khí nắm "
-          "95,76% cổ phần nên PV GAS không còn đủ điều kiện công ty đại chúng (cần tối thiểu 10% do cổ đông nhỏ nắm) "
-          "và có 1 năm từ 14/8/2026 để khắc phục [32]. **Triển vọng:** nhu cầu khí cho điện tăng theo Quy hoạch "
-          "điện VIII; LNG là động lực trung hạn."),
+    ("p", "**Cổ tức:** PV GAS chia cổ tức tiền mặt đều đặn nhiều năm; năm 2025 chia 2.500 đ/cổ phiếu, bằng **3,2%** "
+          "giá cổ phiếu [33]. **Rủi ro:** giá dầu có thể giảm trở lại [10]; giá nhập khẩu gas tăng làm lãi mảng "
+          "LPG giảm [31]. Ngoài ra, Tập đoàn Dầu khí nắm 95,76% cổ phần, trong khi luật yêu cầu cổ đông nhỏ phải "
+          "nắm ít nhất 10%. PV GAS có 1 năm từ 14/8/2026 để khắc phục, nếu không có thể bị hủy tư cách công ty đại "
+          "chúng [32]. **Triển vọng:** nhu cầu khí cho phát điện tăng theo quy hoạch điện đến 2030."),
     ("h3", "2.4.4. Nhận định về mức giá hợp lý"),
-    ("p", "Với β = 0,8: k = 4,36% + 0,8 × 8% = 10,76%. Nhóm kết hợp mô hình cổ tức tăng trưởng đều (DDM) với "
-          "D_{0} = 2.500 đ, g = 7%:"),
+    ("p", "Vì PV GAS chia cổ tức đều, nhóm dùng **mô hình chiết khấu cổ tức** (Chương 4): giá trị cổ phiếu bằng "
+          "tổng giá trị hôm nay của các khoản cổ tức nhận được trong tương lai. Giả sử cổ tức tăng đều g = 7%/năm, "
+          "với k = 4,36% + 0,8 × 8% = 10,76%:"),
     ("ct", "V_{0} = D_{0}(1 + g) / (k − g) = 2.500 × 1,07 / (0,1076 − 0,07) = 71.100 đ", "2.4"),
-    ("p", "và phương pháp P/E với EPS 4 quý khoảng 5.350 đ, P/E chuẩn 16 lần: 85.600 đ [34]. Giá hợp lý bằng bình "
-          "quân hai phương pháp, **78.400 đ/cp**, xấp xỉ giá hiện tại 78.300 đ. GAS được định giá sát mức hợp lý nên "
-          "không phải mã kỳ vọng tăng giá mạnh; vai trò của GAS là **đa dạng hóa và thu nhập cổ tức** (kiểm chứng ở "
-          "Phần 3, 4)."),
+    ("p", "Theo cách P/E (EPS khoảng 5.350 đ, P/E chuẩn 16), giá trị là 85.600 đ [34]. Lấy trung bình hai cách, "
+          "**giá hợp lý khoảng 78.400 đ**, gần đúng bằng giá hiện tại 78.300 đ. **Ý nghĩa:** GAS không bị định "
+          "giá rẻ, nên nhóm không mua GAS để chờ tăng giá. Nhóm mua GAS vì cổ tức đều và vì GAS **lên xuống khác "
+          "nhịp** với MBB và MWG, giúp giảm rủi ro chung (Phần 3, 4 chứng minh điều này bằng số liệu)."),
 
     ("h2", "2.5. Tổng hợp ba cổ phiếu"),
-    ("hinh", "2.1", "Vùng giá hợp lý của MBB, MWG, GAS so với giá hiện tại (dải mờ: vùng giá trị theo các phương "
-     "pháp; chấm: mức nhóm chọn)", "hinh_2_1_vung_gia_hop_ly.png", "Nhóm tính toán."),
+    ("hinh", "2.1", "Vùng giá hợp lý của MBB, MWG, GAS so với giá hiện tại (dải mờ: vùng giá trị theo các cách "
+     "định giá; chấm: mức nhóm chọn)", "hinh_2_1_vung_gia_hop_ly.png", "Nhóm tính toán."),
     ("bang", "2.6", "So sánh ba cổ phiếu được chọn",
      [("Tiêu chí", "MBB", "MWG", "GAS"),
       ("Ngành", "Ngân hàng", "Bán lẻ", "Khí đốt, năng lượng"),
       ("Giá 23/10/2026", "19.800 đ", "75.500 đ", "78.300 đ"),
-      ("Tăng trưởng lợi nhuận", "+27,1% (LNTT 6T)", "+88% (LNST 6T)", "+31% (LNTT 9T)"),
-      ("Tỷ suất cổ tức tiền mặt", "5,1%", "2,6%", "3,2%"),
-      ("Giá hợp lý / tiềm năng", "25.000 đ / +26%", "90.000 đ / +19%", "78.400 đ / ≈ 0%"),
-      ("Vai trò", "Giá trị", "Tăng trưởng", "Đa dạng hóa, cổ tức"),
-      ("Rủi ro lớn nhất", "Nợ nhóm 5, biên lãi ròng", "Lợi nhuận 2027 chững", "Giá dầu, tư cách đại chúng")],
+      ("Tăng trưởng lợi nhuận", "+27,1%", "+88%", "+31%"),
+      ("Cổ tức tiền mặt / giá", "5,1%", "2,6%", "3,2%"),
+      ("Giá hợp lý (chênh lệch)", "25.000 đ (+26%)", "90.000 đ (+19%)", "78.400 đ (≈ 0%)"),
+      ("Vai trò trong danh mục", "Giá trị", "Tăng trưởng", "Đa dạng hóa, cổ tức"),
+      ("Rủi ro lớn nhất", "Nợ xấu", "Lợi nhuận 2027 chững lại", "Giá dầu giảm")],
      [4.1, 4.1, 4.1, 4.2], (), "Nhóm tổng hợp và tính toán."),
 
     # ============================== PHẦN 3 ==============================
     ("phan", "PHẦN 3. PHÂN TÍCH RỦI RO VÀ LỢI NHUẬN"),
+    ("p", "Phần 2 đánh giá cổ phiếu bằng kết quả kinh doanh. Phần 3 dùng **dữ liệu giá thực tế trong một năm** "
+          "để đo hai điều nhà đầu tư quan tâm nhất: mỗi cổ phiếu sinh lời bao nhiêu, và giá của nó lên xuống mạnh "
+          "đến mức nào."),
     ("h2", "3.1. Dữ liệu và cách xử lý"),
-    ("p", "Nhóm thu thập **giá đóng cửa điều chỉnh** hằng ngày của MBB, MWG, GAS và VN-Index từ CafeF trong giai "
-          "đoạn 01/10/2025 – 30/09/2026 [43]. Hai điểm xử lý quan trọng:"),
-    ("abc", ["**Dùng giá điều chỉnh thay cho giá thô.** Ngày 11/08/2026 MBB giao dịch không hưởng quyền cổ tức 15% "
-             "bằng cổ phiếu: giá thô giảm từ 24.250 đ xuống 20.350 đ (−16%) dù nhà đầu tư không bị lỗ, còn giá điều "
-             "chỉnh tăng 0,7%. Dùng giá thô sẽ tạo một ngày lỗ −16% không có thật.",
-             "**Đồng bộ ngày giao dịch.** CafeF không có giá 3 cổ phiếu ngày 29–30/01/2026 nên hai ngày này bị loại; "
-             "mẫu còn **246 phiên giá, 245 quan sát lợi tức**."]),
-    ("hinh", "3.1", "Diễn biến giá điều chỉnh của MBB, MWG, GAS và VN-Index (01/10/2025 = 100)",
+    ("p", "Nhóm lấy giá đóng cửa từng ngày của MBB, MWG, GAS và VN-Index từ trang CafeF, giai đoạn 01/10/2025 – "
+          "30/09/2026 [43]. Có hai điểm cần xử lý:"),
+    ("abc", ["**Dùng giá điều chỉnh, không dùng giá thô.** Khi công ty chia cổ tức bằng cổ phiếu, giá cổ phiếu tự "
+             "giảm xuống tương ứng, dù nhà đầu tư không mất tiền vì nhận thêm cổ phiếu. Ví dụ, ngày 11/08/2026 MBB "
+             "chia cổ tức 15% bằng cổ phiếu: giá thô giảm từ 24.250 đ xuống 20.350 đ (−16%). **Giá điều chỉnh** "
+             "đã tính lại giá các ngày trước để loại bỏ bước giảm \"giả\" này; theo giá điều chỉnh, MBB hôm đó "
+             "thực ra tăng 0,7%.",
+             "**Chỉ giữ những ngày có đủ giá của cả ba mã.** CafeF thiếu giá ba cổ phiếu ngày 29 và 30/01/2026 nên "
+             "hai ngày này bị bỏ. Dữ liệu còn **246 ngày giao dịch**."]),
+    ("hinh", "3.1", "Diễn biến giá điều chỉnh của MBB, MWG, GAS và VN-Index (giá ngày 01/10/2025 = 100)",
      "hinh_3_1_dien_bien_gia.png", "Nhóm tính toán từ dữ liệu CafeF [43]."),
-    ("p", "Trong năm, GAS tăng 39% (đỉnh tháng 1/2026 khi giá dầu tăng vọt), VN-Index tăng 6%, còn MBB và MWG giảm "
-          "lần lượt 7% và 5%."),
+    ("p", "**Cách đọc Hình 3.1:** giá mỗi mã được quy về 100 tại ngày đầu tiên để dễ so sánh. Sau một năm, 100 "
+          "đồng bỏ vào GAS thành 139 đồng (lãi 39%), vào VN-Index thành 106 đồng, còn vào MBB và MWG lần lượt chỉ "
+          "còn 93 và 95 đồng. Đường của GAS cũng gồ ghề nhất, nghĩa là giá GAS lên xuống mạnh nhất."),
     ("h2", "3.2. Phương pháp tính"),
-    ("p", "Tỷ suất lợi tức ngày t của cổ phiếu i, với P_{t} là giá điều chỉnh:"),
-    ("ct", "R_{i,t} = (P_{t} − P_{t−1}) / P_{t−1}", "3.1"),
-    ("p", "Tỷ suất lợi tức kỳ vọng và độ lệch chuẩn được ước lượng từ n = 245 quan sát (Excel: AVERAGE, STDEV.S):"),
-    ("ct", "E(R_{i}) = (1/n) × Σ R_{i,t};     σ_{i} = √[ Σ (R_{i,t} − E(R_{i}))^{2} / (n − 1) ]", "3.2"),
-    ("p", "Hiệp phương sai và hệ số tương quan giữa hai cổ phiếu i, j (Excel: COVARIANCE.S, CORREL):"),
+    ("p", "**Tỷ suất lợi tức ngày** là phần trăm lãi (hoặc lỗ) nếu mua hôm trước, bán hôm sau. Với P_{t} là giá "
+          "điều chỉnh ngày t:"),
+    ("ct", "R_{t} = (P_{t} − P_{t−1}) / P_{t−1}", "3.1"),
+    ("p", "Từ 245 tỷ suất lợi tức ngày, nhóm tính hai chỉ tiêu. **Tỷ suất lợi tức kỳ vọng** E(R) là mức lãi trung "
+          "bình mỗi ngày, dùng để ước đoán lợi nhuận trong tương lai. **Độ lệch chuẩn** σ đo mức lợi tức hằng ngày "
+          "dao động quanh mức trung bình. Đây là thước đo **rủi ro**: σ càng lớn, giá càng lên xuống thất thường."),
+    ("ct", "E(R) = (1/n) × Σ R_{t};     σ = √[ Σ (R_{t} − E(R))^{2} / (n − 1) ],  với n = 245", "3.2"),
+    ("p", "Để biết hai cổ phiếu có lên xuống cùng lúc hay không, nhóm tính **hiệp phương sai** (Cov) và **hệ số "
+          "tương quan** (ρ). Hệ số tương quan nằm từ −1 đến +1: ρ = +1 là hai mã luôn tăng giảm cùng nhau; ρ = 0 là "
+          "chúng không liên quan; ρ âm là thường đi ngược chiều."),
     ("ct", "Cov(R_{i}, R_{j}) = Σ (R_{i,t} − E(R_{i}))(R_{j,t} − E(R_{j})) / (n − 1);     ρ_{ij} = Cov(R_{i}, R_{j}) / (σ_{i}σ_{j})", "3.3"),
-    ("p", "Chỉ tiêu ngày được quy đổi theo năm với N = 250 phiên: E_{năm} = E_{ngày} × N; σ_{năm} = σ_{ngày} × √N; "
-          "Cov_{năm} = Cov_{ngày} × N. Ngoài ra nhóm ước lượng hệ số β so với VN-Index: β_{i} = Cov(R_{i}, R_{M}) / σ^{2}_{M}."),
+    ("p", "Số liệu theo ngày rất nhỏ và khó hình dung, nên nhóm quy đổi sang **theo năm**, với 1 năm khoảng 250 "
+          "ngày giao dịch: E(R)_{năm} = E(R)_{ngày} × 250; σ_{năm} = σ_{ngày} × √250. Ngoài ra, nhóm tính hệ số "
+          "β thực tế: β_{i} = Cov(R_{i}, R_{M}) / σ^{2}_{M}, với R_{M} là lợi tức của VN-Index. Mọi phép tính được "
+          "thực hiện bằng công thức trong file Excel nộp kèm."),
     ("h2", "3.3. Tỷ suất lợi tức kỳ vọng và độ lệch chuẩn"),
-    ("bang", "3.1", "Tỷ suất lợi tức kỳ vọng, độ lệch chuẩn và hệ số β",
+    ("bang", "3.1", "Lợi tức kỳ vọng, rủi ro và hệ số β của từng cổ phiếu",
      [("Chỉ tiêu", "MBB", "MWG", "GAS", "VN-Index"),
-      ("E(R) – ngày", "−0,015%", "0,003%", "0,184%", "0,033%"),
-      ("σ – ngày", "1,710%", "2,258%", "3,140%", "1,327%"),
-      ("E(R) – năm", "−3,82%", "0,70%", "46,01%", "8,37%"),
-      ("σ – năm", "27,04%", "35,70%", "49,65%", "20,99%"),
-      ("Lợi tức cả kỳ", "−7,05%", "−5,37%", "+39,24%", "+6,22%"),
+      ("Lợi tức kỳ vọng E(R) – ngày", "−0,015%", "0,003%", "0,184%", "0,033%"),
+      ("Độ lệch chuẩn σ – ngày", "1,710%", "2,258%", "3,140%", "1,327%"),
+      ("Lợi tức kỳ vọng E(R) – năm", "−3,82%", "0,70%", "46,01%", "8,37%"),
+      ("Độ lệch chuẩn σ – năm", "27,04%", "35,70%", "49,65%", "20,99%"),
+      ("Lãi/lỗ thực tế cả năm", "−7,05%", "−5,37%", "+39,24%", "+6,22%"),
       ("Hệ số β", "0,79", "1,06", "0,62", "1,00")],
-     [4.0, 3.1, 3.1, 3.1, 3.2], (1, 2, 3, 4), "Nhóm tính toán trên Excel (trang Thống kê)."),
-    ("p", "GAS có lợi tức kỳ vọng cao nhất nhưng cũng **rủi ro cao nhất** (σ = 49,65%/năm) do nhiều phiên tăng, giảm "
-          "kịch biên độ khi giá dầu biến động. MBB rủi ro thấp nhất nhưng lợi tức kỳ vọng âm. Giữa ba mã không có "
-          "tài sản bị thống trị: không mã nào vừa lợi tức thấp hơn vừa rủi ro cao hơn một mã khác. Lưu ý: E(R) ước "
-          "lượng từ 1 năm dữ liệu dao động lớn; mức 46% của GAS chủ yếu đến từ cú sốc giá dầu, khó lặp lại."),
-    ("p", "Hệ số β ước lượng (0,79; 1,06; 0,62) **thấp hơn** β giả định ở Phần 2 (1,1; 1,2; 0,8), nên tỷ suất lợi "
-          "tức yêu cầu thực tế thấp hơn và các mức giá hợp lý ở Phần 2 là **ước tính thận trọng**. GAS có β thấp "
-          "nhất dù σ cao nhất: phần lớn rủi ro của GAS là rủi ro riêng (giá dầu), không đi cùng thị trường."),
+     [5.0, 2.8, 2.8, 2.8, 3.1], (1, 2, 3, 4), "Nhóm tính toán trên Excel (trang Thống kê)."),
+    ("p", "**Ý nghĩa:**"),
+    ("gach", ["**GAS lãi nhiều nhất nhưng cũng rủi ro nhất.** σ năm của GAS là 49,65%, nghĩa là trong một năm bình "
+              "thường, lợi tức của GAS có thể lệch khỏi mức trung bình khoảng ±50%. Nguyên nhân là giá dầu biến động "
+              "mạnh khiến giá GAS nhiều ngày tăng hoặc giảm kịch biên độ 7% cho phép.",
+              "**MBB ít rủi ro nhất** (σ = 27,04%) nhưng lợi tức trung bình hơi âm. **MWG ở giữa.**",
+              "**Không có cổ phiếu nào \"thua toàn diện\"** (vừa lãi ít hơn, vừa rủi ro cao hơn một mã khác). Một cổ "
+              "phiếu thua toàn diện được gọi là **tài sản bị thống trị** và nên loại khỏi danh mục. Ba mã của nhóm "
+              "không rơi vào trường hợp này.",
+              "**Cần thận trọng với con số 46%/năm của GAS:** kết quả này có được chủ yếu nhờ một đợt giá dầu tăng "
+              "đột biến, khó lặp lại. Lợi tức tính từ dữ liệu một năm chỉ là ước lượng.",
+              "**Hệ số β thực tế** (MBB 0,79; MWG 1,06; GAS 0,62) **thấp hơn** mức nhóm giả định ở Phần 2. Theo "
+              "công thức (2.1), β thấp hơn thì k thấp hơn và giá hợp lý cao hơn. Vậy các mức giá hợp lý ở Phần 2 "
+              "là **ước tính thận trọng**. GAS có β thấp nhất dù σ cao nhất: rủi ro của GAS chủ yếu đến từ giá dầu, "
+              "không đi cùng nhịp thị trường chung."]),
     ("h2", "3.4. Hiệp phương sai và hệ số tương quan"),
-    ("bang", "3.2", "Ma trận hiệp phương sai (năm) và hệ số tương quan",
+    ("bang", "3.2", "Ma trận hiệp phương sai (theo năm) và hệ số tương quan giữa các cổ phiếu",
      [("", "Cov: MBB", "Cov: MWG", "Cov: GAS", "ρ: MBB", "ρ: MWG", "ρ: GAS"),
       ("MBB", "0,0731", "0,0568", "0,0163", "1,000", "0,588", "0,121"),
       ("MWG", "0,0568", "0,1274", "0,0197", "0,588", "1,000", "0,111"),
       ("GAS", "0,0163", "0,0197", "0,2465", "0,121", "0,111", "1,000")],
      [1.9, 2.4, 2.4, 2.4, 2.4, 2.4, 2.6], (1, 2, 3, 4, 5, 6),
-     "Nhóm tính toán trên Excel (trang Hiệp phương sai); đường chéo của ma trận hiệp phương sai là phương sai σ^{2}."),
-    ("p", "Mọi cặp đều tương quan dương nhưng ở mức rất khác nhau. MBB – MWG tương quan trung bình (0,59) vì cùng "
-          "phụ thuộc chu kỳ kinh tế nội địa. GAS gần như **độc lập** với hai mã còn lại (0,11 – 0,12) vì chịu tác "
-          "động chủ yếu của giá dầu thế giới. Điều này xác nhận nhận định ở Phần 1: GAS là công cụ **đa dạng hóa** "
-          "hiệu quả, dù bản thân GAS biến động mạnh."),
+     "Nhóm tính toán trên Excel (trang Hiệp phương sai). Ô trên đường chéo của ma trận hiệp phương sai là phương "
+     "sai σ^{2} của chính cổ phiếu đó."),
+    ("p", "**Ý nghĩa:** MBB và MWG có tương quan 0,59: hai mã thường tăng giảm cùng lúc, vì cùng phụ thuộc vào sức "
+          "khỏe kinh tế trong nước. Ngược lại, GAS gần như **không liên quan** đến hai mã còn lại (ρ chỉ 0,11 – 0,12) "
+          "vì GAS chịu tác động chủ yếu của giá dầu thế giới. Đây là phát hiện quan trọng nhất của Phần 3: tuy bản "
+          "thân GAS biến động mạnh, những ngày MBB và MWG giảm giá thì GAS thường không giảm theo. Do đó GAS giúp "
+          "\"đệm\" cho cả danh mục, đúng như nhận định ở Phần 1."),
 
     # ============================== PHẦN 4 ==============================
     ("phan", "PHẦN 4. XÂY DỰNG DANH MỤC ĐẦU TƯ"),
-    ("h2", "4.1. Mô hình Markowitz và cách thực hiện trên Excel"),
-    ("p", "Với tỷ trọng w_{i} của mỗi cổ phiếu, lợi nhuận kỳ vọng và phương sai của danh mục là [44]:"),
+    ("h2", "4.1. Phương pháp Markowitz và cách thực hiện trên Excel"),
+    ("p", "**Danh mục đầu tư** là cách chia vốn cho nhiều cổ phiếu. Gọi w_{i} là **tỷ trọng** (phần trăm vốn) dành "
+          "cho cổ phiếu i. Lợi nhuận kỳ vọng của danh mục là trung bình có trọng số của lợi nhuận từng mã. Rủi ro "
+          "của danh mục thì phức tạp hơn, vì phụ thuộc vào việc các mã có lên xuống cùng nhau hay không, tức phụ "
+          "thuộc vào hiệp phương sai ở Phần 3 [44]:"),
     ("ct", "E(R_{p}) = Σ w_{i}E(R_{i});     σ^{2}_{p} = Σ_{i} Σ_{j} w_{i}w_{j}Cov(R_{i}, R_{j})", "4.1"),
-    ("p", "Ràng buộc chung: Σ w_{i} = 1 và **w_{i} ≥ 0** vì thị trường Việt Nam không cho phép bán khống. Trên Excel, "
-          "E(R_{p}) tính bằng SUMPRODUCT, σ^{2}_{p} bằng SUMPRODUCT của véc-tơ tỷ trọng với tích ma trận hiệp phương "
-          "sai × tỷ trọng. Nhóm dùng **Solver** (phương pháp GRG Nonlinear) giải ba bài toán ở Bảng 4.1. Hệ số "
-          "Sharpe = (E(R_{p}) − R_{f})/σ_{p} dùng để so sánh các danh mục."),
-    ("bang", "4.1", "Ba mô hình Solver",
-     [("Mô hình", "Hàm mục tiêu", "Ô thay đổi", "Ràng buộc", "Mục đích"),
-      ("Solver 1", "Min σ^{2}_{p}", "w_{MBB}, w_{MWG}, w_{GAS}", "Σw = 1; w ≥ 0", "Danh mục phương sai nhỏ nhất"),
-      ("Solver 2", "Min σ^{2}_{p}", "w_{MBB}, w_{MWG}, w_{GAS}", "Σw = 1; E(R_{p}) = mức mục tiêu; w ≥ 0",
-       "Một điểm của đường biên phương sai bé nhất"),
-      ("Solver 3", "Max E(R_{p})", "w_{MBB}, w_{MWG}, w_{GAS}", "Σw = 1; σ_{p} ≤ 25%; w ≥ 0",
-       "Danh mục lợi nhuận cao nhất ở mức rủi ro chấp nhận")],
-     [2.0, 2.4, 3.5, 4.4, 4.2], (), "Nhóm thiết lập trên Excel."),
-    ("p", "Các bước thực hiện trên file Excel nộp kèm:"),
-    ("abc", ["**Chuẩn bị đầu vào:** liên kết E(R) năm và ma trận hiệp phương sai năm từ Phần 3 sang các trang Solver.",
-             "**Lập mô hình:** ba ô tỷ trọng (ô thay đổi), ô tổng tỷ trọng, ô E(R_{p}) = SUMPRODUCT(w; E(R)), ô "
-             "σ^{2}_{p} = SUMPRODUCT(w; MMULT(w; Cov)) và ô σ_{p} = SQRT(σ^{2}_{p}).",
-             "**Khai báo Solver** (Data → Solver) theo Bảng 4.1, tích \"Make Unconstrained Variables Non-Negative\" "
-             "(w ≥ 0), chọn GRG Nonlinear vì hàm phương sai là hàm bậc hai, không tuyến tính.",
-             "**Danh mục phương sai nhỏ nhất:** chạy Solver 1.",
-             "**Đường biên:** chạy Solver 2 cho 26 mức E(R_{p}) mục tiêu cách đều từ E(R_{MBB}) = −3,82% (thấp nhất) "
-             "đến E(R_{GAS}) = 46,01% (cao nhất), vì không bán khống thì E(R_{p}) chỉ nằm trong khoảng này; ghi lại "
-             "tỷ trọng, E(R_{p}), σ_{p} của từng lần rồi vẽ đồ thị XY với σ_{p} ở trục hoành, E(R_{p}) ở trục tung. "
-             "Việc chạy lặp được tự động hóa bằng macro VBA gọi Excel Solver; cả 26 lần đều thành công.",
-             "**Chọn danh mục:** chạy Solver 3 với mức rủi ro chấp nhận σ_{p} ≤ 25%."]),
-    ("p", "Để kiểm tra, nhóm đối chiếu kết quả Solver với một thuật toán tối ưu độc lập (Python, thư viện scipy): "
-          "độ lệch chuẩn chênh không quá 0,00002%."),
+    ("p", "Công thức thứ hai giải thích vì sao đa dạng hóa có tác dụng. Khi các cổ phiếu tương quan thấp, những "
+          "ngày mã này giảm thì mã kia thường không giảm theo, nên rủi ro của danh mục **thấp hơn** trung bình rủi "
+          "ro của từng mã. Ý tưởng của **mô hình Markowitz** là tìm cách chia vốn để: với mỗi mức lợi nhuận mong "
+          "muốn, rủi ro là thấp nhất có thể."),
+    ("p", "Danh mục phải thỏa hai điều kiện: tổng tỷ trọng bằng 100% (Σ w_{i} = 1), và **không có tỷ trọng âm** "
+          "(w_{i} ≥ 0). Tỷ trọng âm nghĩa là **bán khống**, tức đi vay cổ phiếu để bán trước rồi mua lại sau; thị "
+          "trường Việt Nam chưa cho phép cách này. Nhóm dùng công cụ **Solver** của Excel. Solver tự thử nhiều cách "
+          "chia vốn cho đến khi tìm được cách tốt nhất theo yêu cầu. Nhóm giải ba bài toán (Bảng 4.1)."),
+    ("bang", "4.1", "Ba bài toán giải bằng Solver",
+     [("Bài toán", "Solver cần tìm", "Điều kiện", "Kết quả dùng để"),
+      ("Solver 1", "Tỷ trọng cho rủi ro σ_{p} nhỏ nhất", "Σw = 1; w ≥ 0", "Tìm danh mục rủi ro thấp nhất"),
+      ("Solver 2", "Tỷ trọng cho rủi ro σ_{p} nhỏ nhất", "Σw = 1; w ≥ 0; lợi nhuận kỳ vọng bằng một mức cho trước",
+       "Tìm từng điểm để vẽ đường biên"),
+      ("Solver 3", "Tỷ trọng cho lợi nhuận E(R_{p}) lớn nhất", "Σw = 1; w ≥ 0; rủi ro σ_{p} ≤ 25%",
+       "Chọn danh mục đầu tư")],
+     [2.0, 4.6, 5.3, 4.6], (), "Nhóm thiết lập trên Excel."),
+    ("p", "Các bước thực hiện:"),
+    ("abc", ["Đưa lợi tức kỳ vọng và ma trận hiệp phương sai (theo năm) từ Phần 3 vào trang tính Solver.",
+             "Tạo ba ô tỷ trọng cho Solver thay đổi, cùng các ô tính tổng tỷ trọng, E(R_{p}) và σ_{p} theo công "
+             "thức (4.1).",
+             "Chạy **Solver 1** để tìm danh mục rủi ro thấp nhất.",
+             "Chạy **Solver 2** cho 26 mức lợi nhuận mục tiêu, trải đều từ mức thấp nhất (−3,82%, bằng MBB) đến "
+             "cao nhất (46,01%, bằng GAS). Không bán khống thì lợi nhuận danh mục chỉ có thể nằm trong khoảng này. "
+             "Việc chạy 26 lần được tự động hóa trong Excel, và cả 26 lần Solver đều tìm được kết quả.",
+             "Vẽ 26 điểm lên đồ thị, trục ngang là rủi ro σ_{p}, trục đứng là lợi nhuận E(R_{p}).",
+             "Chạy **Solver 3** với mức rủi ro chấp nhận 25%/năm để chọn danh mục."]),
+    ("p", "Nhóm kiểm tra lại kết quả Solver bằng một chương trình tính toán độc lập; hai cách cho kết quả trùng khớp."),
     ("h2", "4.2. Đường biên phương sai bé nhất và đường biên hiệu quả"),
     ("hinh", "4.1", "Đường biên phương sai bé nhất và đường biên hiệu quả của danh mục MBB – MWG – GAS",
      "hinh_4_1_duong_bien.png", "Nhóm tính toán bằng Excel Solver (trang Đường biên)."),
+    ("p", "**Cách đọc Hình 4.1:** mỗi điểm là một cách chia 10 tỷ đồng. Điểm càng **lệch sang phải** thì càng rủi "
+          "ro, càng **lên cao** thì càng lãi nhiều. Đường cong là **đường biên phương sai bé nhất**: với mỗi mức "
+          "lợi nhuận, đó là cách chia vốn có rủi ro thấp nhất. Điểm nằm xa nhất về bên trái (chấm tím) là **danh "
+          "mục phương sai nhỏ nhất**, tức danh mục ít rủi ro nhất có thể tạo ra từ ba cổ phiếu này."),
+    ("p", "Phần đường cong **phía trên** chấm tím (nét liền) gọi là **đường biên hiệu quả**. Phần **phía dưới** "
+          "(nét đứt) không nên chọn: ở cùng mức rủi ro, luôn có một điểm phía trên lãi nhiều hơn. Có thể hình dung "
+          "đường biên hiệu quả như **danh sách các lựa chọn tốt nhất**: nhà đầu tư chỉ cần chọn mức rủi ro mình "
+          "chịu được, đường biên cho biết mức lãi cao nhất tương ứng."),
     ("bang", "4.2", "Một số điểm trên đường biên phương sai bé nhất (theo năm)",
-     [("E(R_{p}) mục tiêu", "w MBB", "w MWG", "w GAS", "σ_{p}", "Thuộc phần"),
+     [("Lợi nhuận mục tiêu", "MBB", "MWG", "GAS", "Rủi ro σ_{p}", "Thuộc phần"),
       ("−3,82%", "100,00%", "0,00%", "0,00%", "27,04%", "Không hiệu quả"),
       ("2,41%", "74,79%", "13,98%", "11,23%", "24,84%", "Không hiệu quả"),
-      ("6,20%", "66,66%", "14,54%", "18,80%", "24,51%", "Danh mục phương sai nhỏ nhất"),
+      ("6,20%", "66,66%", "14,54%", "18,80%", "24,51%", "Rủi ro thấp nhất"),
       ("10,71%", "57,01%", "15,20%", "27,79%", "24,98%", "Hiệu quả"),
       ("19,02%", "39,24%", "16,42%", "44,34%", "28,11%", "Hiệu quả"),
       ("29,40%", "17,02%", "17,94%", "65,04%", "34,95%", "Hiệu quả"),
       ("46,01%", "0,00%", "0,00%", "100,00%", "49,65%", "Hiệu quả")],
-     [2.8, 2.1, 2.1, 2.1, 2.1, 5.3], (0, 1, 2, 3, 4), "Trích từ 26 điểm ở trang Đường biên (Excel)."),
-    ("p", "Toàn bộ đường cong là **đường biên phương sai bé nhất**: với mỗi mức lợi nhuận, đó là danh mục có rủi ro "
-          "thấp nhất. Điểm có σ nhỏ nhất là **danh mục phương sai nhỏ nhất** (σ_{p} = 24,51%, E(R_{p}) = 6,20%). "
-          "Phần phía trên điểm này là **đường biên hiệu quả** (nét liền): cùng mức rủi ro, nó cho lợi nhuận cao hơn "
-          "phần phía dưới (nét đứt). Ba quan sát đáng chú ý:"),
-    ("abc", ["Danh mục phương sai nhỏ nhất (24,51%) **ít rủi ro hơn cả cổ phiếu ít rủi ro nhất** là MBB (27,04%): "
-             "đây là tác dụng của đa dạng hóa khi tương quan thấp.",
-             "MWG đứng riêng nằm xa bên dưới đường biên (rủi ro 35,70% nhưng lợi tức gần 0), nhưng vẫn chiếm khoảng "
-             "15–19% trên phần lớn đường biên hiệu quả (chỉ giảm về 0 khi tiến tới 100% GAS) vì góp phần giảm "
-             "phương sai chung.",
-             "Tỷ trọng sơ bộ 40/35/25 ở Phần 1 nằm **dưới** đường biên hiệu quả: cùng σ_{p} = 25,56% có thể đạt "
-             "E(R_{p}) ≈ 12,95% thay vì 10,22%. Nhóm vì vậy thay tỷ trọng sơ bộ bằng tỷ trọng tối ưu."]),
+     [3.2, 2.2, 2.2, 2.2, 2.4, 4.3], (0, 1, 2, 3, 4), "Trích từ 26 điểm ở trang Đường biên (Excel)."),
+    ("p", "**Ý nghĩa:** Đồ thị cho thấy ba điều:"),
+    ("abc", ["**Đa dạng hóa giảm rủi ro thật sự.** Danh mục rủi ro thấp nhất có σ = 24,51%, **thấp hơn cả MBB** "
+             "(27,04%), cổ phiếu ít rủi ro nhất. Gộp ba cổ phiếu rủi ro lại cho ra danh mục ít rủi ro hơn từng mã, "
+             "nhờ GAS gần như không tương quan với hai mã kia.",
+             "**MWG đứng riêng thì không hấp dẫn**: rủi ro 35,70% mà lãi gần 0, nằm xa bên dưới đường biên. Nhưng "
+             "MWG vẫn chiếm khoảng 15–19% trên phần lớn đường biên hiệu quả, vì góp phần làm rủi ro chung giảm "
+             "xuống.",
+             "**Cách chia vốn sơ bộ 40/35/25 ở Phần 1 chưa tối ưu** (ô vuông xám nằm dưới đường biên). Với cùng mức "
+             "rủi ro 25,56%, chia vốn đúng cách có thể đạt lãi khoảng 12,95% thay vì 10,22%. Vì vậy nhóm thay tỷ lệ "
+             "sơ bộ bằng tỷ lệ tối ưu."]),
     ("h2", "4.3. Lựa chọn danh mục đầu tư"),
+    ("p", "Để so sánh các danh mục, nhóm dùng thêm **hệ số Sharpe**: phần lợi nhuận vượt lãi suất an toàn trên mỗi "
+          "đơn vị rủi ro, Sharpe = (E(R_{p}) − R_{f}) / σ_{p}. Sharpe càng cao thì mỗi đơn vị rủi ro càng \"đáng "
+          "tiền\"."),
     ("bang", "4.3", "So sánh các danh mục ứng viên (theo năm)",
      [("Danh mục", "MBB", "MWG", "GAS", "E(R_{p})", "σ_{p}", "Sharpe"),
-      ("Phương sai nhỏ nhất (Solver 1)", "66,66%", "14,54%", "18,80%", "6,20%", "24,51%", "0,075"),
-      ("**Được chọn (Solver 3, σ_{p} ≤ 25%)**", "**56,84%**", "**15,20%**", "**27,97%**", "**10,80%**", "**25,00%**",
-       "**0,258**"),
-      ("Toàn bộ vào GAS (Sharpe cao nhất)", "0%", "0%", "100%", "46,01%", "49,65%", "0,839"),
-      ("Tỷ trọng sơ bộ ở Phần 1", "40,00%", "35,00%", "25,00%", "10,22%", "25,56%", "0,229")],
-     [5.0, 1.9, 1.9, 1.9, 1.9, 1.9, 2.0], (1, 2, 3, 4, 5, 6), "Nhóm tính toán bằng Excel Solver (trang Danh mục chọn)."),
-    ("p", "Nhóm chọn **danh mục có lợi nhuận kỳ vọng cao nhất với mức rủi ro chấp nhận σ_{p} ≤ 25%/năm** "
-          "(khoảng 7,2%/tháng), vì:"),
-    ("abc", ["Mức 25% phù hợp chiến lược cân bằng và tương đương rủi ro của tỷ trọng sơ bộ đã chấp nhận ở Phần 1.",
-             "Gần danh mục phương sai nhỏ nhất, đường biên rất dốc: chỉ chấp nhận thêm 0,49 điểm % rủi ro "
-             "(24,51% → 25,00%), lợi nhuận kỳ vọng tăng 4,6 điểm % (6,20% → 10,80%), Sharpe tăng từ 0,075 lên 0,258.",
-             "Danh mục phương sai nhỏ nhất có E(R_{p}) = 6,20%, chỉ nhỉnh hơn lãi suất phi rủi ro 4,36%: phần bù rủi "
-             "ro quá mỏng.",
-             "Danh mục Sharpe cao nhất dồn 100% vào GAS, mất hoàn toàn đa dạng hóa, trong khi E(R) 46% của GAS chủ "
-             "yếu do cú sốc giá dầu khó lặp lại; nhóm không chọn."]),
+      ("Rủi ro thấp nhất (Solver 1)", "66,66%", "14,54%", "18,80%", "6,20%", "24,51%", "0,075"),
+      ("**Được chọn (Solver 3)**", "**56,84%**", "**15,20%**", "**27,97%**", "**10,80%**", "**25,00%**", "**0,258**"),
+      ("Toàn bộ vào GAS", "0%", "0%", "100%", "46,01%", "49,65%", "0,839"),
+      ("Tỷ lệ sơ bộ ở Phần 1", "40,00%", "35,00%", "25,00%", "10,22%", "25,56%", "0,229")],
+     [4.6, 1.95, 1.95, 1.95, 1.95, 1.95, 2.15], (1, 2, 3, 4, 5, 6),
+     "Nhóm tính toán bằng Excel Solver (trang Danh mục chọn)."),
+    ("p", "Nhóm chọn **danh mục có lợi nhuận kỳ vọng cao nhất trong giới hạn rủi ro 25%/năm**, tương đương "
+          "khoảng 7,2%/tháng, vì bốn lý do:"),
+    ("abc", ["Mức rủi ro 25% phù hợp chiến lược cân bằng, và gần bằng mức rủi ro của cách chia vốn sơ bộ mà nhóm "
+             "đã chấp nhận ở Phần 1.",
+             "**Đánh đổi rất có lợi:** so với danh mục rủi ro thấp nhất, chỉ chịu thêm 0,49 điểm % rủi ro (24,51% → "
+             "25,00%) nhưng lãi kỳ vọng tăng 4,6 điểm % (6,20% → 10,80%).",
+             "Danh mục rủi ro thấp nhất chỉ lãi 6,20%/năm, gần bằng mức 4,36% của trái phiếu Chính phủ gần như không "
+             "rủi ro. Chấp nhận rủi ro cổ phiếu mà chỉ lãi thêm chừng đó là không xứng đáng.",
+             "Dồn 100% vào GAS có Sharpe cao nhất, nhưng mất hoàn toàn lợi ích đa dạng hóa. Hơn nữa, mức lãi 46% "
+             "của GAS chủ yếu do đợt giá dầu tăng đột biến, khó lặp lại. Nhóm không chọn phương án này."]),
     ("h2", "4.4. Phân bổ vốn 10 tỷ đồng"),
-    ("p", "Số cổ phiếu mua = ROUNDDOWN(w_{i} × 10 tỷ / (giá × 100), 0) × 100, vì HOSE giao dịch theo lô 100 cổ phiếu. "
-          "Giá mua là giá đóng cửa ngày 23/10/2026 [43]."),
-    ("bang", "4.4", "Phân bổ vốn theo danh mục được chọn (mua ngày 26/10/2026)",
-     [("Cổ phiếu", "Tỷ trọng", "Giá (đ)", "Số cổ phiếu", "Giá trị mua (đ)", "Tỷ trọng thực tế"),
+    ("p", "Trên sàn HOSE, cổ phiếu được mua theo **lô 100 cổ phiếu**, nên số cổ phiếu mua được làm tròn xuống bội số "
+          "của 100. Giá mua là giá đóng cửa ngày 23/10/2026 [43]:"),
+    ("ct", "Số cổ phiếu = làm tròn xuống [w_{i} × 10 tỷ đồng / (giá × 100)] × 100", "4.2"),
+    ("bang", "4.4", "Phân bổ 10 tỷ đồng theo danh mục được chọn (mua ngày 26/10/2026)",
+     [("Cổ phiếu", "Tỷ trọng", "Giá (đ)", "Số cổ phiếu", "Số tiền mua (đ)", "Tỷ trọng thực tế"),
       ("MBB", "56,84%", "19.800", "287.000", "5.682.600.000", "56,83%"),
       ("MWG", "15,20%", "75.500", "20.100", "1.517.550.000", "15,18%"),
       ("GAS", "27,97%", "78.300", "35.700", "2.795.310.000", "27,95%"),
       ("Tổng", "100,00%", "", "", "9.995.460.000", "99,95%"),
       ("Tiền mặt còn lại", "", "", "", "4.540.000", "0,05%")],
      [2.8, 2.3, 2.3, 2.7, 3.6, 2.8], (1, 2, 3, 4, 5), "Nhóm tính toán (trang Danh mục chọn, Excel)."),
-    ("p", "Quy đổi theo tháng, danh mục có E(R_{p}) ≈ 10,80%/12 = **0,90%/tháng**, tương ứng lợi nhuận kỳ vọng "
-          "khoảng **90 triệu đồng** trên 10 tỷ, và σ_{p} ≈ 25,00%/√12 = 7,22%/tháng. Để kiểm soát rủi ro, nhóm "
-          "giải ngân hai lần (60% đầu kỳ, 40% sau khi MBB và MWG công bố báo cáo tài chính quý III), cắt lỗ một mã "
-          "nếu giảm quá 8% so với giá mua, và bán GAS nếu có quyết định hủy tư cách công ty đại chúng."),
+    ("p", "**Ý nghĩa với kỳ đầu tư 1 tháng:** lợi nhuận kỳ vọng khoảng 10,80% / 12 = **0,90%/tháng**, tức khoảng "
+          "**90 triệu đồng** trên 10 tỷ đồng. Rủi ro tháng khoảng 25,00% / √12 = 7,22%: con số kỳ vọng này không "
+          "chắc chắn, kết quả thực tế có thể cao hơn hoặc thấp hơn đáng kể. Để hạn chế thua lỗ, nhóm áp dụng ba "
+          "nguyên tắc: mua làm hai đợt (60% đầu kỳ, 40% sau khi MBB và MWG công bố kết quả quý III); bán một mã nếu "
+          "giá giảm quá 8% so với giá mua; và bán GAS nếu cổ phiếu này có quyết định hủy tư cách công ty đại chúng."),
 
     ("phan", "KẾT LUẬN"),
-    ("p", "Bối cảnh 2026 có tăng trưởng kinh tế mạnh (GDP quý III +9,95%) nhưng lạm phát vượt mục tiêu, nên nhóm theo "
-          "chiến lược cân bằng với ba cổ phiếu thuộc ba ngành: MBB (giá trị), MWG (tăng trưởng) và GAS (đa dạng "
-          "hóa, cổ tức). Phân tích dữ liệu một năm cho thấy GAS gần như không tương quan với hai mã còn lại, giúp "
-          "danh mục phương sai nhỏ nhất ít rủi ro hơn cả cổ phiếu ít rủi ro nhất. Dùng Solver trên mô hình "
-          "Markowitz, nhóm chọn danh mục **56,84% MBB – 15,20% MWG – 27,97% GAS**, có lợi nhuận kỳ vọng 10,80%/năm "
-          "với rủi ro 25,00%/năm, hiệu quả hơn tỷ trọng sơ bộ ban đầu. Hạn chế: lợi tức kỳ vọng ước lượng từ một "
-          "năm dữ liệu dao động lớn, và hệ số β, phần bù rủi ro trong định giá là giả định; nhóm sẽ cập nhật khi có "
-          "báo cáo tài chính quý III chính thức."),
+    ("p", "Năm 2026, kinh tế Việt Nam tăng trưởng mạnh nhưng lạm phát vượt mục tiêu. Nhóm vì vậy theo chiến lược cân "
+          "bằng, chọn ba cổ phiếu thuộc ba ngành: MBB (ngân hàng, đang được định giá rẻ), MWG (bán lẻ, lợi nhuận "
+          "tăng nhanh) và GAS (khí đốt, chia cổ tức đều). Dữ liệu giá một năm cho thấy GAS gần như không lên xuống "
+          "cùng nhịp với hai mã còn lại. Nhờ vậy, danh mục gồm cả ba mã có rủi ro thấp hơn cả cổ phiếu ít rủi ro "
+          "nhất. Dùng Solver trên mô hình Markowitz, nhóm chia 10 tỷ đồng theo tỷ lệ **56,84% MBB – 15,20% MWG – "
+          "27,97% GAS**, với lợi nhuận kỳ vọng 10,80%/năm và rủi ro 25,00%/năm. Cách chia này tốt hơn cách chia sơ "
+          "bộ ban đầu. Báo cáo còn hai hạn chế: lợi nhuận kỳ vọng được ước lượng từ chỉ một năm dữ liệu nên dao "
+          "động lớn, và một số thông số định giá ở Phần 2 là giả định. Nhóm sẽ cập nhật khi các công ty công bố báo "
+          "cáo tài chính quý III chính thức."),
 ]
 
 TAI_LIEU = TAI_LIEU_BAI_1 + [
