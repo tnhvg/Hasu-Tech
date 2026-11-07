@@ -9,7 +9,9 @@ macro chay_solver.bas), không phải số giải bằng Python. Thứ tự tran
 """
 
 import json
+import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -28,8 +30,9 @@ KET_QUA_SOLVER = THU_MUC / "du_lieu" / "ket_qua_excel_solver.json"
 
 
 def lam_sach(w):
-    """Solver dừng khi sai số đủ nhỏ nên có thể để lại tỷ trọng âm cỡ 10⁻⁷; đưa về 0."""
-    return np.array([max(float(x), 0.0) for x in w])
+    """Solver dừng khi sai số đủ nhỏ nên có thể để lại tỷ trọng âm cỡ 10⁻⁷; đưa về 0 rồi chia lại cho tổng = 1."""
+    w = np.array([max(float(x), 0.0) for x in w])
+    return w / w.sum()
 
 
 def trang_gioi_thieu(wb, so_phien):
@@ -55,10 +58,11 @@ def trang_gioi_thieu(wb, so_phien):
         ("• Danh mục: E(Rp) = Σ wᵢE(Rᵢ);  σ²p = Σᵢ Σⱼ wᵢwⱼCov(Rᵢ,Rⱼ). Không bán khống: wᵢ ≥ 0, Σwᵢ = 1.", f()),
         ("• Solver (GRG Nonlinear) giải 3 bài toán: Min σ²p (danh mục phương sai nhỏ nhất); Min σ²p với E(Rp) = mục tiêu "
          "(từng điểm đường biên); Max E(Rp) với σp ≤ 25% (danh mục được chọn).", f()),
-        ("• 26 điểm đường biên được giải bằng macro VBA gọi Excel Solver (file chay_solver.bas nộp kèm); cột Kiểm chứng "
-         "ở trang Đường biên ghi mã kết quả của Solver. Kết quả được đối chiếu với một thuật toán tối ưu độc lập "
-         "(Python, scipy): độ lệch chuẩn chênh không quá 0,00002%.", f()),
-        ("• Tỷ trọng âm cỡ 10⁻⁷ do sai số dừng của Solver được làm tròn về 0.", f()),
+        ("• 26 điểm đường biên được giải bằng Excel Solver, chạy tự động lần lượt từng điểm bằng macro VBA (file "
+         "chay_solver.bas). Cột Kiểm chứng ở trang Đường biên ghi mã kết quả của Solver: mã 0 = Solver tìm được "
+         "nghiệm thỏa mọi điều kiện. Kết quả được kiểm tra lại bằng một chương trình tối ưu độc lập: độ lệch chuẩn "
+         "chênh không quá 0,00002%.", f()),
+        ("• Tỷ trọng âm cỡ 10⁻⁷ do sai số dừng của Solver được làm tròn về 0 (tổng tỷ trọng vẫn bằng 100%).", f()),
         ("", None),
         ("4. Chú thích màu", f(dam=True)),
         ("Chữ xanh dương: số liệu nhập tay / kết quả Solver", f(XANH_DUONG)),
@@ -108,6 +112,74 @@ def trang_bieu_do_gia(wb, dau_gia, cuoi_gia):
     ws.freeze_panes = "B4"
 
 
+# Tên gọi trong file Excel theo đúng báo cáo nhóm (báo cáo gọi tỷ lệ 40/35/25 là "tỷ lệ sơ bộ ở Phần 1").
+DOI_TEN = [
+    ("danh mục sơ bộ ở Bài 1", "tỷ lệ sơ bộ ở Phần 1"),
+    ("Danh mục Bài 1 (40/35/25)", "Tỷ lệ sơ bộ 40/35/25 (Phần 1)"),
+    ("danh mục Bài 1 (40/35/25)", "tỷ lệ sơ bộ 40/35/25 (Phần 1)"),
+    ("Tỷ trọng sơ bộ ở Bài tập 1 (40/35/25)", "Tỷ lệ sơ bộ 40/35/25 (Phần 1)"),
+    ("(Bài 1)", "(Phần 1)"),
+    ("cùng giả định với Bài tập tình huống 1", "cùng giả định ở Phần 2 của báo cáo"),
+    ("giống Bài tập 2", "Phần 3 của báo cáo"),
+    ("thay các β giả định ở Bài tập tình huống 1", "so sánh với các β giả định ở Phần 2 của báo cáo"),
+]
+
+
+def doi_chu(chu):
+    for cu, moi in DOI_TEN:
+        chu = chu.replace(cu, moi)
+    return chu
+
+
+def hoan_thien(wb, dau_gia, cuoi_gia):
+    """Các chỉnh sửa riêng cho bản nộp bài nhóm, làm sau khi dựng xong (không đổi code của Bài 2, Bài 3)."""
+    # 1) Đổi tên gọi "Bài 1/Bài tập 1" thành "Phần 1" như trong báo cáo: ô, ghi chú ô, tên chuỗi trên đồ thị
+    for ws in wb.worksheets:
+        for hang in ws.iter_rows():
+            for o in hang:
+                if isinstance(o.value, str) and not o.value.startswith("="):
+                    o.value = doi_chu(o.value)
+                if o.comment is not None:
+                    o.comment.text = doi_chu(o.comment.text)
+        for ch in ws._charts:
+            for chuoi in ch.series:
+                if chuoi.tx is not None and chuoi.tx.v:
+                    chuoi.tx.v = doi_chu(chuoi.tx.v)
+    con_sot = [(ws.title, o.coordinate) for ws in wb.worksheets for hang in ws.iter_rows() for o in hang
+               if isinstance(o.value, str) and re.search(r"Bài (tập )?\d|Bài tập tình huống", o.value)]
+    assert not con_sot, f"Còn tên gọi Bài 1/2: {con_sot}"
+
+    # 2) Ngày ở trang Giá là ngày thật (không phải chữ) để định dạng dd/mm/yyyy và trục đồ thị hiển thị đúng
+    ws = wb["Giá"]
+    for r in range(dau_gia, cuoi_gia + 1):
+        o = ws.cell(r, 1)
+        if isinstance(o.value, str):
+            o.value = datetime.strptime(o.value, "%Y-%m-%d")
+        o.number_format = "dd/mm/yyyy"
+    for ten in ("Lợi tức", "Biểu đồ giá"):
+        for r in range(4, wb[ten].max_row + 1):
+            wb[ten].cell(r, 1).number_format = "dd/mm/yyyy"
+
+    # 3) Trang Thống kê: tiêu đề "Công thức" đặt đúng cột chứa công thức (cột G); ghi chú về hệ số CV
+    ws = wb["Thống kê"]
+    if ws["G5"].value is None and ws["F5"].value:
+        ws["G5"].value, ws["F5"].value = ws["F5"].value, None
+        ws["G5"]._style = ws["E5"]._style
+        ws["G5"].alignment = Alignment(horizontal="left", vertical="center")
+        ws.column_dimensions["F"].width = 2
+    r = ws.max_row + 1
+    ws.cell(r, 1, "• Hệ số CV chỉ có ý nghĩa khi E(R) > 0. MBB có E(R) âm và MWG có E(R) gần 0 nên CV của hai mã "
+                  "này không dùng để so sánh.").font = f(co=11)
+
+    # 4) Trang Biểu đồ giá: chữ Times New Roman, trục đứng 70–220 để thấy rõ chênh lệch giữa các mã
+    ws = wb["Biểu đồ giá"]
+    for hang in ws.iter_rows(min_row=4, min_col=2, max_col=5):
+        for o in hang:
+            o.font = f(co=11)
+    for ch in ws._charts:
+        ch.y_axis.scaling.min, ch.y_axis.scaling.max = 70, 220
+
+
 def main():
     kq = json.loads(KET_QUA_SOLVER.read_text(encoding="utf-8"))
     gia = b3.b2.doc_gia()
@@ -128,12 +200,21 @@ def main():
     b3.trang_solver(wb, "Solver 3 - DM chọn", "chon", w_chon, None)
     cot_dau_mut = ("BCD"[int(np.argmin(mu))], "BCD"[int(np.argmax(mu))])
     ws_bien, dau_b, cuoi_b = b3.trang_duong_bien(wb, cac_diem, dong_gmv, cot_dau_mut)
+    # Code Bài 3 làm tròn tỷ trọng 6 chữ số; ở đây ghi đủ chữ số đúng như Excel Solver nhóm đã chạy
+    for ten, w in (("Solver 1 - PSNN", w_gmv), ("Solver 2 - Đường biên", lam_sach(kq["bien_mau"]["w"])),
+                   ("Solver 3 - DM chọn", w_chon)):
+        for j, c in enumerate("BCD"):
+            wb[ten][f"{c}5"].value = float(w[j])
+    for k, (_, w) in enumerate(cac_diem):
+        for j in range(3):
+            ws_bien.cell(dau_b + k, 3 + j).value = float(w[j])
     for k, d in enumerate(kq["duong_bien"]):
-        o = ws_bien.cell(dau_b + k, 10, d["kiem_chung"])
+        o = ws_bien.cell(dau_b + k, 10, d["kiem_chung"].replace("(ma ", "(mã "))
         o.font, o.border = f(co=11), b3.VIEN
     ws_chon = b3.trang_danh_muc_chon(wb, b3.TY_TRONG_BAI_1)
     b3.them_do_thi(ws_bien, dau_b, cuoi_b, dau_b + dong_gmv, ws_chon)
     trang_bieu_do_gia(wb, dau_gia, cuoi_gia)
+    hoan_thien(wb, dau_gia, cuoi_gia)
     wb.save(DICH)
     print("Đã lưu", DICH)
 

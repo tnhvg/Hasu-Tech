@@ -50,7 +50,8 @@ Public Sub ChayToanBoSolver()
         wsBien.Cells(r, 4).Value = ws.Range("C5").Value
         wsBien.Cells(r, 5).Value = ws.Range("D5").Value
         If ma <= 2 Then
-            wsBien.Cells(r, 10).Value = "Excel Solver (ma " & ma & ")"
+            ' ChrW(227) = chu "a" co dau nga, de ghi "Excel Solver (ma 0)" co dau tieng Viet
+            wsBien.Cells(r, 10).Value = "Excel Solver (m" & ChrW(227) & " " & ma & ")"
         Else
             wsBien.Cells(r, 10).Value = "Solver bao loi, ma " & ma
             soLanLoi = soLanLoi + 1
@@ -96,7 +97,23 @@ Private Function GiaiMotTrang(ws As Worksheet, oMucTieu As String, loaiToiUu As 
     ' SolverSolve(UserFinish:=True): giai ma khong hien hop thoai ket qua
     GiaiMotTrang = Application.Run("Solver.xlam!SolverSolve", True)
     Application.Run "Solver.xlam!SolverFinish", 1    ' 1 = giu nghiem vua tim duoc
+    LamSachTyTrong ws
 End Function
+
+' Solver dung khi sai so du nho nen co the de lai ty trong am rat nho (vd -0,0000003, hien "-0,00%").
+' Dua cac ty trong am ve 0 roi chia lai cho tong de tong ty trong van bang 1.
+Private Sub LamSachTyTrong(ws As Worksheet)
+    Dim o As Range, tong As Double
+    For Each o In ws.Range("B5:D5").Cells
+        If o.Value < 0 Then o.Value = 0
+        tong = tong + o.Value
+    Next o
+    If tong > 0 Then
+        For Each o In ws.Range("B5:D5").Cells
+            o.Value = o.Value / tong
+        Next o
+    End If
+End Sub
 
 ' Nap Solver Add-in neu chua nap (ten add-in co the khac tren may dung Excel tieng Viet)
 Private Sub BatSolver()

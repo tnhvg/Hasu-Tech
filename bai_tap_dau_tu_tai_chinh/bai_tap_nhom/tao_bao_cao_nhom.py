@@ -13,6 +13,8 @@ import json
 import re
 import subprocess
 import tempfile
+import unicodedata
+from collections import defaultdict
 from pathlib import Path
 
 import matplotlib
@@ -43,6 +45,82 @@ CO_BANG = 11
 RONG_TRANG = 16.5  # 21 − 2,5 − 2 (cm)
 THUT = Cm(1.0)
 FOOTER_TRAI = "Thứ 3_Tiết 789_Nhóm 7"
+# Nhóm chọn không in dòng "Nguồn: …" dưới bảng và hình (đổi thành True để in lại).
+HIEN_NGUON = False
+FONT_HINH = ["Times New Roman", "Liberation Serif", "DejaVu Serif"]  # chữ trong hình gần giống Times New Roman
+
+
+# ======================= Trích dẫn kiểu APA (Tác giả, năm) =======================
+
+def khoa_abc(chu):
+    """Khoá sắp xếp theo bảng chữ cái tiếng Việt (Đ đứng sau D, chữ có dấu sau chữ không dấu)."""
+    goc, dau = [], []
+    for c in unicodedata.normalize("NFD", chu.lower().replace("đ", "d￿")):
+        (dau if unicodedata.combining(c) else goc).append(c)
+    return "".join(goc), "".join(dau)
+
+
+def chuan_bi_tai_lieu(tai_lieu, da_trich=None):
+    """Tách tác giả, năm của từng mục; thêm a, b, c khi cùng tác giả, cùng năm; xếp danh mục theo ABC.
+
+    Chỉ giữ các mục có số trong da_trich (nếu có). Trả về (tra cứu theo số gốc [n], danh mục xếp theo ABC).
+    """
+    ds = []
+    for so, muc in enumerate(tai_lieu, start=1):
+        if da_trich is not None and so not in da_trich:
+            continue
+        m = re.match(r"^(.*?)\. \((\d{4}(?:–\d{4})?)([^)]*)\)\.\s*(.*)$", muc)
+        if m is None:
+            raise ValueError(f"Tài liệu [{so}] không đúng dạng 'Tác giả. (Năm). …': {muc[:60]}")
+        tac_gia, nam, ngay, con_lai = m.groups()
+        ds.append({"so": so, "tac_gia": tac_gia, "ngan": tac_gia.split(",")[0], "nam": nam, "ngay": ngay,
+                   "con_lai": con_lai})
+    cung_nam = defaultdict(list)
+    for d in ds:
+        cung_nam[(d["ngan"], d["nam"])].append(d)
+    for nhom in cung_nam.values():
+        nhom.sort(key=lambda d: khoa_abc(d["con_lai"]))
+        for i, d in enumerate(nhom):
+            d["nam_apa"] = d["nam"] + ("abcdefghij"[i] if len(nhom) > 1 else "")
+    for d in ds:
+        d["muc"] = f"{d['tac_gia']}. ({d['nam_apa']}{d['ngay']}). {d['con_lai']}"
+    return {d["so"]: d for d in ds}, sorted(ds, key=lambda d: (khoa_abc(d["tac_gia"]), d["nam_apa"]))
+
+
+def doi_trich_dan(chu, tra_cuu):
+    """'… 13,4% [1], [2], [40].' → '… 13,4% (Cục Thống kê, 2026; …).' Nhiều nguồn xếp theo ABC, cùng tác giả gộp năm."""
+    def thay(m):
+        cac_so = [int(x) for x in re.findall(r"\[(\d+)\]", m.group(0))]
+        theo_tac_gia = {}
+        for so in cac_so:
+            d = tra_cuu[so]
+            theo_tac_gia.setdefault(d["ngan"], []).append(d["nam_apa"])
+        phan = [f"{tg}, {', '.join(sorted(set(nam)))}"
+                for tg, nam in sorted(theo_tac_gia.items(), key=lambda x: khoa_abc(x[0]))]
+        return f" ({'; '.join(phan)})"
+    return re.sub(r" ?\[\d+\](?:, \[\d+\])*", thay, chu)
+
+
+def cau_van(noi_dung):
+    """Các câu văn người đọc thấy (đoạn, ý liệt kê; dòng Nguồn của bảng/hình chỉ tính khi HIEN_NGUON)."""
+    ds = []
+    for k in noi_dung:
+        if k[0] == "p":
+            ds.append(k[1])
+        elif k[0] in ("abc", "gach"):
+            ds.extend(k[1])
+        elif HIEN_NGUON and k[0] in ("bang", "hinh"):
+            ds.append(k[-1] or "")
+    return ds
+
+
+def ap_dung_trich_dan(khoi, tra_cuu):
+    """Đổi trích dẫn trong mọi chuỗi của một khối nội dung (chuỗi, tuple, list lồng nhau)."""
+    if isinstance(khoi, str):
+        return doi_trich_dan(khoi, tra_cuu)
+    if isinstance(khoi, (list, tuple)):
+        return type(khoi)(ap_dung_trich_dan(x, tra_cuu) for x in khoi)
+    return khoi
 
 
 # ======================= Định dạng chữ =======================
@@ -150,6 +228,51 @@ def vien(t, kieu="ba_duong"):
             tc.append(b)
 
 
+def anh_nen(run, duong_dan, x_cm, y_cm, rong_cm, cao_cm):
+    """Chèn ảnh nằm sau chữ, đặt theo toạ độ trên trang (dùng cho khung hoa văn của trang bìa)."""
+    run.add_picture(str(duong_dan), width=Cm(rong_cm), height=Cm(cao_cm))
+    inline = run._r.find(".//" + qn("wp:inline"))
+    anchor = OxmlElement("wp:anchor")
+    for k, v in (("distT", "0"), ("distB", "0"), ("distL", "0"), ("distR", "0"), ("simplePos", "0"),
+                 ("relativeHeight", "0"), ("behindDoc", "1"), ("locked", "0"), ("layoutInCell", "1"),
+                 ("allowOverlap", "1")):
+        anchor.set(k, v)
+    vt = OxmlElement("wp:simplePos")
+    vt.set("x", "0")
+    vt.set("y", "0")
+    anchor.append(vt)
+    for truc, gia_tri in (("positionH", x_cm), ("positionV", y_cm)):
+        e = OxmlElement(f"wp:{truc}")
+        e.set("relativeFrom", "page")
+        lech = OxmlElement("wp:posOffset")
+        lech.text = str(int(Cm(gia_tri)))
+        e.append(lech)
+        anchor.append(e)
+    anchor.append(inline.find(qn("wp:extent")))
+    ee = OxmlElement("wp:effectExtent")
+    for k in ("l", "t", "r", "b"):
+        ee.set(k, "0")
+    anchor.append(ee)
+    anchor.append(OxmlElement("wp:wrapNone"))
+    for ten in ("wp:docPr", "wp:cNvGraphicFramePr", "a:graphic"):
+        anchor.append(inline.find(qn(ten)))
+    inline.getparent().replace(inline, anchor)
+
+
+def dat_so_trang(sect_pr, kieu_so):
+    """Đặt kiểu số trang và bắt đầu từ 1. pgNumType phải đứng trước w:cols theo chuẩn của Word."""
+    for cu in sect_pr.findall(qn("w:pgNumType")):
+        sect_pr.remove(cu)
+    so = OxmlElement("w:pgNumType")
+    so.set(qn("w:fmt"), kieu_so)
+    so.set(qn("w:start"), "1")
+    cols = sect_pr.find(qn("w:cols"))
+    if cols is not None:
+        cols.addprevious(so)
+    else:
+        sect_pr.append(so)
+
+
 # ======================= Trình tạo tài liệu =======================
 
 class TrinhTao:
@@ -182,6 +305,8 @@ class TrinhTao:
         p = self.doc.add_paragraph()
         dinh_dang(p, can, thut)
         them_chu(p, chu, co, dam, nghieng)
+        if chu.rstrip("*").endswith(":"):  # câu dẫn ("… ba điều:") không bị tách khỏi phần ngay sau
+            p.paragraph_format.keep_with_next = True
         return p
 
     def liet_ke(self, cac_y, ky_hieu="abc"):
@@ -234,13 +359,18 @@ class TrinhTao:
                     them_chu(pp, str(gia_tri), CO_BANG)
                 if i < len(hang) - 1:
                     pp.paragraph_format.keep_with_next = True
-        tr = t.rows[0]._tr.get_or_add_trPr()
-        lap = OxmlElement("w:tblHeader")
-        lap.set(qn("w:val"), "true")
-        tr.append(lap)
+        for i, hang_bang in enumerate(t.rows):  # không cắt một hàng của bảng sang hai trang
+            tr = hang_bang._tr.get_or_add_trPr()
+            khong_tach = OxmlElement("w:cantSplit")
+            khong_tach.set(qn("w:val"), "true")
+            tr.append(khong_tach)
+            if i == 0:
+                lap = OxmlElement("w:tblHeader")
+                lap.set(qn("w:val"), "true")
+                tr.append(lap)
         vien(t)
         dat_do_rong_bang(t, rong)
-        if nguon:
+        if nguon and HIEN_NGUON:
             p = self.doc.add_paragraph()
             dinh_dang(p, WD_ALIGN_PARAGRAPH.LEFT, None)
             them_chu(p, f"*Nguồn: {nguon}*", CO_BANG)
@@ -254,61 +384,55 @@ class TrinhTao:
         dinh_dang(p, WD_ALIGN_PARAGRAPH.CENTER, None)
         p.paragraph_format.keep_with_next = True
         dat_font(p.add_run(f"Hình {so}. {ten}"), CO, True)
-        p = self.doc.add_paragraph()
-        dinh_dang(p, WD_ALIGN_PARAGRAPH.CENTER, None)
-        them_chu(p, f"*Nguồn: {nguon}*", CO_BANG)
+        p.paragraph_format.keep_with_next = HIEN_NGUON  # tên hình chỉ cần dính với dòng nguồn (nếu có)
+        if HIEN_NGUON:
+            p = self.doc.add_paragraph()
+            dinh_dang(p, WD_ALIGN_PARAGRAPH.CENTER, None)
+            them_chu(p, f"*Nguồn: {nguon}*", CO_BANG)
 
     def ngat_trang(self):
         self.doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
 
     # ---- trang bìa ----
     def trang_bia(self):
-        sec = self.doc.sections[0]
-        pg = OxmlElement("w:pgBorders")
-        pg.set(qn("w:offsetFrom"), "page")
-        for c in ("top", "left", "bottom", "right"):
-            e = OxmlElement(f"w:{c}")
-            e.set(qn("w:val"), "thinThickSmallGap")
-            e.set(qn("w:sz"), "24")
-            e.set(qn("w:space"), "24")
-            e.set(qn("w:color"), "1F3864")
-            pg.append(e)
-        sec._sectPr.append(pg)
-
-        def dong(chu, co=14, dam=True, cach=0):
-            for _ in range(cach):
-                self.doc.add_paragraph()
+        """Bìa theo bản nhóm chỉnh trên Google Docs: khung hoa văn, logo DUE, tên trường và khoa."""
+        def dong(chu, co=14, dam=True, truoc=0.0):
             p = self.doc.add_paragraph()
             dinh_dang(p, WD_ALIGN_PARAGRAPH.CENTER, None, gian=1.2)
+            p.paragraph_format.space_before = Cm(truoc)
             dat_font(p.add_run(chu), co, dam)
+            return p
 
-        dong("ĐẠI HỌC ĐÀ NẴNG", 13, False)
-        dong("TRƯỜNG ĐẠI HỌC KINH TẾ", 13)
-        dong("KHOA TÀI CHÍNH", 13)
-        dong("----------✦✦✦----------", 12, False)
-        dong(BIA["loai_bao_cao"], 20, cach=3)
+        p = dong(BIA["truong"], 16)
+        anh_nen(p.add_run(), HINH / "bia_khung.png", x_cm=0.78, y_cm=0.31, rong_cm=19.55, cao_cm=28.87)
+        dong(BIA["khoa"], 16)
+        dong("----------oOo----------", 13)
+        p = self.doc.add_paragraph()
+        dinh_dang(p, WD_ALIGN_PARAGRAPH.CENTER, None, gian=1.0)
+        p.paragraph_format.space_before = Cm(0.15)
+        p.add_run().add_picture(str(HINH / "bia_logo_due.png"), width=Cm(4.71))
+        dong(BIA["loai_bao_cao"], 20, truoc=0.75)
         dong(BIA["hoc_phan"], 16)
         dong(BIA["thu_tiet"], 13, False)
-        dong(BIA["nhom"], 16, cach=1)
+        dong(BIA["nhom"], 16, truoc=0.6)
         for dong_ten in BIA["de_tai"]:
             dong(dong_ten, 15)
-        self.doc.add_paragraph()
-        self.doc.add_paragraph()
 
-        def thong_tin(nhan, gia_tri):
+        def thong_tin(nhan, gia_tri, truoc=0.0):
             p = self.doc.add_paragraph()
             dinh_dang(p, WD_ALIGN_PARAGRAPH.LEFT, None, gian=1.3)
+            p.paragraph_format.space_before = Cm(truoc)
             p.paragraph_format.left_indent = Cm(2.5)
             p.paragraph_format.tab_stops.add_tab_stop(Cm(7.5))
             dat_font(p.add_run(nhan), 13, True)
             dat_font(p.add_run(f"\t{gia_tri}"), 13)
 
-        thong_tin("GVHD:", BIA["gvhd"])
+        thong_tin("GVHD:", BIA["gvhd"], truoc=1.4)
         thong_tin("Lớp học phần:", BIA["lop"])
         for i, (ten, mssv) in enumerate(BIA["thanh_vien"]):
             thong_tin("Thành viên:" if i == 0 else "", f"{ten} – {mssv}")
         thong_tin("Lớp sinh hoạt:", BIA["lop_sinh_hoat"])
-        dong(BIA["ngay"], 13, False, cach=3)
+        dong(BIA["ngay"], 13, False, truoc=2.2)
 
     # ---- phần đầu ----
     def tieu_de_trang(self, chu, vao_muc_luc=True):
@@ -322,7 +446,8 @@ class TrinhTao:
     def hoat_dong(self):
         self.tieu_de_trang("BÁO CÁO HOẠT ĐỘNG CỦA CÁC THÀNH VIÊN TRONG NHÓM", vao_muc_luc=False)
         hang = [("STT", "Họ và tên", "MSSV", "Nhiệm vụ", "Mức độ đóng góp")]
-        hang += [(str(i), t, m, nv, "…%") for i, (t, m, nv) in enumerate(HOAT_DONG["thanh_vien"], start=1)]
+        hang += [(str(i), t, m, nv, HOAT_DONG["dong_gop"])
+                 for i, (t, m, nv) in enumerate(HOAT_DONG["thanh_vien"], start=1)]
         t = self.doc.add_table(rows=len(hang), cols=5)
         t.alignment = WD_TABLE_ALIGNMENT.CENTER
         for i, dong in enumerate(hang):
@@ -338,17 +463,19 @@ class TrinhTao:
             self.doan(y, thut=Cm(0), nghieng=True)
         p = self.doc.add_paragraph()
         dinh_dang(p, WD_ALIGN_PARAGRAPH.RIGHT, None)
-        them_chu(p, "*Đà Nẵng, ngày 23 tháng 10 năm 2026*")
-        p = self.doc.add_paragraph()
-        dinh_dang(p, WD_ALIGN_PARAGRAPH.RIGHT, None)
-        p.paragraph_format.right_indent = Cm(1.5)
-        them_chu(p, "**Nhóm trưởng**")
+        them_chu(p, f"*{BIA['ngay']}*")
+        for chu, truoc in (("**Nhóm trưởng**", 0.0), (HOAT_DONG["nhom_truong"], 2.2)):
+            p = self.doc.add_paragraph()
+            dinh_dang(p, WD_ALIGN_PARAGRAPH.CENTER, None)
+            p.paragraph_format.left_indent = Cm(9.5)
+            p.paragraph_format.space_before = Cm(truoc)
+            them_chu(p, chu)
 
     def muc_luc(self, de_muc):
         self.tieu_de_trang("MỤC LỤC", vao_muc_luc=False)
         for cap, chu in de_muc:
             p = self.doc.add_paragraph()
-            dinh_dang(p, WD_ALIGN_PARAGRAPH.LEFT, None, gian=1.3)
+            dinh_dang(p, WD_ALIGN_PARAGRAPH.LEFT, None, gian=1.15)
             p.paragraph_format.left_indent = Cm({1: 0, 2: 0.6, 3: 1.2}[cap])
             p.paragraph_format.tab_stops.add_tab_stop(Cm(RONG_TRANG), WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS)
             dat_font(p.add_run(chu), CO, cap == 1, cap == 3)
@@ -357,27 +484,21 @@ class TrinhTao:
     # ---- phân đoạn, header, footer ----
     def phan_moi(self, kieu_so):
         sec = self.doc.add_section(WD_SECTION.NEW_PAGE)
-        pg = sec._sectPr.find(qn("w:pgBorders"))
-        if pg is not None:
-            sec._sectPr.remove(pg)
-        so = OxmlElement("w:pgNumType")
-        so.set(qn("w:fmt"), kieu_so)
-        so.set(qn("w:start"), "1")
-        sec._sectPr.append(so)
+        dat_so_trang(sec._sectPr, kieu_so)
         sec.header.is_linked_to_previous = False
         sec.footer.is_linked_to_previous = False
         h = sec.header.paragraphs[0]
         h.style = self.doc.styles["Normal"]
         dinh_dang(h, WD_ALIGN_PARAGRAPH.CENTER, None, gian=1.0)
-        dat_font(h.add_run("Bài tập nhóm Đầu tư tài chính"), 11, nghieng=True)
+        dat_font(h.add_run("Bài tập nhóm Đầu tư tài chính"), CO, nghieng=True)
         ft = sec.footer.paragraphs[0]
         ft.style = self.doc.styles["Normal"]  # kiểu Footer có sẵn tab giữa trang làm lệch số trang
         dinh_dang(ft, WD_ALIGN_PARAGRAPH.LEFT, None, gian=1.0)
         ft.paragraph_format.tab_stops.add_tab_stop(Cm(RONG_TRANG), WD_TAB_ALIGNMENT.RIGHT)
-        dat_font(ft.add_run(f"{FOOTER_TRAI}\t"), 11)
+        dat_font(ft.add_run(f"{FOOTER_TRAI}\t"), CO)
         r = ft.add_run()
         truong_trang(r)
-        dat_font(r, 11)
+        dat_font(r, CO)
 
 
 # ======================= Hình vẽ =======================
@@ -385,6 +506,7 @@ class TrinhTao:
 def ve_hinh():
     """Hình 2.1 (vùng giá hợp lý), Hình 3.1 (diễn biến giá), Hình 4.1 (đường biên theo tỷ trọng Excel Solver)."""
     HINH.mkdir(exist_ok=True)
+    plt.rcParams.update({"font.family": "serif", "font.serif": FONT_HINH})
     ve_vung_gia_hop_ly()
     g = pd.read_csv(DU_LIEU_GIA, parse_dates=["Ngay"]).set_index("Ngay").dropna(subset=["MBB", "MWG", "GAS"])
     plt.rcParams.update({"font.size": 10, "axes.spines.top": False, "axes.spines.right": False,
@@ -393,11 +515,17 @@ def ve_hinh():
 
     fig, ax = plt.subplots(figsize=(7.4, 3.3))
     ax.grid(axis="y", color="#e6e5e1")
+    cuoi = {ma: g[ma].iloc[-1] / g[ma].iloc[0] * 100 for ma in ("MBB", "MWG", "GAS", "VNINDEX")}
+    # Nhãn cuối đường của MBB và MWG gần nhau (93 và 95) thì đẩy ra hai phía để không đè lên nhau
+    lech = {ma: -3 for ma in cuoi}
+    if abs(cuoi["MBB"] - cuoi["MWG"]) < 5:
+        thap, cao = sorted(("MBB", "MWG"), key=cuoi.get)
+        lech[thap], lech[cao] = -9, 3
     for ma in ("MBB", "MWG", "GAS", "VNINDEX"):
         chi_so = g[ma] / g[ma].iloc[0] * 100
         ax.plot(chi_so.index, chi_so, color=mau[ma], lw=1.6 if ma != "VNINDEX" else 1.3,
                 ls="-" if ma != "VNINDEX" else "--", label=ma if ma != "VNINDEX" else "VN-Index")
-        ax.annotate(f"{chi_so.iloc[-1]:.0f}", (chi_so.index[-1], chi_so.iloc[-1]), xytext=(4, -3),
+        ax.annotate(f"{chi_so.iloc[-1]:.0f}", (chi_so.index[-1], chi_so.iloc[-1]), xytext=(4, lech[ma]),
                     textcoords="offset points", fontsize=8.5, color=mau[ma])
     ax.axhline(100, color="#8a8984", lw=0.8)
     ax.set_ylabel("Chỉ số giá (01/10/2025 = 100)")
@@ -450,7 +578,8 @@ def ve_vung_gia_hop_ly():
         a, b, c = ((x / gia - 1) * 100 for x in (thap, cao, chon))
         ax.plot([a, b], [i, i], color=mau, lw=7, alpha=0.35, solid_capstyle="round")
         ax.scatter([c], [i], s=60, color=mau, edgecolor="white", linewidth=1.5, zorder=3)
-        ax.text(b + 2, i, f"giá hợp lý {chon:,.0f} đ ({c:+.0f}%)".replace(",", "."), va="center", fontsize=9)
+        chenh = "≈ 0%" if abs(c) < 0.5 else f"{c:+.0f}%"
+        ax.text(b + 2, i, f"giá hợp lý {chon:,.0f} đ ({chenh})".replace(",", "."), va="center", fontsize=9)
     ax.set_yticks(range(3))
     ax.set_yticklabels([c[0] for c in reversed(co_phieu)], fontweight="bold")
     ax.set_xlim(-15, 95)
@@ -475,7 +604,10 @@ def dung(so_trang, de_muc_truoc):
     tt.muc_luc(de_muc_truoc)
 
     tt.phan_moi("decimal")
+    da_trich = {int(x) for x in re.findall(r"\[(\d+)\]", repr(cau_van(NOI_DUNG)))}
+    tra_cuu, danh_muc = chuan_bi_tai_lieu(TAI_LIEU, da_trich)
     for k in NOI_DUNG:
+        k = ap_dung_trich_dan(k, tra_cuu)
         loai = k[0]
         if loai == "phan":
             tt.tieu_de_phan(k[1], ngat_trang=len(k) > 2 and k[2])
@@ -494,16 +626,15 @@ def dung(so_trang, de_muc_truoc):
             tt.bang(so, ten, hang, rong, can_phai, nguon)
         elif loai == "hinh":
             _, so, ten, file, nguon = k
-            tt.hinh(so, ten, HINH / file, nguon)
+            tt.hinh(so, ten, HINH / file, nguon, rong_cm={"4.1": 12.5, "3.1": 13.5, "2.1": 13.5}.get(so, 14.5))
         elif loai == "ngat":
             tt.ngat_trang()
 
     tt.tieu_de_phan("TÀI LIỆU THAM KHẢO", ngat_trang=True)
-    for i, tl in enumerate(TAI_LIEU, start=1):
+    for d in danh_muc:  # kiểu APA: chỉ liệt kê nguồn được trích, xếp theo ABC tên tác giả, thụt treo
         p = tt.doc.add_paragraph()
-        dinh_dang(p, thut=Cm(-0.9), trai=Cm(0.9))
-        p.paragraph_format.tab_stops.add_tab_stop(Cm(0.9))
-        them_chu(p, f"[{i}]\t{tl}")
+        dinh_dang(p, can=WD_ALIGN_PARAGRAPH.LEFT, thut=Cm(-1.0), trai=Cm(1.0))
+        them_chu(p, d["muc"])
     return tt
 
 
