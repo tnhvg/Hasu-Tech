@@ -87,7 +87,7 @@ def drift_status(history: pd.DataFrame, reference_wmape: float) -> dict:
         return {"status": f"Cảnh báo: sai số tuần gần nhất {last['wmape']:.0%} vượt ngưỡng "
                           f"{reference_wmape * DRIFT_FACTOR:.0%}. Nên huấn luyện lại.",
                 "retrain": True, "tracking_signal": ts}
-    if abs(ts) > 4:
+    if abs(ts) > TS_LIMIT:
         return {"status": f"Cảnh báo: mô hình lệch hệ thống (tracking signal {ts:.1f}).",
                 "retrain": True, "tracking_signal": ts}
     return {"status": "Trong ngưỡng: giữ mô hình, huấn luyện lại theo chu kỳ.", "retrain": False,

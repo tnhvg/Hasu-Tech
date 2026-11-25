@@ -4,13 +4,13 @@
 
 | Thời gian | Màn hình | Nói gì |
 |---|---|---|
-| 0:00–0:20 | README | "Cửa hàng tạp hoá BHS Đại Phúc có 2.521 mã hàng, chủ cửa hàng nhập hàng bằng kinh nghiệm. Em xây hệ thống trả lời câu hỏi: tuần tới nhập nhóm hàng nào, bao nhiêu." |
-| 0:20–0:45 | Chất lượng dữ liệu | "Trước khi phân tích, em đối soát doanh thu tính lại với KiotViet, lệch tối đa 6 đồng mỗi tháng. Em phát hiện 1/3 doanh thu đến từ đơn lớn chỉ chiếm 1,8% hoá đơn, nên tách riêng khỏi nhu cầu bán lẻ." |
-| 0:45–1:20 | Phân tích kinh doanh | Ma trận biên lợi nhuận: "7 nhóm hàng đang bán lỗ, nhiều nhất là sữa bột và dầu ăn." Tab Tết: "Doanh thu tăng 1,76 lần nhưng số lượng chỉ 1,13 lần, nên nhập hàng Tết theo hệ số doanh thu sẽ dư." |
-| 1:20–2:00 | Dự báo & đề xuất nhập | "94% mã hàng bán dưới 10% số ngày, nên em dự báo ở cấp nhóm hàng, so sánh 12 mô hình bằng kiểm định trượt. Mỗi dòng có nhãn độ tin cậy, và số lượng đề xuất nhập dùng phân vị theo loại hàng." |
+| 0:00–0:20 | README | "Cửa hàng tạp hoá BHS Đại Phúc có 2.515 mã hàng, chủ cửa hàng nhập hàng bằng kinh nghiệm. Em xây hệ thống trả lời câu hỏi: tuần tới nhập nhóm hàng nào, bao nhiêu." |
+| 0:20–0:45 | Chất lượng dữ liệu | "Trước khi phân tích, em đối soát doanh thu tính lại với KiotViet, lệch tối đa 6 đồng mỗi tháng. Em phát hiện hơn 1/3 doanh thu (36%) đến từ đơn lớn và đơn tổ chức, dù chỉ chiếm 1,8% hoá đơn, nên tách riêng khỏi nhu cầu bán lẻ." |
+| 0:45–1:20 | Phân tích kinh doanh | Ma trận biên lợi nhuận: "7 nhóm hàng cấp 2 đang bán lỗ, nhiều nhất là sữa bột và dầu ăn." Tab Tết: "Doanh thu tăng 1,76 lần nhưng số lượng chỉ 1,13 lần, nên nhập hàng Tết theo hệ số doanh thu sẽ dư." |
+| 1:20–2:00 | Dự báo & đề xuất nhập | "94% mã hàng có bán lẻ được bán dưới 10% số ngày, nên em dự báo ở cấp nhóm hàng, so sánh 12 mô hình bằng kiểm định trượt. Mỗi dòng có nhãn độ tin cậy, và số lượng đề xuất nhập dùng phân vị theo loại hàng." |
 | 2:00–2:25 | Giải thích dự báo | "SHAP cho biết vì sao dự báo ra con số này: bán gần đây tăng làm dự báo tăng 101%..." |
 | 2:25–2:50 | Lịch sử & đánh giá | "Mỗi lần chạy, dự báo được lưu lại. Khi nạp dữ liệu tuần mới, hệ thống đối chiếu và tự cảnh báo nếu mô hình kém đi." |
-| 2:50–3:00 | Tổng quan | "Độ chính xác tổng tuần 84%. Mô phỏng 8 tuần: giảm 11% hàng thiếu và 20% giá trị hàng dư so với cách nhập theo trung bình." |
+| 2:50–3:00 | Tổng quan | "Độ chính xác tổng tuần 84%. Mô phỏng 8 tuần: giảm 11% hàng thiếu và 20% giá trị hàng dư so với cách nhập theo trung bình lịch sử." |
 
 ## Câu hỏi nhà tuyển dụng hay hỏi, và ý chính để trả lời
 
@@ -20,11 +20,14 @@ chia cho tổng lượng bán cả kỳ.
 
 **2. Mô hình của bạn chỉ tốt hơn mức nền ở 50% số nhóm hàng. Vậy có đáng dùng không?**
 Có, nhưng phải nói đúng phạm vi. Ở cấp nhóm nhỏ theo tuần, nhu cầu gần như ngẫu nhiên nên không mô hình nào
-chính xác. Ở cấp ngành hàng và toàn cửa hàng, sai số giảm mạnh (24% và 16%). Giá trị lớn nhất nằm ở chính
-sách nhập theo phân vị: mô phỏng giảm cả hàng thiếu lẫn hàng dư so với nhập theo trung bình.
+chính xác. Ở cấp ngành hàng và toàn cửa hàng, sai số giảm mạnh (24% và 16%), dù ở cấp toàn cửa hàng trung
+bình trượt 28 ngày còn tốt hơn (13%). Giá trị lớn nhất nằm ở chính sách nhập theo phân vị: mô phỏng giảm cả
+hàng thiếu lẫn hàng dư so với nhập theo trung bình lịch sử; so với trung bình 28 ngày thì ít thiếu hàng hơn
+nhưng dư nhiều hơn, vì nhóm ngôi sao được ưu tiên đủ hàng.
 
 **3. Vì sao chọn mô hình kết hợp, trong khi LightGBM có điểm tốt nhất?**
-Chỉ được chọn mô hình trên 4 tuần "chọn mô hình". Ở đó mô hình kết hợp thắng. Nếu nhìn kết quả 8 tuần chấm
+Chỉ được chọn mô hình trên 4 tuần "chọn mô hình". Ở đó mô hình kết hợp thắng; trên 8 tuần chấm điểm nó xếp
+thứ 4, kém LightGBM 2 điểm %, nhưng có thứ hạng trung bình tốt nhất qua hai giai đoạn. Nếu nhìn kết quả 8 tuần chấm
 điểm rồi mới chọn LightGBM, con số báo cáo sẽ bị đẹp giả (rò rỉ dữ liệu kiểm tra).
 
 **4. Bạn xử lý ngày cửa hàng đóng cửa thế nào?**
@@ -32,7 +35,7 @@ Ngày đóng cửa không phải nhu cầu bằng 0. Em đánh dấu trong bản
 lân cận khi huấn luyện, và không tính vào đánh giá.
 
 **5. Làm sao biết một sản phẩm hết hàng khi không có dữ liệu tồn kho?**
-Không biết chắc. Em ước lượng xác suất để một mã bán đều có L ngày liên tiếp không bán do tình cờ, là (1 − p)^L.
+Không biết chắc. Em ước lượng xác suất để một mã bán đều có L ngày mở cửa liên tiếp không bán do tình cờ, là (1 − p)^L.
 Nếu xác suất dưới 1% thì đánh dấu nghi ngờ, và để chủ cửa hàng xác nhận. Hàng theo mùa cũng có biểu hiện
 giống vậy, nên em ghi rõ đây là suy đoán.
 

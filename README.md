@@ -13,7 +13,7 @@ chiếu dự báo với thực tế khi có dữ liệu mới. Xây dựng trên
 
 ## Bài toán kinh doanh
 
-Chủ cửa hàng BHS Đại Phúc phải tự quyết định nhập hàng cho 2.521 mã thuộc 196 nhóm hàng mà chưa có công cụ dự báo nào hỗ trợ, trong khi 94% số mã chỉ phát sinh bán ra dưới 10% số ngày nên không thể nhẩm ra quy luật. Dữ liệu bán hàng hiện cũng không ghi nhận tồn kho, nên thiệt hại do nhập sai không được đo trực tiếp ở bất kỳ đâu.
+Chủ cửa hàng BHS Đại Phúc phải tự quyết định nhập hàng cho 2.515 mã thuộc 188 nhóm hàng cấp 3 mà chưa có công cụ dự báo nào hỗ trợ, trong khi 94% số mã có bán lẻ chỉ phát sinh bán ra dưới 10% số ngày nên không thể nhẩm ra quy luật. Dữ liệu bán hàng hiện cũng không ghi nhận tồn kho, nên thiệt hại do nhập sai không được đo trực tiếp ở bất kỳ đâu.
 
 Nhập thiếu thì mất doanh thu của lần khách hỏi mua, và có thể mất luôn khách sang cửa hàng khác. Nhập dư thì vốn nằm chết trong kho, hàng cận hạn phải đổi trả hoặc bán tháo, và với nhóm hàng có hạn sử dụng ngắn thì phần dư gần như mất trắng.
 
@@ -23,20 +23,22 @@ Thành công được đo bằng ba chỉ tiêu:
 
 1. **WMAPE so với mức nền.** Mức nền là dự báo bằng trung bình lịch sử. Chọn WMAPE vì dữ liệu có rất nhiều ngày bán bằng 0: MAPE chia cho lượng bán từng ngày nên không tính được, còn WMAPE chia cho tổng lượng bán cả kỳ nên luôn xác định.
 2. **Tỷ lệ nhóm hàng đủ dữ liệu có WMAPE cải thiện so với mức nền**, để tránh trường hợp con số tổng đẹp nhờ vài nhóm lớn trong khi phần lớn nhóm còn lại tệ đi. Nhóm quá thưa được báo cáo riêng, không tính vào tỷ lệ này.
-3. **Mô phỏng nhập hàng trên 8 tuần cuối.** So sánh số ngày thiếu hàng và lượng hàng dư ước tính khi nhập theo dự báo với khi nhập theo trung bình lịch sử. Đây là kết quả mô phỏng trên dữ liệu quá khứ, không phải kết quả áp dụng thực tế tại cửa hàng.
+3. **Mô phỏng nhập hàng trên 8 tuần cuối.** So sánh lượng hàng thiếu và giá trị hàng dư ước tính khi nhập theo dự báo với khi nhập theo trung bình lịch sử và theo trung bình 28 ngày (gần với cách nhẩm của chủ cửa hàng). Đây là kết quả mô phỏng trên dữ liệu quá khứ, không phải kết quả áp dụng thực tế tại cửa hàng.
 
 ## Kết quả
 
-| Chỉ tiêu (8 tuần kiểm định, đơn vị tuần) | Mô hình | Mức nền |
-|---|---|---|
-| WMAPE toàn cửa hàng | **15,7%** (chính xác ~84%) | 19,2% |
-| WMAPE ngành hàng cấp 1 | **24,1%** | 39,1% |
-| WMAPE nhóm hàng cấp 3 | **55,2%** | 72,6% |
-| Tỷ lệ nhóm hàng có sai số thấp hơn mức nền | 50% | – |
-| Mô phỏng nhập hàng: lượng hàng thiếu / giá trị hàng dư | **−11% / −20%** | – |
+| Chỉ tiêu (8 tuần kiểm định, đơn vị tuần) | Mô hình | Trung bình 28 ngày | Mức nền |
+|---|---|---|---|
+| WMAPE toàn cửa hàng | 15,7% (chính xác ~84%) | **13,2%** | 19,2% |
+| WMAPE ngành hàng cấp 1 | **24,1%** | 24,8% | 39,1% |
+| WMAPE nhóm hàng cấp 3 | **55,2%** | 57,9% | 72,6% |
+| Tỷ lệ nhóm hàng có sai số thấp hơn mức nền | 50% (53/105 nhóm) | – | – |
+| Mô phỏng nhập hàng: lượng hàng thiếu / giá trị hàng dư của mô hình + phân vị, so với từng cách | – | −15% / **+26%** | **−11% / −20%** |
 
 **Nói thẳng về giới hạn:** ở cấp nhóm hàng nhỏ theo tuần, nhu cầu gần như ngẫu nhiên. Mô hình chỉ tốt hơn trung
-bình trượt 28 ngày một chút (55,2% so với 57,9%) và chỉ thắng mức nền ở một nửa số nhóm. Giá trị thực tế nằm ở dự
+bình trượt 28 ngày một chút (55,2% so với 57,9%), chỉ thắng mức nền ở một nửa số nhóm, và ở cấp toàn cửa hàng
+trung bình trượt 28 ngày còn tốt hơn mô hình. So với trung bình 28 ngày, chính sách nhập theo phân vị giảm hàng
+thiếu nhưng làm tăng hàng dư: đây là đánh đổi có chủ đích để nhóm hàng ngôi sao luôn đủ hàng. Giá trị thực tế nằm ở dự
 báo cấp cao đáng tin, chính sách nhập hàng theo phân vị, và khả năng giải thích, tự động hoá. Chi tiết trong
 [báo cáo mô hình](docs/forecast_report.md).
 
@@ -45,9 +47,9 @@ báo cấp cao đáng tin, chính sách nhập hàng theo phân vị, và khả 
 - **1,8% số hoá đơn (đơn lớn, đơn công ty) mang về 36% doanh thu**, biên lợi nhuận 5,6% so với 8,4% của bán lẻ.
   Đây là một kênh riêng, cần kế hoạch nhập và giá sỉ riêng.
 - **Lượng khách bán lẻ giảm 26% từ tháng 5/2026 (từ 47 xuống 34 hoá đơn/ngày)** trong khi giá trị mỗi hoá đơn không đổi: vấn đề nằm ở lưu lượng khách.
-- **7 nhóm hàng bán lỗ**, tập trung ở sữa và dầu ăn. Riêng một mã dầu ăn bán thấp hơn giá vốn ghi nhận khoảng 29%.
+- **7 nhóm hàng cấp 2 bán lỗ**, tập trung ở sữa và dầu ăn. Riêng một mã dầu ăn bán thấp hơn giá vốn ghi nhận khoảng 29%.
 - **Tết: doanh thu ×1,76 nhưng số lượng chỉ ×1,13.** Nhập hàng Tết theo hệ số doanh thu sẽ dư gần gấp rưỡi.
-- **Bật lửa bị xếp nhầm vào "dụng cụ bếp"**, và là món mua kèm thuốc lá mạnh nhất (lift 8,5).
+- **Bật lửa bị xếp nhầm vào "dụng cụ bếp"**, và là món mua kèm thuốc lá mạnh nhất (lift 8,3).
 
 | | |
 |---|---|
@@ -69,10 +71,10 @@ File Excel KiotViet ─► raw ─► staging ─► mart ─► phân tích (FP
 | **Làm sạch** (`sql/staging`) | Khử trùng lặp theo mã HĐ + thời gian + mã hàng; tính lại doanh thu mức dòng (khớp KiotViet tới 6 đ/tháng); điền giá vốn thiếu; sửa cây nhóm hàng; tách **đơn lớn / đơn tổ chức / xuất nội bộ** khỏi nhu cầu bán lẻ; ẩn danh người bán |
 | **Lịch** (`dim_date`) | Ngày đóng cửa (Tết, lễ) không bị coi là nhu cầu bằng 0 |
 | **Phân tích** (`sql/marts`, `analysis.py`) | Xu hướng theo ngày mở cửa, ABC theo số lượng, giờ × thứ, ma trận doanh thu × biên, hệ số Tết theo số lượng và doanh thu, FP-Growth trên dữ liệu đã loại khuyến mãi, phát hiện nghi ngờ hết hàng bằng xác suất |
-| **Dự báo** (`forecasting/`) | Lớp ngày thường + lớp ngày lễ; phân loại nhu cầu **Syntetos–Boylan**; 8 mô hình StatsForecast (Croston, ADIDA, IMAPA, TSB, AutoETS...) + **LightGBM toàn cục** + 3 mô hình kết hợp (+ **Chronos-Bolt** tuỳ chọn); chọn mô hình trên 4 tuần, chấm trên 8 tuần khác |
+| **Dự báo** (`forecasting/`) | Lớp ngày thường + lớp ngày lễ; phân loại nhu cầu **Syntetos–Boylan**; 8 mô hình StatsForecast (Croston, ADIDA, IMAPA, TSB, AutoETS...) + **LightGBM toàn cục** + 3 mô hình kết hợp (+ **Chronos-Bolt** tuỳ chọn, chưa chạy được); chọn mô hình trên 4 tuần, chấm trên 8 tuần khác |
 | **Quyết định** (`policy.py`) | Khoảng dự báo **conformal**; phân vị τ theo loại nhóm hàng (ngôi sao 0,80 · bảo quản lâu 0,70 · dễ hư 0,55), nối phân tích biên lợi nhuận với mô hình |
 | **Giải thích** | SHAP cho LightGBM, quy đổi thành "% tác động" |
-| **Vòng lặp** (`monitor.py`) | Lưu snapshot dự báo; khi có dữ liệu mới thì đối chiếu, tính WMAPE / bias / tracking signal, cảnh báo drift và tự huấn luyện lại |
+| **Vòng lặp** (`monitor.py`) | Lưu snapshot dự báo; khi có dữ liệu mới thì đối chiếu, tính WMAPE / bias / tracking signal, cảnh báo drift và tự huấn luyện lại (hiện mới minh hoạ trên dữ liệu kiểm định) |
 
 **Công nghệ:** Python · DuckDB (SQL) · pandas · StatsForecast · MLForecast · LightGBM · SHAP · mlxtend · Streamlit · Plotly · pytest · GitHub Actions
 
@@ -81,7 +83,7 @@ File Excel KiotViet ─► raw ─► staging ─► mart ─► phân tích (FP
 8 màn hình: **Tổng quan** · **Nạp dữ liệu** (tự nhận diện cột theo từ điển KiotViet + từ điển đồng nghĩa, người dùng
 xác nhận; ghép dữ liệu mới và khử trùng lặp) · **Chất lượng dữ liệu** · **Phân tích kinh doanh** · **Dự báo & đề xuất
 nhập** (nhãn độ tin cậy, phân bổ xuống mã hàng, tải CSV) · **Giải thích dự báo** · **Kịch bản mô phỏng** (giảm giá có
-tính triệt tiêu chéo, kỳ nghỉ Tết) · **Lịch sử & đánh giá**.
+tính phần bán bị lấy từ mã khác cùng nhóm, kỳ nghỉ Tết) · **Lịch sử & đánh giá**.
 
 Bản công khai dùng **dữ liệu demo đã ẩn danh** (`app/demo_data/`): chỉ gồm bảng tổng hợp và kết quả mô hình.
 `python -m hasu.export_demo` từ chối xuất nếu bảng chứa tên nhân viên, ghi chú hay mã hoá đơn. Dữ liệu gốc không
@@ -97,7 +99,7 @@ python -m hasu.business_report   # báo cáo phân tích kinh doanh + biểu đ�
 python -m hasu.forecasting.run   # kiểm định, dự báo 28 ngày, đề xuất nhập, SHAP (~1 phút)
 python -m hasu.forecast_report   # báo cáo mô hình dự báo
 streamlit run app/streamlit_app.py
-pytest                           # 25 bài kiểm thử
+pytest                           # 26 bài kiểm thử
 ```
 
 Không có file KiotViet? Chạy thẳng `streamlit run app/streamlit_app.py`, ứng dụng sẽ dùng dữ liệu demo.
@@ -108,7 +110,7 @@ Triển khai lên Streamlit Cloud: xem [hướng dẫn](docs/huong_dan_trien_kha
 ```
 data/raw/            dữ liệu gốc (không đưa lên GitHub)
 data/processed/      CSDL DuckDB sinh ra (không đưa lên GitHub)
-sql/staging/         làm sạch: stg_sales_lines, dim_date
+sql/staging/         làm sạch: stg_sales_lines, dim_date, sku_month_price
 sql/marts/           bảng tổng hợp cho phân tích và dự báo
 src/hasu/            ingest, pipeline, quality, analysis, báo cáo
 src/hasu/forecasting data, models, evaluate, policy, monitor, run
@@ -126,7 +128,8 @@ docs/                báo cáo, biểu đồ, ảnh chụp, hướng dẫn, mock
 | Hết hàng chỉ suy đoán từ dữ liệu bán | Danh sách để chủ cửa hàng xác nhận |
 | Ảnh hưởng giảm giá lẫn với mua theo thùng | Kịch bản giảm giá hiển thị như mức trần, kèm cảnh báo |
 | Chưa chạy được Chronos (mạng môi trường thử nghiệm chặn Hugging Face) | Code sẵn sàng: `pip install -e ".[chronos]"` |
-| Một cửa hàng, chưa có đăng nhập | Mở rộng: tài khoản riêng từng doanh nghiệp, mô hình toàn cục đa cửa hàng |
+| Mô hình chỉ nhỉnh hơn trung bình 28 ngày; ở cấp toàn cửa hàng còn kém hơn | Chọn mô hình theo kiểu nhu cầu; dùng song song trung bình 28 ngày cho kế hoạch vốn tổng |
+| Một cửa hàng, chưa có đăng nhập; bản công khai chỉ giữ dữ liệu tải lên trong một phiên | Mở rộng: tài khoản và cơ sở dữ liệu riêng từng doanh nghiệp, mô hình toàn cục đa cửa hàng |
 
 ## Tài liệu
 

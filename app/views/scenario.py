@@ -23,7 +23,7 @@ with tab1:
     l1 = c1.selectbox("Ngành hàng", pr.sort_values("discount_days", ascending=False)["cat_l1"])
     disc = c2.slider("Mức giảm giá (%)", 0, 30, 10, step=5)
     cannibal = c3.slider("Phần tăng lấy từ mã khác cùng nhóm (%)", 0, 100, 50, step=10,
-                         help="Hiện tượng triệt tiêu chéo: khách chuyển từ mã không giảm giá sang mã giảm giá trong "
+                         help="Hiện tượng ăn mòn doanh số (cannibalization): khách chuyển từ mã không giảm giá sang mã giảm giá trong "
                               "cùng nhóm, nên tổng nhu cầu nhóm tăng ít hơn nhu cầu của mã được giảm giá.")
     r = pr.set_index("cat_l1").loc[l1]
     slope = r["uplift_per_pct"] if r["reliable"] else r["store_uplift_per_pct"]

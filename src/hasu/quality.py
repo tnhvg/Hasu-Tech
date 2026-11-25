@@ -231,8 +231,11 @@ def _rest_of_report(con, out: list[str], total_rev: float, d0) -> str:
             WHERE txn_channel = 'retail' AND NOT is_return GROUP BY 1
         ),
         cat AS (
+            -- Cùng điều kiện với fct_retail_daily_category (bỏ hàng tặng, khuyến mại khai trương)
+            -- để mẫu số khớp với số nhóm hàng dùng cho dự báo.
             SELECT cat_l3, count(DISTINCT sale_date) AS d FROM stg_sales_lines
-            WHERE txn_channel = 'retail' AND NOT is_return GROUP BY 1
+            WHERE txn_channel = 'retail' AND NOT is_return AND NOT is_zero_price AND NOT is_opening_promo
+            GROUP BY 1
         )
         SELECT
             (SELECT avg(CASE WHEN d < 0.1 * n THEN 1 ELSE 0 END) FROM sku, open_days),
@@ -242,7 +245,7 @@ def _rest_of_report(con, out: list[str], total_rev: float, d0) -> str:
     add(f"Chỉ tính bán lẻ, trên các ngày cửa hàng mở cửa:\n\n"
         f"- {_pct(sp[0])} mã hàng bán ra dưới 10% số ngày.\n"
         f"- Chỉ {sp[1]} mã hàng bán ra từ 50% số ngày trở lên.\n"
-        f"- Ở cấp nhóm hàng 3: {sp[2]}/{sp[3]} nhóm bán ra từ 50% số ngày trở lên.\n\n"
+        f"- Ở nhóm hàng cấp 3: {sp[2]}/{sp[3]} nhóm bán ra từ 50% số ngày trở lên.\n\n"
         "→ Cần dự báo phân tầng theo mức độ đầy đủ dữ liệu, và dùng mô hình cho nhu cầu "
         "gián đoạn (intermittent demand) ở các nhóm thưa.\n")
 

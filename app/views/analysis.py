@@ -86,7 +86,7 @@ with tabs[2]:
     by_hour = h.groupby("sale_hour")["avg_invoices"].mean()
     lib.alert("info", f"<b>Cao điểm:</b> {by_hour.idxmax()}h ({lib.num(by_hour.max(), 1)} hoá đơn/giờ). "
               f"<b>Thấp điểm ban ngày:</b> {by_hour.loc[12:15].idxmin()}h. "
-              "Gợi ý: đủ người đứng quầy 16h–19h và 7h–9h; nhận hàng, kiểm kho vào 13h–15h.")
+              "Gợi ý: đủ người đứng quầy 16h–19h và 8h–12h; nhận hàng, kiểm kho vào 13h–15h.")
 
 # ---------------------------------------------------------------- Biên lợi nhuận
 with tabs[3]:

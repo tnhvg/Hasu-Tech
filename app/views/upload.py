@@ -15,7 +15,8 @@ st.markdown(
     "Tải lên file **Báo cáo bán hàng theo lợi nhuận** xuất từ KiotViet (định dạng `.xlsx`). Có thể tải nhiều "
     "file một lúc, hoặc tải file mới nối tiếp dữ liệu cũ: hệ thống tự ghép và **khử trùng lặp** theo khoá "
     "*mã hoá đơn + thời gian + mã hàng*.\n\n"
-    "Dữ liệu chỉ nằm trong phiên làm việc của bạn, không được lưu lại sau khi đóng trình duyệt."
+    "Dữ liệu chỉ dùng trong phiên làm việc của bạn và không chia sẻ cho người dùng khác. File Excel gốc bị "
+    "xoá ngay sau khi nạp; phần dữ liệu đã xử lý chỉ được lưu tạm trên máy chủ để các màn hình sử dụng."
 )
 
 FIELD_LABELS = {
@@ -93,6 +94,7 @@ with st.status("Đang xử lý...", expanded=True) as status:
         st.write("Nạp dữ liệu...")
         for p in paths:
             n = load_raw(con, p, mappings[p.name])
+            p.unlink(missing_ok=True)   # không giữ file gốc (có tên nhân viên, ghi chú) trên máy chủ
             st.write(f"  · {p.name}: {n:,} dòng")
         report = build_database(con, [], log=st.write)
 

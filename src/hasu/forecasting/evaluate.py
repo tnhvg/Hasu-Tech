@@ -2,7 +2,7 @@
 
 Quy trình: chia 12 tuần cuối thành 12 cửa sổ. Ở mỗi cửa sổ, mô hình chỉ được
 thấy dữ liệu tới trước ngày bắt đầu cửa sổ, dự báo 7 ngày, rồi so với thực tế.
-  - 4 cửa sổ đầu ("selection"): dùng để CHỌN mô hình cho từng kiểu nhu cầu.
+  - 4 cửa sổ đầu ("selection"): dùng để CHỌN một mô hình chung (xem select_champion).
   - 8 cửa sổ sau ("holdout"): dùng để BÁO CÁO độ chính xác. Không dùng để chọn
     mô hình, nên con số không bị "đẹp giả".
 

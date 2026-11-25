@@ -261,7 +261,7 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
 
     # ---- Tóm tắt ----
     add("## Tóm tắt cho chủ cửa hàng\n")
-    add(f"1. **Đơn lớn chỉ chiếm {pct(big.n_invoices / inv_total)} số hoá đơn nhưng mang về "
+    add(f"1. **Đơn lớn và đơn tổ chức chỉ chiếm {pct(big.n_invoices / inv_total)} số hoá đơn nhưng mang về "
         f"{pct(big.revenue / total_rev, 0)} doanh thu**, với biên lợi nhuận "
         f"{pct(big.profit / big.revenue)} (bán lẻ: {pct(retail.profit / retail.revenue)}). "
         "Đây là một kênh bán riêng, cần được quản lý và dự báo riêng.")
@@ -274,7 +274,8 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         f"{num(oil.cost)} đ, lỗ {mil(-oil.profit)}. Cần kiểm tra lại giá vốn hoặc giá bán.")
     add(f"4. **Tết làm tăng doanh thu bán lẻ {times(tt.loc['Trước Tết', 'rev_factor'])} nhưng số lượng "
         f"chỉ tăng {times(tt.loc['Trước Tết', 'qty_factor'])}** trong 14 ngày trước Tết: khách mua hàng "
-        "đắt hơn (quà biếu, thùng nước, bánh kẹo hộp) chứ không mua nhiều món hơn hẳn.")
+        "đắt hơn chứ không mua nhiều món hơn hẳn (phù hợp với giả thuyết mua quà biếu, thùng nước, bánh kẹo "
+        "hộp, nhưng dữ liệu chưa kiểm chứng được).")
     add(f"5. **Cao điểm lúc {peak_hour}h** ({num(by_hour.max(), 1)} hoá đơn/giờ), thấp điểm "
         f"{trough.idxmin()}h–15h. Chủ nhật vắng nhất ({num(by_day.min(), 0)} hoá đơn/ngày so với "
         f"{num(by_day.drop(7).mean(), 0)} các ngày khác).\n")
@@ -290,7 +291,7 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "Tháng": tbl.index,
         "Bán lẻ / ngày": tbl[("revenue_per_open_day", "Bán lẻ")].map(lambda v: mil(v)),
         "Biên bán lẻ": (tbl[("profit", "Bán lẻ")] / tbl[("revenue", "Bán lẻ")]).map(pct),
-        "Đơn lớn / ngày": tbl[("revenue_per_open_day", "Đơn lớn / tổ chức")].map(lambda v: mil(v)),
+        "Đơn lớn, tổ chức / ngày": tbl[("revenue_per_open_day", "Đơn lớn / tổ chức")].map(lambda v: mil(v)),
         "Hoá đơn bán lẻ / ngày": t["inv_per_day"].map(lambda v: num(v)).values,
         "Giá trị / hoá đơn": t["basket"].map(lambda v: num(v) + " đ").values,
     })
@@ -330,11 +331,14 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     # ---- 3. Heatmap ----
     add("\n## 3. Mẫu hình theo giờ và thứ\n")
     add(f"![Bản đồ nhiệt]({f3})\n")
-    add(f"- **Ba khung cao điểm**: {peak_hour}h (cao nhất), {second_peaks[0]}h và {second_peaks[1]}h, "
-        "trùng giờ đi làm về, giờ đi làm buổi sáng và trước bữa trưa.\n"
-        f"- **Thấp điểm** {trough.idxmin()}h–15h ({num(trough.mean(), 1)} hoá đơn/giờ).\n"
+    add(f"- **Ba khung cao điểm**: {peak_hour}h (cao nhất), {second_peaks[0]}h và {second_peaks[1]}h. "
+        "Các khung này có thể tương ứng với giờ tan làm, giờ chuẩn bị bữa tối và trước bữa trưa, nhưng dữ "
+        "liệu bán hàng không xác nhận được nguyên nhân. Buổi sáng còn một đỉnh phụ lúc 8h "
+        f"({num(by_hour.loc[8], 1)} hoá đơn/giờ).\n"
+        f"- **Thấp điểm** 13h–15h ({num(by_hour.loc[13:15].min(), 1)}–{num(by_hour.loc[13:15].max(), 1)} "
+        f"hoá đơn/giờ, thấp nhất lúc {by_hour.loc[13:15].idxmin()}h).\n"
         f"- **Chủ nhật** vắng hơn rõ rệt ({num(by_day.loc[7], 0)} hoá đơn/ngày).\n")
-    add("**Khuyến nghị xếp ca:** bố trí đủ người đứng quầy 16h–19h và 7h–9h; dùng khung 13h–15h để "
+    add("**Khuyến nghị xếp ca:** bố trí đủ người đứng quầy 16h–19h và 8h–12h; dùng khung 13h–15h để "
         "nhận hàng, kiểm kho, sắp xếp kệ.\n")
 
     # ---- 4. Biên lợi nhuận ----
@@ -364,11 +368,13 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         f"{pct(star['revenue_share'].sum(), 0)} doanh thu với biên cao hơn mức chung: đây là nhóm cần "
         "**không bao giờ để hết hàng**.\n"
         f"- {len(thin)} nhóm \"lời mỏng\" như gia vị, vệ sinh nhà cửa, giặt giũ chiếm "
-        f"{pct(thin['revenue_share'].sum(), 0)} doanh thu nhưng biên rất thấp, phần lớn do bán theo "
-        "đơn lớn. Nên xem lại giá bán sỉ cho các nhóm này.\n"
-        f"- Toàn bộ ngành **sữa** đang lỗ hoặc gần hoà vốn (sữa bột biên "
-        f"{pct(milk.loc[milk['cat_l2'] == 'Sữa bột', 'margin'].iloc[0]) if (milk['cat_l2'] == 'Sữa bột').any() else 'n/a'}). "
-        "Sữa có hạn dùng ngắn, nên khả năng cao là xả hàng cận hạn. Đây chính là nhóm cần dự báo sát "
+        f"{pct(thin['revenue_share'].sum(), 0)} doanh thu nhưng biên rất thấp ở cả bán lẻ lẫn đơn lớn. "
+        "Nên xem lại giá bán (lẻ và sỉ) cho các nhóm này.\n"
+        f"- Ngành **sữa** là điểm đáng lo nhất: {int((milk['margin'] < 0).sum())}/{len(milk)} nhóm cấp 2 "
+        "đang lỗ (sữa bột biên "
+        f"{pct(milk.loc[milk['cat_l2'] == 'Sữa bột', 'margin'].iloc[0]) if (milk['cat_l2'] == 'Sữa bột').any() else 'n/a'}); "
+        f"chỉ {', '.join(milk.loc[milk['margin'] >= 0, 'cat_l2'].str.lower())} còn có lãi. "
+        "Sữa có hạn dùng ngắn, nên một khả năng là xả hàng cận hạn. Đây chính là nhóm cần dự báo sát "
         "nhất để giảm hàng dư.\n"
         "- **Hạn chế:** giá vốn lấy từ KiotViet tại thời điểm bán. Nếu giá vốn nhập sai (ví dụ nhập theo "
         "thùng nhưng bán theo chai), biên sẽ sai. Các nhóm thua lỗ cần chủ cửa hàng đối chiếu hoá đơn nhập.\n")
@@ -382,7 +388,9 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "Hệ số số lượng": tt["qty_factor"].map(times),
         "Hệ số doanh thu": tt["rev_factor"].map(times),
     })))
-    add("\nHệ số = trung bình mỗi ngày mở cửa trong giai đoạn / trung bình các ngày mở cửa ngoài vùng ±14 ngày.\n")
+    add("\nHệ số = trung bình mỗi ngày mở cửa trong giai đoạn / trung bình các ngày mở cửa ngoài vùng ảnh "
+        "hưởng. \"Trước Tết\" là 14 ngày trước mùng 1 (17/02/2026); \"Sau Tết\" là 14 ngày kể từ mùng 1 "
+        "(phần lớn cửa hàng nghỉ).\n")
     add("**Nhóm hàng tăng mạnh nhất 14 ngày trước Tết (theo doanh thu):**\n")
     add(md_table(pd.DataFrame({
         "Nhóm hàng cấp 1": pre["cat_l1"].head(6),
@@ -400,8 +408,8 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     add("## 6. Phân tích giỏ hàng\n")
     n_b = int(rules["total_multi_item_baskets"].iloc[0]) if len(rules) else 0
     add(f"Thuật toán FP-Growth (cùng kết quả với Apriori, chạy nhanh hơn) trên {num(n_b)} hoá đơn bán lẻ "
-        "có từ 2 nhóm hàng trở lên, **đã loại các dòng bán dưới giá phổ biến** để luật phản ánh hành vi "
-        "mua tự nhiên chứ không phải tác động của khuyến mãi. Phân tích ở cấp nhóm hàng 3 vì từng mã hàng "
+        "có từ 2 nhóm hàng trở lên, **đã loại các dòng bán dưới 95% giá phổ biến** để luật phản ánh hành vi "
+        "mua tự nhiên chứ không phải tác động của khuyến mãi. Phân tích ở nhóm hàng cấp 3 vì từng mã hàng "
         "quá thưa.\n")
     add("- **Độ tin cậy (confidence)**: trong các hoá đơn có A, bao nhiêu % có cả B.\n"
         "- **Lift**: khả năng mua B khi đã mua A cao gấp bao nhiêu lần so với bình thường. Lift > 1 là có liên kết.\n")
@@ -431,11 +439,11 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     n_freq = int((abc["sell_day_ratio"] >= 0.15).sum())
     s_skus = stock["sku"].nunique()
     end = stock[stock["status"].str.startswith("Không bán tới cuối")]
-    add(f"Xét {n_freq} mã hàng bán đều (có bán ở ≥ 15% số ngày mở cửa). Với mỗi mã, nếu một chuỗi ngày "
-        "mở cửa liên tiếp không bán được có xác suất xảy ra ngẫu nhiên dưới 1%, chuỗi đó bị đánh dấu "
+    add(f"Xét {n_freq} mã hàng bán đều (có bán ở ≥ 15% số ngày mở cửa). Với mỗi mã, nếu một chuỗi từ 5 ngày "
+        "mở cửa liên tiếp trở lên không bán được có xác suất xảy ra ngẫu nhiên dưới 1%, chuỗi đó bị đánh dấu "
         "nghi ngờ hết hàng.\n")
     add(f"- **{s_skus}/{n_freq} mã** có ít nhất một giai đoạn nghi ngờ, tổng cộng {len(stock)} giai đoạn.\n"
-        f"- **{len(end)} mã** ngừng bán hẳn tới cuối kỳ dữ liệu: hoặc đang hết hàng, hoặc đã ngừng kinh doanh.\n")
+        f"- **{len(end)} mã** ngừng bán hẳn tới cuối kỳ dữ liệu (có thể do đang hết hàng hoặc đã ngừng kinh doanh).\n")
     show = stock.sort_values("gap_open_days", ascending=False).head(10)
     add(md_table(pd.DataFrame({
         "Mã hàng": show["product_name"],
@@ -457,12 +465,12 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     add("| # | Khuyến nghị | Căn cứ | Ưu tiên |\n|---|---|---|---|\n"
         f"| 1 | Đối chiếu giá vốn và giá bán các mã đang bán dưới giá vốn, bắt đầu với dầu ăn HASUKOOK và sữa bột | Mục 4: {len(loss)} nhóm hàng lỗ | Cao |\n"
         "| 2 | Tìm hiểu nguyên nhân lượng khách bán lẻ giảm từ tháng 5 | Mục 1: hoá đơn/ngày giảm, giá trị/hoá đơn không đổi | Cao |\n"
-        "| 3 | Tách kế hoạch nhập hàng cho kênh đơn lớn khỏi bán lẻ; xem lại giá sỉ nhóm lời mỏng | Tóm tắt 1, mục 4 | Trung bình |\n"
+        "| 3 | Tách kế hoạch nhập hàng cho kênh đơn lớn khỏi bán lẻ; xem lại giá bán (lẻ và sỉ) nhóm lời mỏng | Tóm tắt 1, mục 4 | Trung bình |\n"
         "| 4 | Ưu tiên không để hết hàng các nhóm ngôi sao; kiểm tra danh sách nghi ngờ hết hàng | Mục 4, mục 7 | Cao |\n"
         "| 5 | Nhập hàng Tết theo hệ số số lượng từng nhóm, không theo hệ số doanh thu | Mục 5 | Theo mùa |\n"
-        "| 6 | Xếp ca theo cao điểm 16h–19h, 7h–9h; nhận hàng 13h–15h | Mục 3 | Thấp, làm ngay được |\n"
+        "| 6 | Xếp ca theo cao điểm 16h–19h và 8h–12h; nhận hàng 13h–15h | Mục 3 | Thấp, làm ngay được |\n"
         "| 7 | Bày bật lửa cạnh quầy thuốc lá, mì cạnh xúc xích | Mục 6 | Thấp, làm ngay được |\n"
-        "| 8 | Chuẩn hoá cây nhóm hàng trong KiotViet: sửa nhóm của bật lửa, gộp các nhóm trùng nghĩa (mì, kẹo, snack) | Báo cáo chất lượng dữ liệu, mục 6 | Thấp, giúp mọi phân tích sau chính xác hơn |\n")
+        "| 8 | Chuẩn hoá cây nhóm hàng trong KiotViet: sửa nhóm của bật lửa, gộp các nhóm trùng nghĩa (mì, kẹo, snack) | Báo cáo chất lượng dữ liệu, mục 4; mục 6 | Thấp, giúp mọi phân tích sau chính xác hơn |\n")
     return "\n".join(out)
 
 

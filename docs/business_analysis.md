@@ -6,10 +6,10 @@ _Sinh tự động bởi `python -m hasu.business_report` lúc 06/10/2026 04:10.
 
 ## Tóm tắt cho chủ cửa hàng
 
-1. **Đơn lớn chỉ chiếm 1,8% số hoá đơn nhưng mang về 36% doanh thu**, với biên lợi nhuận 5,6% (bán lẻ: 8,4%). Đây là một kênh bán riêng, cần được quản lý và dự báo riêng.
+1. **Đơn lớn và đơn tổ chức chỉ chiếm 1,8% số hoá đơn nhưng mang về 36% doanh thu**, với biên lợi nhuận 5,6% (bán lẻ: 8,4%). Đây là một kênh bán riêng, cần được quản lý và dự báo riêng.
 2. **Lượng khách bán lẻ giảm rõ trong tháng 5–6/2026**: từ khoảng 47 hoá đơn/ngày xuống 34 hoá đơn/ngày (-26%), trong khi giá trị mỗi hoá đơn gần như không đổi (65.929 đ → 63.145 đ). Nguyên nhân là **ít khách hơn**, không phải khách mua ít đi.
 3. **7 nhóm hàng đang bán lỗ**, tập trung ở dầu ăn và các sản phẩm từ sữa. Riêng HASUKOOK dầu đậu nành NK Nga can 5L/3 (Can) được bán khoảng 200.000 đ trong khi giá vốn ghi nhận 280.000 đ, lỗ 5,6 triệu đ. Cần kiểm tra lại giá vốn hoặc giá bán.
-4. **Tết làm tăng doanh thu bán lẻ 1,76 lần nhưng số lượng chỉ tăng 1,13 lần** trong 14 ngày trước Tết: khách mua hàng đắt hơn (quà biếu, thùng nước, bánh kẹo hộp) chứ không mua nhiều món hơn hẳn.
+4. **Tết làm tăng doanh thu bán lẻ 1,76 lần nhưng số lượng chỉ tăng 1,13 lần** trong 14 ngày trước Tết: khách mua hàng đắt hơn chứ không mua nhiều món hơn hẳn (phù hợp với giả thuyết mua quà biếu, thùng nước, bánh kẹo hộp, nhưng dữ liệu chưa kiểm chứng được).
 5. **Cao điểm lúc 17h** (5,1 hoá đơn/giờ), thấp điểm 14h–15h. Chủ nhật vắng nhất (36 hoá đơn/ngày so với 45 các ngày khác).
 
 ## 1. Xu hướng doanh thu và lợi nhuận
@@ -18,7 +18,7 @@ _Sinh tự động bởi `python -m hasu.business_report` lúc 06/10/2026 04:10.
 
 Biểu đồ dùng **doanh thu trung bình mỗi ngày mở cửa** thay cho tổng tháng, vì tháng 09/2025 chỉ có dữ liệu từ ngày 11 và tháng 02/2026 nghỉ Tết 7 ngày. So tổng tháng sẽ cho kết luận sai.
 
-| Tháng | Bán lẻ / ngày | Biên bán lẻ | Đơn lớn / ngày | Hoá đơn bán lẻ / ngày | Giá trị / hoá đơn |
+| Tháng | Bán lẻ / ngày | Biên bán lẻ | Đơn lớn, tổ chức / ngày | Hoá đơn bán lẻ / ngày | Giá trị / hoá đơn |
 |---|---|---|---|---|---|
 | 2025-09 | 3,1 triệu đ | 10,9% | 1,6 triệu đ | 42 | 74.193 đ |
 | 2025-10 | 3,0 triệu đ | 12,1% | 0,6 triệu đ | 52 | 59.126 đ |
@@ -64,11 +64,11 @@ Biên lợi nhuận bán lẻ tụt thấp trong tháng 2–4/2026. Các khoản
 
 ![Bản đồ nhiệt](figures/03_ban_do_nhiet_gio_thu.png)
 
-- **Ba khung cao điểm**: 17h (cao nhất), 18h và 11h, trùng giờ đi làm về, giờ đi làm buổi sáng và trước bữa trưa.
-- **Thấp điểm** 14h–15h (2,3 hoá đơn/giờ).
+- **Ba khung cao điểm**: 17h (cao nhất), 18h và 11h. Các khung này có thể tương ứng với giờ tan làm, giờ chuẩn bị bữa tối và trước bữa trưa, nhưng dữ liệu bán hàng không xác nhận được nguyên nhân. Buổi sáng còn một đỉnh phụ lúc 8h (3,5 hoá đơn/giờ).
+- **Thấp điểm** 13h–15h (2,1–2,4 hoá đơn/giờ, thấp nhất lúc 14h).
 - **Chủ nhật** vắng hơn rõ rệt (36 hoá đơn/ngày).
 
-**Khuyến nghị xếp ca:** bố trí đủ người đứng quầy 16h–19h và 7h–9h; dùng khung 13h–15h để nhận hàng, kiểm kho, sắp xếp kệ.
+**Khuyến nghị xếp ca:** bố trí đủ người đứng quầy 16h–19h và 8h–12h; dùng khung 13h–15h để nhận hàng, kiểm kho, sắp xếp kệ.
 
 ## 4. Biên lợi nhuận theo nhóm hàng
 
@@ -99,8 +99,8 @@ Hai đường chia: doanh thu trung vị giữa các nhóm (8,1 triệu đ) và 
 **Nhận xét.**
 
 - 20 nhóm "ngôi sao" (nước ngọt, bánh, trà, snack, thuốc lá...) tạo 54% doanh thu với biên cao hơn mức chung: đây là nhóm cần **không bao giờ để hết hàng**.
-- 8 nhóm "lời mỏng" như gia vị, vệ sinh nhà cửa, giặt giũ chiếm 28% doanh thu nhưng biên rất thấp, phần lớn do bán theo đơn lớn. Nên xem lại giá bán sỉ cho các nhóm này.
-- Toàn bộ ngành **sữa** đang lỗ hoặc gần hoà vốn (sữa bột biên -44,8%). Sữa có hạn dùng ngắn, nên khả năng cao là xả hàng cận hạn. Đây chính là nhóm cần dự báo sát nhất để giảm hàng dư.
+- 8 nhóm "lời mỏng" như gia vị, vệ sinh nhà cửa, giặt giũ chiếm 28% doanh thu nhưng biên rất thấp ở cả bán lẻ lẫn đơn lớn. Nên xem lại giá bán (lẻ và sỉ) cho các nhóm này.
+- Ngành **sữa** là điểm đáng lo nhất: 4/6 nhóm cấp 2 đang lỗ (sữa bột biên -44,8%); chỉ sữa đặc, sản phẩm từ sữa khác còn có lãi. Sữa có hạn dùng ngắn, nên một khả năng là xả hàng cận hạn. Đây chính là nhóm cần dự báo sát nhất để giảm hàng dư.
 - **Hạn chế:** giá vốn lấy từ KiotViet tại thời điểm bán. Nếu giá vốn nhập sai (ví dụ nhập theo thùng nhưng bán theo chai), biên sẽ sai. Các nhóm thua lỗ cần chủ cửa hàng đối chiếu hoá đơn nhập.
 
 ## 5. Ảnh hưởng của Tết
@@ -112,7 +112,7 @@ Hai đường chia: doanh thu trung vị giữa các nhóm (8,1 triệu đ) và 
 | Trước Tết | 13 | 1,13 lần | 1,76 lần |
 | Sau Tết | 8 | 1,14 lần | 1,47 lần |
 
-Hệ số = trung bình mỗi ngày mở cửa trong giai đoạn / trung bình các ngày mở cửa ngoài vùng ±14 ngày.
+Hệ số = trung bình mỗi ngày mở cửa trong giai đoạn / trung bình các ngày mở cửa ngoài vùng ảnh hưởng. "Trước Tết" là 14 ngày trước mùng 1 (17/02/2026); "Sau Tết" là 14 ngày kể từ mùng 1 (phần lớn cửa hàng nghỉ).
 
 **Nhóm hàng tăng mạnh nhất 14 ngày trước Tết (theo doanh thu):**
 
@@ -129,7 +129,7 @@ Hệ số = trung bình mỗi ngày mở cửa trong giai đoạn / trung bình 
 
 ## 6. Phân tích giỏ hàng
 
-Thuật toán FP-Growth (cùng kết quả với Apriori, chạy nhanh hơn) trên 4.590 hoá đơn bán lẻ có từ 2 nhóm hàng trở lên, **đã loại các dòng bán dưới giá phổ biến** để luật phản ánh hành vi mua tự nhiên chứ không phải tác động của khuyến mãi. Phân tích ở cấp nhóm hàng 3 vì từng mã hàng quá thưa.
+Thuật toán FP-Growth (cùng kết quả với Apriori, chạy nhanh hơn) trên 4.590 hoá đơn bán lẻ có từ 2 nhóm hàng trở lên, **đã loại các dòng bán dưới 95% giá phổ biến** để luật phản ánh hành vi mua tự nhiên chứ không phải tác động của khuyến mãi. Phân tích ở nhóm hàng cấp 3 vì từng mã hàng quá thưa.
 
 - **Độ tin cậy (confidence)**: trong các hoá đơn có A, bao nhiêu % có cả B.
 - **Lift**: khả năng mua B khi đã mua A cao gấp bao nhiêu lần so với bình thường. Lift > 1 là có liên kết.
@@ -158,10 +158,10 @@ Thuật toán FP-Growth (cùng kết quả với Apriori, chạy nhanh hơn) tr�
 
 ## 7. Nghi ngờ hết hàng (nhu cầu không được đáp ứng)
 
-Xét 81 mã hàng bán đều (có bán ở ≥ 15% số ngày mở cửa). Với mỗi mã, nếu một chuỗi ngày mở cửa liên tiếp không bán được có xác suất xảy ra ngẫu nhiên dưới 1%, chuỗi đó bị đánh dấu nghi ngờ hết hàng.
+Xét 81 mã hàng bán đều (có bán ở ≥ 15% số ngày mở cửa). Với mỗi mã, nếu một chuỗi từ 5 ngày mở cửa liên tiếp trở lên không bán được có xác suất xảy ra ngẫu nhiên dưới 1%, chuỗi đó bị đánh dấu nghi ngờ hết hàng.
 
 - **72/81 mã** có ít nhất một giai đoạn nghi ngờ, tổng cộng 129 giai đoạn.
-- **27 mã** ngừng bán hẳn tới cuối kỳ dữ liệu: hoặc đang hết hàng, hoặc đã ngừng kinh doanh.
+- **27 mã** ngừng bán hẳn tới cuối kỳ dữ liệu (có thể do đang hết hàng hoặc đã ngừng kinh doanh).
 
 | Mã hàng | Từ | Đến | Số ngày mở cửa không bán | % ngày có bán (bình thường) | Đánh giá |
 |---|---|---|---|---|---|
@@ -186,9 +186,9 @@ Xét 81 mã hàng bán đều (có bán ở ≥ 15% số ngày mở cửa). Vớ
 |---|---|---|---|
 | 1 | Đối chiếu giá vốn và giá bán các mã đang bán dưới giá vốn, bắt đầu với dầu ăn HASUKOOK và sữa bột | Mục 4: 7 nhóm hàng lỗ | Cao |
 | 2 | Tìm hiểu nguyên nhân lượng khách bán lẻ giảm từ tháng 5 | Mục 1: hoá đơn/ngày giảm, giá trị/hoá đơn không đổi | Cao |
-| 3 | Tách kế hoạch nhập hàng cho kênh đơn lớn khỏi bán lẻ; xem lại giá sỉ nhóm lời mỏng | Tóm tắt 1, mục 4 | Trung bình |
+| 3 | Tách kế hoạch nhập hàng cho kênh đơn lớn khỏi bán lẻ; xem lại giá bán (lẻ và sỉ) nhóm lời mỏng | Tóm tắt 1, mục 4 | Trung bình |
 | 4 | Ưu tiên không để hết hàng các nhóm ngôi sao; kiểm tra danh sách nghi ngờ hết hàng | Mục 4, mục 7 | Cao |
 | 5 | Nhập hàng Tết theo hệ số số lượng từng nhóm, không theo hệ số doanh thu | Mục 5 | Theo mùa |
-| 6 | Xếp ca theo cao điểm 16h–19h, 7h–9h; nhận hàng 13h–15h | Mục 3 | Thấp, làm ngay được |
+| 6 | Xếp ca theo cao điểm 16h–19h và 8h–12h; nhận hàng 13h–15h | Mục 3 | Thấp, làm ngay được |
 | 7 | Bày bật lửa cạnh quầy thuốc lá, mì cạnh xúc xích | Mục 6 | Thấp, làm ngay được |
-| 8 | Chuẩn hoá cây nhóm hàng trong KiotViet: sửa nhóm của bật lửa, gộp các nhóm trùng nghĩa (mì, kẹo, snack) | Báo cáo chất lượng dữ liệu, mục 6 | Thấp, giúp mọi phân tích sau chính xác hơn |
+| 8 | Chuẩn hoá cây nhóm hàng trong KiotViet: sửa nhóm của bật lửa, gộp các nhóm trùng nghĩa (mì, kẹo, snack) | Báo cáo chất lượng dữ liệu, mục 4; mục 6 | Thấp, giúp mọi phân tích sau chính xác hơn |

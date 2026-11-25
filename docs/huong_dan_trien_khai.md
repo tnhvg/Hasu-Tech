@@ -8,7 +8,7 @@ Các bước dưới đây cần **tài khoản GitHub của bạn**, nên bạn
 1. Gộp nhánh làm việc vào `main`. Vào GitHub → repo `Hasu-Tech` → **Pull requests** → **New pull request**,
    chọn `base: main` ← `compare: claude/ecstatic-shannon-snxl2a` → **Create pull request** → **Merge**.
    (Cũng có thể triển khai thẳng từ nhánh làm việc, nhưng link sẽ đẹp hơn nếu dùng `main`.)
-2. Kiểm tra trên GitHub: thư mục `app/demo_data/` có 23 file `.parquet`, và **không có** file `.xlsx` hay `.duckdb` nào.
+2. Kiểm tra trên GitHub: thư mục `app/demo_data/` có 24 file `.parquet`, và **không có** file `.xlsx` hay `.duckdb` nào.
 
 ## 1. Tạo ứng dụng
 

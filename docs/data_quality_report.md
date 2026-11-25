@@ -82,6 +82,6 @@ Chỉ tính bán lẻ, trên các ngày cửa hàng mở cửa:
 
 - 94,1% mã hàng bán ra dưới 10% số ngày.
 - Chỉ 3 mã hàng bán ra từ 50% số ngày trở lên.
-- Ở cấp nhóm hàng 3: 16/185 nhóm bán ra từ 50% số ngày trở lên.
+- Ở nhóm hàng cấp 3: 16/182 nhóm bán ra từ 50% số ngày trở lên.
 
 → Cần dự báo phân tầng theo mức độ đầy đủ dữ liệu, và dùng mô hình cho nhu cầu gián đoạn (intermittent demand) ở các nhóm thưa.

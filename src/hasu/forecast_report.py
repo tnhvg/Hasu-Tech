@@ -161,30 +161,37 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "không nhìn vào 8 tuần dùng để chấm điểm.\n"
         f"- **Toàn cửa hàng:** sai số dự báo tuần (WMAPE) {pct(lv[('Toàn cửa hàng', champion)])}, "
         f"tức độ chính xác khoảng **{pct(1 - lv[('Toàn cửa hàng', champion)], 0)}**. Mức nền: "
-        f"{pct(lv[('Toàn cửa hàng', baseline)])}.\n"
+        f"{pct(lv[('Toàn cửa hàng', baseline)])}. Lưu ý: ở cấp này trung bình trượt 28 ngày còn tốt hơn "
+        f"mô hình ({pct(lv[('Toàn cửa hàng', 'MovingAvg28')])}).\n"
         f"- **Nhóm hàng cấp 3** (đơn vị ra quyết định nhập hàng): WMAPE {pct(ch['WMAPE'])} so với "
         f"{pct(bl['WMAPE'])} của mức nền, **giảm {pct(1 - ch['WMAPE'] / bl['WMAPE'], 0)} sai số**. "
         f"Độ lệch (bias) {pct(ch['Bias'])}, trong khi mức nền dự báo thừa {pct(bl['Bias'])}.\n"
         f"- **Mô phỏng nhập hàng 8 tuần:** so với nhập theo mức nền, nhập theo mô hình kết hợp phân vị "
         f"giảm **{pct(1 - model_p.units_short / base_p.units_short, 0)} lượng hàng thiếu** và giảm "
-        f"**{pct(1 - model_p.excess_value / base_p.excess_value, 0)} giá trị hàng dư** cùng lúc.\n")
+        f"**{pct(1 - model_p.excess_value / base_p.excess_value, 0)} giá trị hàng dư** cùng lúc. So với "
+        f"cách nhẩm theo trung bình 28 ngày thì hàng thiếu giảm "
+        f"{pct(1 - model_p.units_short / ma_p.units_short, 0)} nhưng giá trị hàng dư tăng "
+        f"{pct(model_p.excess_value / ma_p.excess_value - 1, 0)} (mục 5).\n")
+    n_imp = round(info["share_improved"] * info["n_modelled"])
     add("**Nói thẳng về giới hạn:** chỉ "
-        f"{pct(info['share_improved'], 0)} số nhóm hàng có sai số thấp hơn mức nền khi xét riêng từng "
-        f"nhóm, và mô hình chỉ tốt hơn trung bình trượt 28 ngày một chút ({pct(ch['WMAPE'])} so với "
-        f"{pct(ma['WMAPE'])}). Với dữ liệu thưa như cửa hàng này, không mô hình nào dự báo chính xác từng "
+        f"{pct(info['share_improved'], 0)} số nhóm hàng ({n_imp}/{info['n_modelled']} nhóm) có sai số thấp "
+        f"hơn mức nền khi xét riêng từng nhóm, mô hình chỉ tốt hơn trung bình trượt 28 ngày một chút "
+        f"({pct(ch['WMAPE'])} so với {pct(ma['WMAPE'])}), và ở cấp toàn cửa hàng còn kém trung bình trượt "
+        f"28 ngày. Với dữ liệu thưa như cửa hàng này, không mô hình nào dự báo chính xác từng "
         "nhóm hàng nhỏ theo tuần. Giá trị thực tế nằm ở: (1) dự báo tổng và nhóm lớn đáng tin cậy, "
         "(2) chính sách nhập hàng theo phân vị, (3) giải thích được và tự động hoá được.\n")
 
     add("## 1. Dữ liệu đầu vào và phân loại nhu cầu\n")
     add("- Mục tiêu: **số lượng bán lẻ** theo ngày của từng nhóm hàng cấp 3, đã loại đơn lớn, đơn tổ chức, "
         "xuất nội bộ, hàng trả, hàng tặng (xem báo cáo chất lượng dữ liệu).\n"
-        "- **Lớp ngày thường:** ngày đóng cửa và vùng ±14 ngày quanh Tết được thay bằng trung vị cùng thứ "
+        "- **Lớp ngày thường:** ngày đóng cửa và vùng 28 ngày quanh Tết (từ 14 ngày trước đến 13 ngày sau "
+        "mùng 1) được thay bằng trung vị cùng thứ "
         "trong các tuần lân cận trước khi huấn luyện, để mô hình học đường nền không bị đột biến kéo lệch. "
         "**Lớp ngày lễ:** khi kỳ dự báo rơi vào vùng Tết, dự báo được nhân hệ số số lượng theo ngành hàng "
         "(đo từ Tết 2026, xem báo cáo phân tích kinh doanh).\n"
         "- Phân loại kiểu nhu cầu theo **Syntetos–Boylan** (ADI: khoảng cách trung bình giữa hai ngày có bán; "
         "CV²: độ biến động lượng bán):\n")
-    names = {"erratic": "Erratic: ngày nào cũng bán, lượng dao động",
+    names = {"erratic": "Erratic: bán gần như mọi ngày, lượng dao động",
              "lumpy": "Lumpy: bán gián đoạn, lượng dao động",
              "intermittent": "Intermittent: bán gián đoạn, lượng đều",
              "smooth": "Smooth: bán đều, lượng ổn định",
@@ -223,16 +230,20 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "Bias": comp["Bias"].map(pct),
     })))
     lgb_hold = overall.set_index("model").loc["LightGBM", "WMAPE"]
+    rank_hold = int(comp["WMAPE"].rank().loc[comp["model"] == champion].iloc[0])
+    rank_sel = int(comp["WMAPE_sel"].rank().loc[comp["model"] == champion].iloc[0])
     add(f"\n**Vì sao chọn mô hình kết hợp mà không chọn LightGBM** dù LightGBM có WMAPE thấp nhất trên 8 tuần "
         f"chấm ({pct(lgb_hold)})? Vì quyết định chọn chỉ được dựa trên 4 tuần đầu. Ở đó LightGBM đứng sau "
-        "mô hình kết hợp. Thứ hạng thay đổi giữa hai giai đoạn cho thấy mô hình đơn lẻ không ổn định, trong khi "
-        "mô hình kết hợp tốt đều ở cả hai giai đoạn và gần như không lệch. Chọn lại theo kết quả chấm điểm "
-        "là gian lận dữ liệu kiểm tra.\n")
+        f"mô hình kết hợp. Mô hình được chọn xếp hạng {rank_sel} ở 4 tuần chọn và hạng {rank_hold} ở 8 tuần "
+        f"chấm (kém LightGBM {num((ch['WMAPE'] - lgb_hold) * 100, 1)} điểm %): không phải mô hình tốt nhất trên "
+        "dữ liệu chấm điểm, nhưng có thứ hạng trung bình tốt nhất qua hai giai đoạn và gần như không lệch. Chọn "
+        "lại theo kết quả chấm điểm là dùng dữ liệu kiểm tra để ra quyết định, làm con số báo cáo lạc quan "
+        "hơn thực tế.\n")
     add("**Theo kiểu nhu cầu (8 tuần chấm, WMAPE):**\n")
     piv = by_cls.pivot(index="label", columns="scope", values="WMAPE")
     piv = piv[[c for c in ["erratic", "lumpy", "intermittent"] if c in piv.columns]].sort_values("erratic")
     add(md_table(pd.DataFrame({"Mô hình": piv.index, **{c: piv[c].map(pct).values for c in piv.columns}})))
-    add("\nNhóm erratic (bán hằng ngày, chiếm phần lớn sản lượng) dự báo khá tốt. Nhóm lumpy và intermittent "
+    add("\nNhóm erratic (bán gần như mọi ngày, chiếm phần lớn sản lượng) dự báo khá tốt. Nhóm lumpy và intermittent "
         "rất khó dự báo theo tuần, đúng với lý thuyết: lượng bán của chúng gần như ngẫu nhiên.\n")
 
     add("## 4. Dự báo phân tầng: sai số theo cấp gộp\n")
@@ -243,7 +254,7 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "Trung bình 28 ngày": [pct(lv[(l, 'MovingAvg28')]) for l in LEVEL_ORDER],
         "Mức nền": [pct(lv[(l, baseline)]) for l in LEVEL_ORDER],
     })))
-    add("\nDự báo cấp nhóm hàng 3 được cộng lên các cấp trên (bottom-up), nên luôn khớp nhau. Sai số giảm "
+    add("\nDự báo ở nhóm hàng cấp 3 được cộng lên các cấp trên (bottom-up), nên luôn khớp nhau. Sai số giảm "
         "mạnh khi gộp vì dao động ngẫu nhiên của các nhóm nhỏ triệt tiêu lẫn nhau. Đây là lý do ứng dụng "
         "hiển thị nhãn độ tin cậy cho từng dòng và khuyến nghị dùng dự báo ngành hàng cho kế hoạch vốn.\n")
     add(f"![Kiểm định toàn cửa hàng]({f3})\n")
@@ -259,7 +270,8 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     })))
     add("\nHệ số phân vị được ước lượng bằng **conformal prediction** theo tỷ lệ: từ các tuần đã kiểm định, "
         "lấy phân vị τ của tỷ lệ thực tế/dự báo cho từng kiểu nhu cầu. Phương pháp này không giả định phân "
-        "phối chuẩn, phù hợp với nhu cầu gián đoạn.\n")
+        "phối chuẩn, phù hợp với nhu cầu gián đoạn. Hệ số dùng trong ứng dụng được ước lượng trên cả 12 tuần "
+        "kiểm định sau khi đã chốt mô hình; mô phỏng dưới đây dùng hệ số chỉ ước lượng từ 4 tuần chọn.\n")
     add("**Mô phỏng nhập hàng trên 8 tuần chấm điểm** (hệ số phân vị ước lượng trên 4 tuần chọn, không "
         "nhìn trước):\n")
     add(md_table(pd.DataFrame({
@@ -268,6 +280,7 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "Hàng thiếu": sim["units_short"].map(num),
         "Hàng dư": sim["units_excess"].map(num),
         "Fill rate": sim["fill_rate"].map(pct),
+        "Service level": sim["service_level"].map(pct),
         "Giá trị hàng dư": sim["excess_value"].map(mil),
     })))
     add(f"\n- So với **mức nền**: hàng thiếu giảm {pct(1 - model_p.units_short / base_p.units_short, 0)}, "
@@ -275,6 +288,10 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         f"- So với **trung bình 28 ngày**: hàng thiếu giảm {pct(1 - model_p.units_short / ma_p.units_short, 0)} "
         f"nhưng hàng dư tăng {pct(model_p.excess_value / ma_p.excess_value - 1, 0)}. Đây là đánh đổi có chủ "
         "đích: nhóm ngôi sao được ưu tiên đủ hàng.\n"
+        f"- **Service level** (tỷ lệ tuần × nhóm hàng không thiếu hàng) của chính sách phân vị "
+        f"({pct(model_p.service_level)}) lại thấp hơn mức nền ({pct(base_p.service_level)}): mức nền dự báo "
+        "thừa đều ở mọi nhóm nên ít tuần bị thiếu, đổi lại lượng hàng dư lớn nhất. Chính sách phân vị giảm "
+        "tổng *lượng* hàng thiếu, không giảm số tuần có thiếu hàng.\n"
         "- **Giả định của mô phỏng:** hàng không mang sang tuần sau, nhập đầu tuần và có hàng ngay. Chưa có "
         "dữ liệu tồn kho và thời gian giao hàng thực tế, nên đây là so sánh tương đối giữa các cách nhập, "
         "không phải con số tiết kiệm thật.\n")
@@ -282,7 +299,9 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
 
     add("## 6. Giải thích dự báo bằng SHAP\n")
     add(f"![SHAP]({f4})\n")
-    add("SHAP phân rã mỗi dự báo của LightGBM thành đóng góp của từng yếu tố. LightGBM dùng hàm mục tiêu "
+    add("SHAP phân rã mỗi dự báo của LightGBM thành đóng góp của từng yếu tố. Lưu ý: SHAP chỉ giải thích "
+        "thành phần LightGBM, một trong ba mô hình của tổ hợp, nên phản ánh xu hướng chính của dự báo chứ "
+        "không phân rã chính xác con số đề xuất cuối cùng. LightGBM dùng hàm mục tiêu "
         "Tweedie (hợp với số đếm nhiều số 0), nên dự báo nằm trên thang log. Vì vậy trong ứng dụng, đóng góp "
         "được đổi thành **% tác động**, ví dụ \"ngày Chủ nhật làm dự báo giảm 12%\".\n")
     top = shap_g.head(3)["group"].tolist()
@@ -295,25 +314,30 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
 
     add("## 7. Kịch bản mô phỏng: giảm giá\n")
     add("Ước lượng sơ bộ: trong các ngày có bán, lượng bán ngày có chiết khấu trên 5% so với ngày bình thường "
-        "(đã chuẩn hoá theo mức bán của từng nhóm hàng).\n")
+        "(đã chuẩn hoá theo mức bán của từng nhóm hàng). Mỗi lượt là một nhóm hàng cấp 3 trong một ngày.\n")
     add(md_table(pd.DataFrame({
         "Ngành hàng": price["cat_l1"],
-        "Số ngày có chiết khấu": price["discount_days"],
+        "Số lượt nhóm hàng × ngày có chiết khấu": price["discount_days"],
         "Chiết khấu TB": price["avg_depth"].map(lambda v: pct(v) if pd.notna(v) else ""),
         "Lượng bán / ngày thường": price["uplift_ratio"].map(lambda v: num(v, 2) + " lần" if pd.notna(v) else ""),
-        "Đủ tin cậy (≥ 30 ngày)": price["reliable"].map({True: "Có", False: "Không"}),
+        "Đủ tin cậy (≥ 30 lượt)": price["reliable"].map({True: "Có", False: "Không"}),
     })))
     add("\n**Cảnh báo quan trọng:** con số này **có thể bị phóng đại**. Ở cửa hàng tạp hoá, giá thấp hơn "
         "giá phổ biến thường do khách **mua theo thùng hoặc lốc** (giá sỉ). Khi đó mua nhiều mới được giá "
         "thấp, chứ không phải giá thấp khiến khách mua nhiều. Dữ liệu hiện tại chưa tách được hai hiệu ứng "
         "này. Ứng dụng hiển thị kết quả kịch bản kèm cảnh báo, và nên coi đó là **mức trần**.\n")
 
-    add("## 8. Vòng lặp cải thiện tự động\n")
+    add("## 8. Vòng lặp tự đánh giá và cải thiện\n")
     add("Mỗi lần chạy dự báo, hệ thống lưu **snapshot** (bảng `fc_snapshots`). Khi cửa hàng nạp file "
         "KiotViet mới trên ứng dụng: dữ liệu được ghép và khử trùng lặp, snapshot cũ được đối chiếu với thực "
         "tế, tính WMAPE, Bias và tracking signal. Nếu sai số vượt **1,3 lần** sai số kiểm định, hoặc tracking "
         "signal vượt 4, hệ thống cảnh báo suy giảm chất lượng và chạy lại mô hình. Trang \"Lịch sử và đánh "
         "giá\" hiện 8 tuần kiểm định được ghi lại theo đúng cơ chế này để minh hoạ.\n")
+    add("**Phạm vi hiện tại:** khi chạy trên máy của cửa hàng, cơ sở dữ liệu được lưu lâu dài nên dữ liệu mới "
+        "được ghép với dữ liệu cũ và đối chiếu với các snapshot trước. Trên bản triển khai công khai, dữ liệu "
+        "tải lên chỉ dùng trong một phiên làm việc, nên vòng lặp chỉ phát huy khi nạp nhiều file trong cùng "
+        "phiên. Vòng lặp mới được minh hoạ bằng dữ liệu kiểm định, chưa được kiểm chứng trên dữ liệu thật "
+        "phát sinh sau ngày 30/06/2026.\n")
 
     add("## 9. Giới hạn\n")
     add("| Giới hạn | Hướng xử lý |\n|---|---|\n"
@@ -321,6 +345,8 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "| Không có tồn kho, thời gian giao hàng | Mô phỏng chỉ so sánh tương đối; cần dữ liệu tồn kho để tính tồn kho an toàn |\n"
         "| Hết hàng chỉ suy đoán từ dữ liệu bán | Ứng dụng có danh sách để chủ cửa hàng xác nhận |\n"
         "| Dữ liệu rất thưa ở cấp nhóm nhỏ | Nhãn độ tin cậy; khuyến nghị dùng dự báo cấp cao hơn |\n"
+        "| Mô hình chỉ tốt hơn trung bình 28 ngày một chút; ở cấp toàn cửa hàng còn kém hơn | Thử chọn mô hình theo kiểu nhu cầu; dùng song song trung bình 28 ngày cho kế hoạch vốn tổng |\n"
+        "| Vòng lặp tự đánh giá chưa kiểm chứng trên dữ liệu mới | Chạy với dữ liệu từ tháng 7/2026 |\n"
         "| Chưa thử được Chronos (mạng chặn Hugging Face) | Code đã sẵn sàng, tự chạy khi tải được mô hình |\n")
     return "\n".join(out)
 

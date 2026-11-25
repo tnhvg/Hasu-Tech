@@ -19,7 +19,7 @@ from hasu.config import DB_PATH  # noqa: E402
 DEMO_DIR = ROOT / "app" / "demo_data"
 
 CLASS_LABELS = {
-    "erratic": "Bán hằng ngày, dao động",
+    "erratic": "Bán gần như mọi ngày, dao động",
     "lumpy": "Gián đoạn, dao động",
     "intermittent": "Gián đoạn, đều",
     "smooth": "Đều đặn",

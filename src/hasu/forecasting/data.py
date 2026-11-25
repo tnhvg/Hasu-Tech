@@ -2,7 +2,7 @@
 
 Kiến trúc hai lớp (theo kế hoạch dự án):
   - Lớp ngày thường: mô hình học trên chuỗi đã thay các ngày bất thường
-    (ngày đóng cửa, vùng ±14 ngày quanh Tết) bằng giá trị nội suy, để đường nền
+    (ngày đóng cửa, vùng quanh Tết từ 14 ngày trước tới 13 ngày sau mùng 1) bằng giá trị nội suy, để đường nền
     không bị kéo lệch bởi các đột biến ngắn hạn.
   - Lớp ngày lễ: khi kỳ dự báo rơi vào vùng lễ, nhân thêm hệ số mùa vụ đã đo
     (xem holiday_factors()).
