@@ -59,7 +59,11 @@ def tet_offset(ds: pd.Series) -> pd.Series:
 
 def impute_abnormal_days(df: pd.DataFrame, max_weeks: int = 6) -> pd.DataFrame:
     """Lớp ngày thường: thay ngày đóng cửa và vùng Tết bằng trung vị của cùng thứ
-    trong các tuần lân cận (tối đa ±max_weeks tuần) không bị thay thế.
+    trong các tuần TRƯỚC đó (tối đa max_weeks tuần) không bị thay thế.
+
+    Chỉ nhìn về quá khứ để khi kiểm định trượt, giá trị nội suy của một ngày
+    không dùng thông tin sau mốc cắt. Chỉ khi chuỗi chưa có tuần nào trước đó
+    (ngay đầu chuỗi) mới dùng các tuần sau; các ngày này nằm trước mọi mốc cắt.
 
     Thêm cột y (chuỗi dùng để huấn luyện) và is_imputed.
     """
@@ -71,9 +75,12 @@ def impute_abnormal_days(df: pd.DataFrame, max_weeks: int = 6) -> pd.DataFrame:
         clean = np.where(mask, np.nan, y)
         filled = clean.copy()
         for i in np.flatnonzero(mask):
-            neigh = [clean[i + 7 * k] for k in range(-max_weeks, max_weeks + 1)
-                     if k != 0 and 0 <= i + 7 * k < len(clean) and not np.isnan(clean[i + 7 * k])]
-            filled[i] = np.median(neigh) if neigh else 0.0
+            past = [clean[i - 7 * k] for k in range(1, max_weeks + 1)
+                    if i - 7 * k >= 0 and not np.isnan(clean[i - 7 * k])]
+            if not past:  # đầu chuỗi: chưa có tuần nào trước đó
+                past = [clean[i + 7 * k] for k in range(1, max_weeks + 1)
+                        if i + 7 * k < len(clean) and not np.isnan(clean[i + 7 * k])]
+            filled[i] = np.median(past) if past else 0.0
         g["y"] = filled
         g["is_imputed"] = mask
         out.append(g)

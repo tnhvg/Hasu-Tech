@@ -204,5 +204,11 @@ with tabs[7]:
                                                                   min_value=0, max_value=1),
                 "reserve_qty": st.column_config.NumberColumn("Dự phòng gợi ý", format="%.0f"),
                 "last_bulk_date": "Lần mua sỉ gần nhất"})
+        if lib.has_table("mart_bulk_backtest"):
+            b = lib.q("SELECT metric, value FROM mart_bulk_backtest").set_index("metric")["value"]
+            lib.alert("info", f"<b>Kiểm chứng ngoài mẫu:</b> học quy tắc trên {lib.num(b['train_months'])} tháng đầu, "
+                      f"kiểm tra trên 3 tháng cuối: {lib.num(b['frequent_skus_reordered'])}/{lib.num(b['frequent_skus'])} "
+                      f"mã thường xuyên có đơn sỉ trở lại; dự phòng đáp ứng trọn "
+                      f"{lib.pct(b['share_purchases_fully_covered'], 0)} số lần mua sỉ của các mã này.")
         lib.note("Lượng nhập = dự báo bán lẻ + dự phòng gợi ý (chỉ cho mã thường xuyên). Mã thỉnh thoảng và một lần: "
                  "nhập khi khách đặt trước. Ngưỡng \"một nửa số tháng\" là lựa chọn của người phân tích.")

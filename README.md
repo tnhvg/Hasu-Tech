@@ -13,7 +13,7 @@ chiếu dự báo với thực tế khi có dữ liệu mới. Xây dựng trên
 
 ## Bài toán kinh doanh
 
-Chủ cửa hàng BHS Đại Phúc phải tự quyết định nhập hàng cho 2.515 mã thuộc 188 nhóm hàng cấp 3 mà chưa có công cụ dự báo nào hỗ trợ, trong khi 94% số mã có bán lẻ chỉ phát sinh bán ra dưới 10% số ngày nên không thể nhẩm ra quy luật. Dữ liệu bán hàng hiện cũng không ghi nhận tồn kho, nên thiệt hại do nhập sai không được đo trực tiếp ở bất kỳ đâu.
+Chủ cửa hàng BHS Đại Phúc phải tự quyết định nhập hàng cho 2.515 mã thuộc 180 nhóm hàng cấp 3 có bán lẻ mà chưa có công cụ dự báo nào hỗ trợ, trong khi 94% số mã có bán lẻ chỉ phát sinh bán ra dưới 10% số ngày nên không thể nhẩm ra quy luật. Dữ liệu bán hàng hiện cũng không ghi nhận tồn kho, nên thiệt hại do nhập sai không được đo trực tiếp ở bất kỳ đâu.
 
 Nhập thiếu thì mất doanh thu của lần khách hỏi mua, và có thể mất luôn khách sang cửa hàng khác. Nhập dư thì vốn nằm chết trong kho, hàng cận hạn phải đổi trả hoặc bán tháo, và với nhóm hàng có hạn sử dụng ngắn thì phần dư gần như mất trắng.
 
@@ -29,29 +29,36 @@ Thành công được đo bằng ba chỉ tiêu:
 
 | Chỉ tiêu (8 tuần kiểm định, đơn vị tuần) | Mô hình | Trung bình 28 ngày | Mức nền |
 |---|---|---|---|
-| WMAPE toàn cửa hàng | 15,7% (chính xác ~84%) | **13,2%** | 19,2% |
-| WMAPE ngành hàng cấp 1 | **24,1%** | 24,8% | 39,1% |
-| WMAPE nhóm hàng cấp 3 | **55,2%** | 57,9% | 72,6% |
-| Tỷ lệ nhóm hàng có sai số thấp hơn mức nền | 50% (53/105 nhóm) | – | – |
-| Mô phỏng nhập hàng: lượng hàng thiếu / giá trị hàng dư của mô hình + phân vị, so với từng cách | – | −15% / **+26%** | **−11% / −20%** |
+| WMAPE toàn cửa hàng | 14,5% (chính xác ~85%) | **14,3%** | 23,8% |
+| WMAPE ngành hàng cấp 1 | **29,1%** | 29,9% | 43,4% |
+| WMAPE nhóm hàng cấp 3 | **54,2%** | 56,4% | 73,1% |
+| Chênh lệch có ý nghĩa thống kê? (Wilcoxon, theo nhóm hàng) | – | Không (p = 0,90) | Có (p = 0,001) |
+| Tỷ lệ nhóm hàng có sai số thấp hơn mức nền | 53% (46/87 nhóm) | – | – |
+| Mô phỏng 8 tuần có chuyển tồn: tổng chi phí (lợi nhuận mất + hàng hỏng + chi phí vốn) | **6,8 triệu đ** | 7,9 triệu đ | 22,7 triệu đ |
+
+Mọi tham số dùng trong kiểm định và mô phỏng (nhóm đủ dữ liệu, kiểu nhu cầu, phân nhóm biên lợi nhuận, giá vốn,
+nhận diện đơn lớn, nội suy ngày đóng cửa) chỉ lấy từ dữ liệu **trước mốc cắt**, nên không có rò rỉ dữ liệu tương lai.
 
 **Nói thẳng về giới hạn:** ở cấp nhóm hàng nhỏ theo tuần, nhu cầu gần như ngẫu nhiên. Mô hình chỉ tốt hơn trung
-bình trượt 28 ngày một chút (55,2% so với 57,9%), chỉ thắng mức nền ở một nửa số nhóm, và ở cấp toàn cửa hàng
-trung bình trượt 28 ngày còn tốt hơn mô hình. So với trung bình 28 ngày, chính sách nhập theo phân vị giảm hàng
-thiếu nhưng làm tăng hàng dư: đây là đánh đổi có chủ đích để nhóm hàng ngôi sao luôn đủ hàng. Giá trị thực tế nằm ở dự
+bình trượt 28 ngày một chút (54,2% so với 56,4%) và **không có ý nghĩa thống kê**, chỉ thắng mức nền ở khoảng một
+nửa số nhóm, và ở cấp toàn cửa hàng trung bình trượt 28 ngày còn nhỉnh hơn. Mức giảm 26% so với mức nền một phần do
+lượng khách giảm đúng trong 8 tuần chấm điểm. Khi mô phỏng có chuyển tồn kho, chính sách nhập theo phân vị giảm
+14% hàng thiếu và 13% tổng chi phí so với cách nhẩm theo trung bình 28 ngày. Giá trị thực tế nằm ở dự
 báo cấp cao đáng tin, chính sách nhập hàng theo phân vị, và khả năng giải thích, tự động hoá. Chi tiết trong
 [báo cáo mô hình](docs/forecast_report.md).
 
 ### Phát hiện kinh doanh nổi bật ([báo cáo đầy đủ](docs/business_analysis.md))
 
-- **1,8% số hoá đơn (đơn lớn, đơn công ty) mang về 36% doanh thu**, biên lợi nhuận 5,6% so với 8,4% của bán lẻ.
+- **1,7% số hoá đơn (đơn lớn, đơn công ty) mang về 36% doanh thu**, biên lợi nhuận 7,1% so với 9,4% của bán lẻ.
   Đây là một kênh riêng, cần kế hoạch nhập và giá sỉ riêng.
 - **41 mã hàng được mua sỉ thường xuyên** (có đơn sỉ ở ít nhất 5/10 tháng), phần lớn là nước uống, cà phê, trà, giấy
-  và đồ vệ sinh; ở 36 mã, hơn một nửa số lượng bán ra đi qua kênh sỉ. Mô hình chỉ dự báo bán lẻ, nên các mã này được
-  gợi ý giữ thêm khoảng một đơn sỉ điển hình làm dự phòng (tổng khoảng 13,5 triệu đ vốn).
-- **Lượng khách bán lẻ giảm 26% từ tháng 5/2026 (từ 47 xuống 34 hoá đơn/ngày)** trong khi giá trị mỗi hoá đơn không đổi: vấn đề nằm ở lưu lượng khách.
-- **7 nhóm hàng cấp 2 bán lỗ**, tập trung ở sữa và dầu ăn. Riêng một mã dầu ăn bán thấp hơn giá vốn ghi nhận khoảng 29%.
-- **Tết: doanh thu ×1,76 nhưng số lượng chỉ ×1,13.** Nhập hàng Tết theo hệ số doanh thu sẽ dư gần gấp rưỡi.
+  và đồ vệ sinh; ở 35 mã, hơn một nửa số lượng bán ra đi qua kênh sỉ. Mô hình chỉ dự báo bán lẻ, nên các mã này được
+  gợi ý giữ thêm khoảng một đơn sỉ điển hình làm dự phòng (tổng khoảng 13,5 triệu đ vốn). Kiểm chứng ngoài mẫu (học
+  7 tháng, kiểm tra 3 tháng cuối): 24/25 mã được chọn có đơn sỉ trở lại, dự phòng đáp ứng trọn 75% số lần mua sỉ.
+- **Lượng khách bán lẻ giảm 26% từ tháng 5/2026 (từ 47 xuống 34 hoá đơn/ngày)** trong khi giá trị mỗi hoá đơn không đổi: vấn đề nằm ở lưu lượng khách. Sụt giảm tập trung ở khung 16h–21h (−42%); không thấy dấu hiệu khách lẻ chuyển sang mua đơn lớn.
+- **6 nhóm hàng cấp 2 bán lỗ**, nặng nhất là dầu ăn (một mã bán thấp hơn giá vốn ghi nhận khoảng 29%). 103 dòng có
+  giá vốn lớn hơn 3 lần giá bán (nhập sai đơn vị, ví dụ giá cả lốc gán cho 1 hộp) được loại khỏi tính lợi nhuận.
+- **Tết: doanh thu ×1,74 nhưng số lượng chỉ ×1,12.** Nhập hàng Tết theo hệ số doanh thu sẽ dư gần gấp rưỡi.
 - **Bật lửa bị xếp nhầm vào "dụng cụ bếp"**, và là món mua kèm thuốc lá mạnh nhất (lift 8,3).
 
 | | |
@@ -102,7 +109,7 @@ python -m hasu.business_report   # báo cáo phân tích kinh doanh + biểu đ�
 python -m hasu.forecasting.run   # kiểm định, dự báo 28 ngày, đề xuất nhập, SHAP (~1 phút)
 python -m hasu.forecast_report   # báo cáo mô hình dự báo
 streamlit run app/streamlit_app.py
-pytest                           # 27 bài kiểm thử
+pytest                           # 33 bài kiểm thử
 ```
 
 Không có file KiotViet? Chạy thẳng `streamlit run app/streamlit_app.py`, ứng dụng sẽ dùng dữ liệu demo.
@@ -130,7 +137,7 @@ docs/                báo cáo, biểu đồ, ảnh chụp, hướng dẫn, mock
 | Không có dữ liệu tồn kho, thời gian giao hàng | Cần bổ sung để tính tồn kho an toàn; đề xuất hiện chưa trừ tồn |
 | Hết hàng chỉ suy đoán từ dữ liệu bán | Danh sách để chủ cửa hàng xác nhận |
 | Ảnh hưởng giảm giá lẫn với mua theo thùng | Kịch bản giảm giá hiển thị như mức trần, kèm cảnh báo |
-| Chưa chạy được Chronos (mạng môi trường thử nghiệm chặn Hugging Face) | Code sẵn sàng: `pip install -e ".[chronos]"` |
+| Chưa chạy được Chronos: hệ thống được chạy trên máy chủ đám mây của công cụ Claude Code, nơi không cài được PyTorch và không tải được trọng số từ Hugging Face | Chạy trên máy có mạng: `pip install -e ".[chronos]"` rồi `python -m hasu.forecasting.run` |
 | Mô hình chỉ nhỉnh hơn trung bình 28 ngày; ở cấp toàn cửa hàng còn kém hơn | Chọn mô hình theo kiểu nhu cầu; dùng song song trung bình 28 ngày cho kế hoạch vốn tổng |
 | Một cửa hàng, chưa có đăng nhập; bản công khai chỉ giữ dữ liệu tải lên trong một phiên | Mở rộng: tài khoản và cơ sở dữ liệu riêng từng doanh nghiệp, mô hình toàn cục đa cửa hàng |
 

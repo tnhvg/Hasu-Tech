@@ -153,6 +153,11 @@ def _rest_of_report(con, out: list[str], total_rev: float, d0) -> str:
                'Bỏ hậu tố để gộp lịch sử bán của bản cũ và bản mới; giữ cờ sku_deleted'
         FROM stg_sales_lines
         UNION ALL
+        SELECT 'Giá vốn nghi sai đơn vị (giá vốn > 3 lần giá bán)', count(*) FILTER (is_cost_suspect),
+               sum(line_revenue) FILTER (is_cost_suspect),
+               'Gắn cờ is_cost_suspect; không tính lợi nhuận; cần đối chiếu hoá đơn nhập'
+        FROM stg_sales_lines
+        UNION ALL
         SELECT 'Bán chịu (ghi chú "nợ", "chưa tt")', count(*) FILTER (is_credit_sale),
                sum(line_revenue) FILTER (is_credit_sale),
                'Vẫn là nhu cầu thật; gắn cờ is_credit_sale'
@@ -177,10 +182,14 @@ def _rest_of_report(con, out: list[str], total_rev: float, d0) -> str:
         FROM stg_sales_lines""")
     fixed = _one(con, """
         SELECT count(*) FROM raw_sales_lines
-        WHERE trim(category_path) IN ('Gạo', 'Dưỡng Thể', 'Dung Dịch Vệ Sinh', 'Bánh{DEL}', 'chưa khai báo')""")[0]
+        WHERE trim(category_path) IN ('Gạo', 'Dưỡng Thể', 'Dung Dịch Vệ Sinh', 'Bánh{DEL}', 'chưa khai báo',
+                                      'Chăm sóc cá nhân>>Gây Hại Sức Khỏe>>Thuốc Lá',
+                                      'Sữa, sản phẩm từ sữa>>Sữa nước các loại>>Sữa tươi 1',
+                                      'Đồ uống>>Nước ngọt')""")[0]
     add(f"- Sau làm sạch: **{cat[0]} nhóm cấp 1, {cat[1]} nhóm cấp 2, {cat[2]} nhóm cấp 3**.\n"
-        f"- {_num(fixed)} dòng có nhóm hàng không chuẩn (nằm sai cấp, đã bị xoá, \"chưa khai báo\") "
-        "được ánh xạ về đúng cây nhóm hàng.\n"
+        f"- {_num(fixed)} dòng có nhóm hàng không chuẩn (nằm sai cấp, đã bị xoá, \"chưa khai báo\", "
+        "thuốc lá bị xếp vào ngành chăm sóc cá nhân, nhóm trùng \"Sữa tươi 1\", nhóm thiếu cấp 3 "
+        "\"Đồ uống>>Nước ngọt\") được ánh xạ về đúng cây nhóm hàng.\n"
         f"- {_num(cat[3])} dòng chỉ có 1–2 cấp: cấp còn thiếu được lấy theo cấp trên "
         "(ví dụ `Thực phẩm đông mát>>Kem` → cấp 3 = `Kem`).\n")
 

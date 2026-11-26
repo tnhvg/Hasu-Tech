@@ -18,9 +18,10 @@ DEMO_DIR = ROOT / "app" / "demo_data"
 DEMO_TABLES = [
     "dim_date", "fct_retail_daily_category", "mart_daily_traffic", "mart_monthly", "mart_sku_abc", "mart_hour_weekday",
     "mart_category_margin", "mart_tet_effect", "mart_basket_rules", "mart_stockout_suspects", "mart_bulk_sku",
+    "mart_bulk_backtest", "mart_channel_monthly",
     "fc_profile", "fc_metrics", "fc_metrics_levels", "fc_backtest_weekly", "fc_simulation",
     "fc_ratio_quantiles", "fc_forecast_daily", "fc_order_plan", "fc_sku_allocation",
-    "fc_shap_global", "fc_shap_local", "fc_price_response", "fc_run_info", "fc_snapshots",
+    "fc_shap_global", "fc_shap_local", "fc_price_response", "fc_run_info", "fc_snapshots", "fc_significance",
 ]
 
 # Cột không được phép xuất hiện trong dữ liệu demo

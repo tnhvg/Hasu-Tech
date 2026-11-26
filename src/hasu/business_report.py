@@ -194,6 +194,8 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     rules = q("SELECT * FROM mart_basket_rules")
     stock = q("SELECT * FROM mart_stockout_suspects")
     bulk = q("SELECT * FROM mart_bulk_sku")
+    bbt = q("SELECT metric, value FROM mart_bulk_backtest").set_index("metric")["value"]
+    chm = q("SELECT * FROM mart_channel_monthly ORDER BY year_month").set_index("year_month")
     daily = q("SELECT date, revenue, quantity, n_invoices FROM mart_daily_traffic ORDER BY 1")
     daily["date"] = pd.to_datetime(daily["date"])
     closed = pd.to_datetime(q("SELECT date FROM dim_date WHERE NOT is_open")["date"])
@@ -238,6 +240,9 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     pre = tet[(tet["tet_window"] == "Trước Tết") & (tet["cat_l1"] != "Toàn cửa hàng")
               & (tet["rev_per_day"] > 50_000)].sort_values("rev_factor", ascending=False)
 
+    cost_bad = q("""
+        SELECT count(*) AS n, sum(quantity * (unit_price - unit_cost)) AS loss, sum(line_revenue) AS rev
+        FROM stg_sales_lines WHERE is_cost_suspect""").iloc[0]
     oil = q("""
         SELECT product_name, sum(quantity) AS qty, median(unit_price) AS price,
                median(unit_cost_filled) AS cost, sum(line_profit) AS profit
@@ -306,6 +311,18 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         f"tháng Tết), rồi giảm còn {mil(late)}/ngày trong tháng 5–6. Số hoá đơn mỗi ngày giảm tương ứng "
         "trong khi giá trị mỗi hoá đơn không đổi, nên sụt giảm đến từ **lượng khách**. Dữ liệu bán hàng "
         "không cho biết lý do (mùa hè, đối thủ mới, thay đổi giờ mở cửa...): **cần chủ cửa hàng xác nhận**.\n")
+    e_, l_ = chm.loc["2025-09":"2026-04"].drop("2026-02"), chm.loc["2026-05":"2026-06"]
+    drop = lambda col: l_[col].mean() / e_[col].mean() - 1  # noqa: E731
+    add("**Khách lẻ giảm có phải vì chuyển sang mua đơn lớn?** Số đơn lớn và đơn tổ chức tăng từ "
+        f"{num(chm.loc['2025-09':'2025-11', 'bulk_orders'].mean())} đơn/tháng (tháng 9–11/2025) lên "
+        f"{num(chm.loc['2026-01':'2026-04', 'bulk_orders'].mean())} đơn/tháng ngay từ tháng 1–4/2026, tức "
+        "trước khi khách lẻ giảm; trong tháng 5–6 số đơn lớn gần như giữ nguyên "
+        f"({num(l_['bulk_orders'].mean())} đơn/tháng). Số hoá đơn bán lẻ từ 500 nghìn đồng trở lên cũng không giảm "
+        "bất thường, nên không thấy dấu hiệu khách lẻ mua gom vượt ngưỡng đơn lớn. Sụt giảm tập trung ở khung "
+        f"**chiều tối 16h–21h ({pct(drop('retail_evening_per_day'), 0)})**, còn buổi sáng chỉ "
+        f"{pct(drop('retail_morning_per_day'), 0)} và buổi trưa {pct(drop('retail_midday_per_day'), 0)}. "
+        "Điều này gợi ý nguyên nhân bên ngoài tác động tới khách mua sau giờ làm (cửa hàng mới gần đó, thay đổi "
+        "giờ mở cửa, mùa hè...), cần chủ cửa hàng xác nhận.\n")
     add("Biên lợi nhuận bán lẻ tụt thấp trong tháng 2–4/2026. Các khoản lỗ lớn nhất trong giai đoạn này "
         "nằm ở giặt giũ (tháng 2), thực phẩm ăn liền (tháng 3–4) và sữa chua: phù hợp với việc bán xả "
         "hàng cận hạn hoặc giá vốn nhập tăng mà giá bán chưa điều chỉnh.\n")
@@ -376,14 +393,19 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         f"- {len(thin)} nhóm \"lời mỏng\" như gia vị, vệ sinh nhà cửa, giặt giũ chiếm "
         f"{pct(thin['revenue_share'].sum(), 0)} doanh thu nhưng biên rất thấp ở cả bán lẻ lẫn đơn lớn. "
         "Nên xem lại giá bán (lẻ và sỉ) cho các nhóm này.\n"
-        f"- Ngành **sữa** là điểm đáng lo nhất: {int((milk['margin'] < 0).sum())}/{len(milk)} nhóm cấp 2 "
-        "đang lỗ (sữa bột biên "
-        f"{pct(milk.loc[milk['cat_l2'] == 'Sữa bột', 'margin'].iloc[0]) if (milk['cat_l2'] == 'Sữa bột').any() else 'n/a'}); "
-        f"chỉ {', '.join(milk.loc[milk['margin'] >= 0, 'cat_l2'].str.lower())} còn có lãi. "
-        "Sữa có hạn dùng ngắn, nên một khả năng là xả hàng cận hạn. Đây chính là nhóm cần dự báo sát "
-        "nhất để giảm hàng dư.\n"
-        "- **Hạn chế:** giá vốn lấy từ KiotViet tại thời điểm bán. Nếu giá vốn nhập sai (ví dụ nhập theo "
-        "thùng nhưng bán theo chai), biên sẽ sai. Các nhóm thua lỗ cần chủ cửa hàng đối chiếu hoá đơn nhập.\n")
+        f"- **{loss.iloc[0]['cat_l2']}** lỗ nặng nhất ({mil(loss.iloc[0]['profit'])}), chủ yếu do một mã dầu "
+        "đậu nành can 5 lít bán thấp hơn giá vốn ghi nhận. Ngành **sữa** có "
+        f"{int((milk['margin'] < 0).sum())}/{len(milk)} nhóm cấp 2 đang lỗ nhẹ; chỉ "
+        f"{', '.join(milk.loc[milk['margin'] >= 0, 'cat_l2'].str.lower())} còn có lãi. Sữa có hạn dùng ngắn, "
+        "nên một khả năng là xả hàng cận hạn: đây là nhóm cần dự báo sát để giảm hàng dư.\n"
+        f"- **{num(cost_bad.n)} dòng có giá vốn lớn hơn 3 lần giá bán** (ví dụ kẹo mút bán 1.000 đ nhưng giá vốn "
+        "ghi 52.920 đ là giá cả túi 58 que; sữa Milo bán theo hộp nhưng giá vốn ghi theo lốc 4 hộp) được coi là "
+        f"nhập sai đơn vị và không tính vào lợi nhuận. Nếu tính, chúng tạo ra khoản \"lỗ\" giả "
+        f"{mil(-cost_bad.loss)} trên doanh thu chỉ {mil(cost_bad.rev)}, làm sữa bột và sữa nước trông như đang lỗ "
+        "nặng.\n"
+        "- **Hạn chế:** giá vốn lấy từ KiotViet tại thời điểm bán. Giá vốn sai ở mức nhỏ hơn (ví dụ dầu ăn "
+        "1,4 lần giá bán) không phát hiện được bằng quy tắc trên, nên các nhóm thua lỗ cần chủ cửa hàng đối "
+        "chiếu hoá đơn nhập trước khi quyết định.\n")
 
     # ---- 5. Tết ----
     add("## 5. Ảnh hưởng của Tết\n")
@@ -515,6 +537,16 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         f"- Giữ sẵn một đơn sỉ điển hình (trung vị số lượng mỗi lần mua) cho {len(freq)} mã này cần khoảng "
         f"**{mil(freq['reserve_value'].sum())} vốn** tính theo giá vốn: một khoản nhỏ so với doanh thu sỉ "
         f"{mil(bulk['bulk_revenue'].sum())} trong kỳ.\n\n"
+        f"- **Kiểm chứng ngoài mẫu:** áp đúng quy tắc trên cho {num(bbt['train_months'])} tháng đầu, rồi kiểm tra "
+        f"trên 3 tháng cuối. Quy tắc chọn ra {num(bbt['frequent_skus'])} mã thường xuyên (dự phòng "
+        f"{mil(bbt['reserve_value'])}); {num(bbt['frequent_skus_reordered'])}/{num(bbt['frequent_skus'])} mã thật sự "
+        f"có đơn sỉ trở lại. Lượng dự phòng đáp ứng trọn {pct(bbt['share_purchases_fully_covered'], 0)} số lần mua "
+        f"sỉ và {pct(bbt['share_qty_covered'], 0)} số lượng của các mã này. Tuy vậy, các mã thường xuyên chỉ chiếm "
+        f"{pct(bbt['share_bulk_qty_of_frequent'], 0)} tổng số lượng sỉ: phần lớn số lượng sỉ đến từ các đơn lớn "
+        "một lần, vẫn phải nhập theo đơn đặt trước.\n"
+        "- **Đơn sỉ ở đây không chỉ là bán buôn:** một hoá đơn được xếp vào đơn lớn khi cả hoá đơn từ 100 sản "
+        "phẩm hoặc 3 triệu đồng trở lên, nên các món mua ít đi kèm (2 hộp trà, 3 can nước rửa) của văn phòng, "
+        "cơ quan cũng nằm trong đó. Với những món này lượng dự phòng rất nhỏ, gần như không ảnh hưởng tới vốn.\n\n"
         "**Cách dùng:** lượng nhập = dự báo bán lẻ (ứng dụng) + dự phòng sỉ cho các mã thường xuyên. Mã "
         "thỉnh thoảng và một lần không giữ dự phòng, chỉ nhập khi khách đặt trước. Đơn sỉ lớn bất thường "
         "(số lượng lớn nhất có thể gấp nhiều lần trung vị) vẫn cần khách báo trước vài ngày.\n\n"
@@ -524,7 +556,7 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     # ---- Khuyến nghị ----
     add("## Khuyến nghị tổng hợp\n")
     add("| # | Khuyến nghị | Căn cứ | Ưu tiên |\n|---|---|---|---|\n"
-        f"| 1 | Đối chiếu giá vốn và giá bán các mã đang bán dưới giá vốn, bắt đầu với dầu ăn HASUKOOK và sữa bột | Mục 4: {len(loss)} nhóm hàng lỗ | Cao |\n"
+        f"| 1 | Đối chiếu giá vốn và giá bán các mã đang bán dưới giá vốn, bắt đầu với dầu ăn HASUKOOK; sửa {num(cost_bad.n)} dòng giá vốn nhập sai đơn vị trong KiotViet | Mục 4: {len(loss)} nhóm hàng lỗ | Cao |\n"
         "| 2 | Tìm hiểu nguyên nhân lượng khách bán lẻ giảm từ tháng 5 | Mục 1: hoá đơn/ngày giảm, giá trị/hoá đơn không đổi | Cao |\n"
         "| 3 | Tách kế hoạch nhập hàng cho kênh đơn lớn khỏi bán lẻ; xem lại giá bán (lẻ và sỉ) nhóm lời mỏng | Tóm tắt 1, mục 4 | Trung bình |\n"
         "| 4 | Ưu tiên không để hết hàng các nhóm ngôi sao; kiểm tra danh sách nghi ngờ hết hàng | Mục 4, mục 7 | Cao |\n"

@@ -77,18 +77,40 @@ def evaluate_snapshots(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
 
 
 def drift_status(history: pd.DataFrame, reference_wmape: float) -> dict:
-    """Quyết định giữ hay huấn luyện lại mô hình dựa trên tuần đối chiếu gần nhất."""
+    """Đánh giá MỌI tuần đã đối chiếu, theo đúng thứ tự thời gian.
+
+    Mỗi tuần, khi có thực tế, hệ thống kiểm tra: sai số tuần đó có vượt
+    DRIFT_FACTOR lần sai số kiểm định không, và tracking signal tích luỹ tới tuần
+    đó có vượt ±TS_LIMIT không. Tuần nào vượt thì được đánh dấu "kích hoạt cảnh
+    báo" (lúc đó hệ thống huấn luyện lại). Trạng thái hiện tại dựa trên tuần mới
+    nhất, kèm danh sách các tuần đã từng kích hoạt để người dùng không bỏ sót.
+    """
     if history.empty:
-        return {"status": "Chưa có tuần nào đủ dữ liệu để đối chiếu", "retrain": False}
-    last = history.iloc[-1]
-    e = history["actual_total"] - history["forecast_total"]
-    ts = e.sum() / e.abs().mean() if e.abs().mean() else 0.0
-    if last["wmape"] > reference_wmape * DRIFT_FACTOR:
-        return {"status": f"Cảnh báo: sai số tuần gần nhất {last['wmape']:.0%} vượt ngưỡng "
-                          f"{reference_wmape * DRIFT_FACTOR:.0%}. Nên huấn luyện lại.",
-                "retrain": True, "tracking_signal": ts}
-    if abs(ts) > TS_LIMIT:
-        return {"status": f"Cảnh báo: mô hình lệch hệ thống (tracking signal {ts:.1f}).",
-                "retrain": True, "tracking_signal": ts}
-    return {"status": "Trong ngưỡng: giữ mô hình, huấn luyện lại theo chu kỳ.", "retrain": False,
-            "tracking_signal": ts}
+        return {"status": "Chưa có tuần nào đủ dữ liệu để đối chiếu", "retrain": False,
+                "flagged_weeks": [], "tracking_signal": 0.0}
+    h = history.reset_index(drop=True)
+    e = h["forecast_total"] - h["actual_total"]          # cùng dấu với Bias: > 0 là dự báo thừa
+    mad = e.abs().expanding().mean()
+    ts = (e.cumsum() / mad.where(mad > 0)).fillna(0.0)
+    limit = reference_wmape * DRIFT_FACTOR
+    over = h["wmape"] > limit
+    biased = ts.abs() > TS_LIMIT
+    labels = (pd.to_datetime(h["week_start"]).dt.strftime("%d/%m/%Y") if "week_start" in h.columns
+              else h.index.astype(str))
+    flagged = [labels.iloc[i] if hasattr(labels, "iloc") else labels[i]
+               for i in range(len(h)) if over.iloc[i] or biased.iloc[i]]
+    n_flag = len(flagged)
+    past_note = (f" Trong {len(h)} tuần đã đối chiếu, {n_flag} tuần từng kích hoạt cảnh báo "
+                 "(tại thời điểm đó hệ thống huấn luyện lại).") if n_flag else ""
+    last_ts = float(ts.iloc[-1])
+    if over.iloc[-1]:
+        return {"status": f"Cảnh báo: sai số tuần gần nhất {h['wmape'].iloc[-1]:.0%} vượt ngưỡng "
+                          f"{limit:.0%}. Nên huấn luyện lại." + past_note,
+                "retrain": True, "tracking_signal": last_ts, "flagged_weeks": flagged}
+    if biased.iloc[-1]:
+        side = "thừa" if last_ts > 0 else "thiếu"
+        return {"status": f"Cảnh báo: mô hình đang dự báo {side} có hệ thống (tracking signal {last_ts:.1f})."
+                          + past_note,
+                "retrain": True, "tracking_signal": last_ts, "flagged_weeks": flagged}
+    return {"status": "Tuần gần nhất trong ngưỡng: giữ mô hình, huấn luyện lại theo chu kỳ." + past_note,
+            "retrain": False, "tracking_signal": last_ts, "flagged_weeks": flagged}

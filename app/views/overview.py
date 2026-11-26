@@ -27,15 +27,18 @@ inv_now = last4["n_invoices"].mean()
 
 items = [
     {"label": "Doanh thu thuần", "value": lib.vnd(rev), "icon": "payments",
-     "note": "Bán lẻ + đơn lớn, đã trừ hàng trả"},
+     "note": "Bán lẻ + đơn lớn/tổ chức, đã trừ hàng trả, không tính xuất nội bộ"},
     {"label": "Lợi nhuận gộp", "value": lib.vnd(profit), "icon": "account_balance_wallet", "tone": "green",
      "note": f"Biên lợi nhuận gộp <b>{lib.pct(profit / rev)}</b>"},
-    {"label": "Hoá đơn bán lẻ / ngày", "value": lib.num(inv_now), "icon": "receipt_long", "tone": "orange",
+    {"label": "Hoá đơn bán lẻ / ngày (4 tuần gần nhất)", "value": lib.num(inv_now), "icon": "receipt_long",
+     "tone": "orange",
      "note": lib.delta(inv_now / prev4["n_invoices"].mean() - 1, " so với 4 tuần trước")},
 ]
 if info is not None:
     items.append({"label": "Độ chính xác dự báo", "value": lib.pct(1 - info["store_wmape"], 0),
-                  "icon": "target", "tone": "violet", "note": "Tổng toàn cửa hàng, 8 tuần kiểm định"})
+                  "icon": "target", "tone": "violet",
+                  "note": f"Tổng toàn cửa hàng, 8 tuần kiểm định. Ở cấp nhóm hàng (nơi ra quyết định nhập) "
+                          f"sai số là <b>{lib.pct(info['holdout_wmape'], 0)}</b>"})
 lib.kpis(items)
 
 # ---- Cảnh báo ----

@@ -39,8 +39,12 @@ def mdape(y: pd.Series, f: pd.Series) -> float:
 
 
 def tracking_signal(y: pd.Series, f: pd.Series) -> float:
-    """Tổng sai số tích luỹ / sai số tuyệt đối trung bình. |TS| > 4: mô hình lệch hệ thống."""
-    e = y - f
+    """Tổng sai số tích luỹ / sai số tuyệt đối trung bình. |TS| > 4: mô hình lệch hệ thống.
+
+    Cùng quy ước dấu với Bias và công thức trong báo cáo: e = dự báo − thực tế,
+    nên TS > 0 là dự báo thừa có hệ thống, TS < 0 là dự báo thiếu có hệ thống.
+    """
+    e = f - y
     mad = np.abs(e).mean()
     return float(e.sum() / mad) if mad else 0.0
 

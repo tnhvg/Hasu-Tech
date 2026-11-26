@@ -7,6 +7,9 @@ Các bước:
   2. Kiểm định trượt 12 tuần cho mọi mô hình; chọn mô hình trên 4 tuần đầu,
      báo cáo độ chính xác trên 8 tuần sau.
   3. Hiệu chỉnh khoảng dự báo (conformal) và mô phỏng nhập hàng trên 8 tuần holdout.
+     Mọi tham số dùng cho kiểm định và mô phỏng (nhóm hàng đủ dữ liệu, kiểu nhu cầu,
+     phân nhóm biên lợi nhuận -> τ, giá vốn, giá bán) chỉ tính từ dữ liệu trước mốc
+     cắt tương ứng, để không rò rỉ thông tin tương lai.
   4. Huấn luyện lại trên toàn bộ dữ liệu, dự báo 28 ngày tới, áp lớp ngày lễ,
      đề xuất số lượng nhập tuần tới, phân bổ xuống mã hàng.
   5. Giải thích dự báo LightGBM bằng SHAP.
@@ -21,12 +24,16 @@ import duckdb
 import numpy as np
 import pandas as pd
 import shap
+from statsforecast import StatsForecast
 
 from hasu.config import DB_PATH
 from hasu.forecasting import data as fdata
 from hasu.forecasting import models as fm
+from scipy import stats
+
 from hasu.forecasting.evaluate import (
     H,
+    N_SELECTION,
     N_WINDOWS,
     confidence_label,
     metrics_table,
@@ -36,7 +43,14 @@ from hasu.forecasting.evaluate import (
     wmape,
 )
 from hasu.forecasting.monitor import save_snapshot
-from hasu.forecasting.policy import SERVICE_POLICY, ratio_quantiles, service_class, simulate_orders
+from hasu.forecasting.policy import (
+    PERISHABLE_L1,
+    SERVICE_POLICY,
+    ratio_quantiles,
+    service_class,
+    simulate_inventory,
+    simulate_orders,
+)
 
 HORIZON = 28
 TAUS = [0.1, 0.5, 0.55, 0.7, 0.8, 0.9]
@@ -71,6 +85,56 @@ def backtest(d: pd.DataFrame, chronos=None) -> tuple[pd.DataFrame, list[str]]:
     cv[base_models] = cv[base_models].clip(lower=0)
     models = base_models + fm.add_ensembles(cv)
     return cv, models
+
+
+def horizon_ratio_quantiles(d: pd.DataFrame, groups: pd.Series, taus: list[float],
+                            n_windows: int = 9) -> pd.DataFrame:
+    """Hiệu chỉnh conformal riêng cho tuần dự báo thứ 1..4.
+
+    Kiểm định trượt với chân trời 28 ngày (bước 7 ngày) cho mô hình kết hợp
+    LightGBM + AutoETS + IMAPA, cộng theo tuần thứ k của chân trời, rồi tính phân
+    vị tỷ lệ thực tế / dự báo theo (kiểu nhu cầu, tuần thứ k). Độ bất định tăng
+    theo chân trời nên khoảng của tuần 4 rộng hơn tuần 1.
+    """
+    sf = StatsForecast(models=[m for m in fm.STATS_MODELS if m.alias in ("AutoETS", "IMAPA")], freq="D", n_jobs=-1)
+    cv = sf.cross_validation(df=d[["unique_id", "ds", "y"]], h=HORIZON, step_size=H, n_windows=n_windows)
+    cvl = fm.lgbm_forecaster().cross_validation(df=fm.lgbm_frame(d), h=HORIZON, step_size=H, n_windows=n_windows,
+                                                static_features=["cat_l1"])
+    cv = cv.merge(cvl[["unique_id", "ds", "cutoff", "LightGBM"]], on=["unique_id", "ds", "cutoff"])
+    cv = cv.merge(d[["unique_id", "ds", "y_raw", "is_closed"]], on=["unique_id", "ds"])
+    cv[["AutoETS", "IMAPA", "LightGBM"]] = cv[["AutoETS", "IMAPA", "LightGBM"]].clip(lower=0)
+    cv["fc"] = cv[["LightGBM", "AutoETS", "IMAPA"]].mean(axis=1)
+    cv["hweek"] = (cv["ds"] - cv["cutoff"]).dt.days.sub(1) // 7 + 1
+    w = (cv[~cv["is_closed"]].groupby(["unique_id", "cutoff", "hweek"], as_index=False)
+         .agg(y=("y_raw", "sum"), fc=("fc", "sum")))
+    out = []
+    for k, g in w.groupby("hweek"):
+        out.append(ratio_quantiles(g, "fc", groups, taus).assign(horizon_week=int(k)))
+    return pd.concat(out, ignore_index=True)
+
+
+def significance(hold: pd.DataFrame, champion: str, others: list[str]) -> pd.DataFrame:
+    """Kiểm định chênh lệch sai số có ý nghĩa thống kê không.
+
+    Với mỗi nhóm hàng, lấy sai số tuyệt đối trung bình theo tuần của mô hình được
+    chọn trừ của mô hình so sánh (âm = mô hình được chọn tốt hơn). Gộp theo nhóm
+    hàng trước để xử lý tương quan giữa các tuần của cùng một nhóm, rồi dùng:
+      - kiểm định Wilcoxon dấu-hạng (không cần giả định phân phối chuẩn);
+      - kiểm định Diebold–Mariano dạng gộp: thống kê t trên chênh lệch trung bình
+        theo nhóm hàng.
+    """
+    rows = []
+    for o in others:
+        dl = (hold.assign(diff=(hold[champion] - hold["y"]).abs() - (hold[o] - hold["y"]).abs())
+              .groupby("unique_id")["diff"].mean())
+        dl = dl[dl != 0]
+        w = stats.wilcoxon(dl)
+        t = dl.mean() / (dl.std(ddof=1) / np.sqrt(len(dl)))
+        rows.append({"model": champion, "compared_to": o, "n_series": int(len(dl)),
+                     "mean_abs_err_diff": float(dl.mean()), "share_series_better": float((dl < 0).mean()),
+                     "wilcoxon_p": float(w.pvalue), "dm_stat": float(t),
+                     "dm_p": float(2 * stats.t.sf(abs(t), df=len(dl) - 1))})
+    return pd.DataFrame(rows)
 
 
 # ---------------------------------------------------------------------------
@@ -191,7 +255,7 @@ def price_response(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
                    FROM fct_retail_daily_category WHERE quantity > 0 AND discount_depth IS NOT NULL)
         SELECT avg(r) FILTER (discount_depth > 0.05) / avg(r) FILTER (discount_depth <= 0.05),
                avg(discount_depth) FILTER (discount_depth > 0.05)
-        FROM s""").fetchone()
+        FROM s""").fetchall()[0]
     df["store_uplift_per_pct"] = max((total[0] - 1) / (total[1] * 100), 0)
     return df
 
@@ -209,16 +273,25 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
     """Toàn bộ quy trình dự báo trên một kết nối DuckDB đã có các bảng mart."""
     log("1. Chuẩn bị chuỗi thời gian")
     d_all = fdata.impute_abnormal_days(fdata.load_daily(con))
+    data_until = d_all["ds"].max()
+    # Mốc cắt của kiểm định trượt: cửa sổ đầu tiên và cửa sổ holdout đầu tiên
+    first_cutoff = data_until - pd.Timedelta(days=H * N_WINDOWS)
+    holdout_cutoff = first_cutoff + pd.Timedelta(days=H * N_SELECTION)
+    # Phân loại dùng cho kiểm định: chỉ dữ liệu trước cửa sổ đầu tiên (không nhìn trước)
+    profile_bt = fdata.classify_demand(d_all[d_all["ds"] <= first_cutoff])
+    eligible_bt = profile_bt.loc[profile_bt["demand_class"] != "insufficient", "unique_id"]
+    # Phân loại dùng cho dự báo thật: toàn bộ dữ liệu hiện có
     profile = fdata.classify_demand(d_all)
     eligible = profile.loc[profile["demand_class"] != "insufficient", "unique_id"]
     d = d_all[d_all["unique_id"].isin(eligible)].copy()
-    data_until = d_all["ds"].max()
+    d_bt = d_all[d_all["unique_id"].isin(eligible_bt)].copy()
     log(f"  {len(eligible)} nhóm hàng đủ dữ liệu / {len(profile)} nhóm; dữ liệu tới {data_until:%d/%m/%Y}")
+    log(f"  kiểm định: {len(eligible_bt)} nhóm đủ dữ liệu tính tới {first_cutoff:%d/%m/%Y}")
 
     log("2. Kiểm định trượt 12 tuần")
     chronos = fm.load_chronos() if use_chronos else None
-    cv, models = backtest(d, chronos)
-    weekly = to_weekly(cv, models).merge(profile[["unique_id", "demand_class", "cat_l1", "cat_l2"]],
+    cv, models = backtest(d_bt, chronos)
+    weekly = to_weekly(cv, models).merge(profile_bt[["unique_id", "demand_class", "cat_l1", "cat_l2"]],
                                          on="unique_id")
     champion = select_champion(weekly, models)
     log(f"  mô hình được chọn (trên 4 tuần đầu): {champion}")
@@ -258,30 +331,59 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
     per["improved"] = per["wmape"] < per["wmape_baseline"]
     profile = profile.merge(per, on="unique_id", how="left")
     profile["confidence"] = [confidence_label(w, c) for w, c in zip(profile["wmape"], profile["demand_class"])]
+    sig = significance(hold, champion, ["MovingAvg28", BASELINE, "LightGBM"])
 
     log("3. Khoảng dự báo và mô phỏng nhập hàng")
+    # Dự báo thật: phân nhóm biên lợi nhuận trên toàn bộ dữ liệu
     quad = con.execute("SELECT cat_l2, quadrant FROM mart_category_margin").df().set_index("cat_l2")["quadrant"]
     profile["quadrant"] = profile["cat_l2"].map(quad)
     profile["service_class"] = [service_class(a, b) for a, b in zip(profile["cat_l1"], profile["quadrant"])]
     profile["tau"] = profile["service_class"].map(lambda s: SERVICE_POLICY[s][0])
     groups = profile.set_index("unique_id")["demand_class"]
-    # Hiệu chỉnh trên 4 tuần "selection" để mô phỏng trên holdout không bị rò rỉ thông tin
-    rq_sel = ratio_quantiles(weekly[weekly["phase"] == "selection"], champion, groups, TAUS).set_index("grp")
-    tau = hold["unique_id"].map(profile.set_index("unique_id")["tau"])
-    cls = hold["unique_id"].map(groups)
+
+    # Mô phỏng trên holdout: mọi tham số chỉ từ dữ liệu trước tuần holdout đầu tiên.
+    #   - phân nhóm biên lợi nhuận (-> τ) tính lại với giá vốn THẬT trước mốc cắt
+    #   - hệ số phân vị hiệu chỉnh trên 4 tuần "selection"
+    #   - giá vốn, giá bán trung bình của từng nhóm hàng trước mốc cắt
+    cut = pd.Timestamp(holdout_cutoff).date()
+    quad_bt = con.execute("SELECT cat_l2, quadrant FROM category_margin(?, true)", [cut]).df() \
+        .set_index("cat_l2")["quadrant"]
+    meta_bt = profile_bt.set_index("unique_id")
+    sc_bt = pd.Series([service_class(a, quad_bt.get(b)) for a, b in zip(meta_bt["cat_l1"], meta_bt["cat_l2"])],
+                      index=meta_bt.index)
+    groups_bt = meta_bt["demand_class"]
+    rq_sel = ratio_quantiles(weekly[weekly["phase"] == "selection"], champion, groups_bt, TAUS).set_index("grp")
+    tau = hold["unique_id"].map(sc_bt.map(lambda s: SERVICE_POLICY[s][0]))
+    cls = hold["unique_id"].map(groups_bt)
     mult = [rq_sel.loc[c, f"q{int(t * 100)}"] if c in rq_sel.index else 1.0 for c, t in zip(cls, tau)]
-    unit_cost = con.execute("""
-        SELECT cat_l3, sum(quantity * unit_cost_filled) / sum(quantity) AS unit_cost
-        FROM stg_sales_lines WHERE txn_channel = 'retail' AND quantity > 0 AND cost_fill_method IS NOT NULL
-        GROUP BY 1""").df().set_index("cat_l3")["unit_cost"]
-    sim = simulate_orders(hold, {
+    prices = con.execute("""
+        SELECT cat_l3, sum(quantity * unit_cost) / sum(quantity) AS unit_cost,
+               sum(line_revenue) / sum(quantity) AS unit_price
+        FROM stg_sales_lines
+        WHERE txn_channel = 'retail' AND quantity > 0 AND NOT is_zero_price
+          AND cost_fill_method = 'actual' AND sale_date <= ?
+        GROUP BY 1""", [cut]).df().set_index("cat_l3")
+    policies = {
         "Mức nền: trung bình lịch sử": hold[BASELINE],
         "Trung bình 28 ngày (cách nhẩm)": hold["MovingAvg28"],
         "Mô hình: dự báo điểm": hold[champion],
         "Mô hình + phân vị theo nhóm hàng": hold[champion] * np.array(mult),
-    }, unit_cost)
-    # Hiệu chỉnh cuối cùng trên cả 12 tuần cho dự báo thật
-    rq_all = ratio_quantiles(weekly, champion, groups, TAUS)
+    }
+    perishable = meta_bt["cat_l1"].isin(PERISHABLE_L1)
+    sim = pd.concat([
+        simulate_orders(hold, policies, prices["unit_cost"]),
+        simulate_inventory(hold, policies, perishable, prices["unit_cost"], prices["unit_price"]),
+    ], ignore_index=True)
+    # Hiệu chỉnh cuối cùng cho dự báo thật: tuần 1 trên cả 12 tuần kiểm định,
+    # tuần 2-4 bằng kiểm định riêng với chân trời 28 ngày.
+    rq_all = ratio_quantiles(weekly, champion, groups_bt, TAUS).assign(horizon_week=1)
+    if champion == "Ens_LGB_ETS_IMAPA":
+        rq_h = horizon_ratio_quantiles(d_bt, groups_bt, TAUS)
+        rq_all = pd.concat([rq_all, rq_h[rq_h["horizon_week"] > 1]], ignore_index=True)
+    unit_cost = con.execute("""
+        SELECT cat_l3, sum(quantity * unit_cost_filled) / sum(quantity) AS unit_cost
+        FROM stg_sales_lines WHERE txn_channel = 'retail' AND quantity > 0 AND cost_fill_method IS NOT NULL
+        GROUP BY 1""").df().set_index("cat_l3")["unit_cost"]
 
     log("4. Dự báo 28 ngày tới")
     fc, lgb_model, captured = forecast_future(d)
@@ -305,7 +407,7 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
     plan = week1.groupby("unique_id", as_index=False)["forecast"].sum().rename(columns={"forecast": "forecast_week"})
     plan = plan.merge(profile[["unique_id", "cat_l1", "cat_l2", "demand_class", "confidence", "service_class",
                                "tau", "wmape", "quadrant"]], on="unique_id")
-    rq = rq_all.set_index("grp")
+    rq = rq_all[rq_all["horizon_week"] == 1].set_index("grp")
 
     def q(cls_, col):
         return rq.loc[cls_, col] if cls_ in rq.index else np.nan
@@ -332,9 +434,7 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
                row_number() OVER (PARTITION BY cat_l3 ORDER BY qty DESC) AS rk
         FROM r QUALIFY rk <= 8""").df()
     alloc = share.merge(plan[["unique_id", "order_qty", "forecast_week"]], left_on="cat_l3", right_on="unique_id")
-    alloc["sku_forecast_week"] = alloc["forecast_week"] * alloc["share"]
-    alloc["sku_order_qty"] = np.ceil(alloc["order_qty"] * alloc["share"])
-    alloc = alloc.drop(columns=["unique_id"])
+    alloc = allocate_skus(alloc)
 
     log("5. Giải thích dự báo (SHAP)")
     train_X = fm.lgbm_forecaster().preprocess(fm.lgbm_frame(d), static_features=["cat_l1"]).drop(
@@ -348,6 +448,7 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
     write(con, "fc_metrics_levels", levels)
     write(con, "fc_backtest_weekly", weekly)
     write(con, "fc_simulation", sim)
+    write(con, "fc_significance", sig)
     write(con, "fc_ratio_quantiles", rq_all)
     write(con, "fc_forecast_daily", fc_daily)
     write(con, "fc_order_plan", plan)
@@ -362,10 +463,33 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
         "baseline_wmape": float(m_all.loc[m_all["model"] == BASELINE, "WMAPE"].iloc[0]),
         "store_wmape": float(levels.query("level == 'Toàn cửa hàng' and model == @champion")["WMAPE"].iloc[0]),
         "share_improved": float(per["improved"].mean()),
-        "n_series": len(profile), "n_modelled": len(eligible), "chronos_used": chronos is not None,
+        "n_series": len(profile), "n_modelled": len(eligible), "n_backtest": len(eligible_bt),
+        "first_cutoff": first_cutoff, "holdout_cutoff": holdout_cutoff, "chronos_used": chronos is not None,
     }]))
     save_snapshot(con, fc_daily, plan, champion, data_until, kind="Dự báo thật")
     backfill_snapshots(con, hold, champion)
+
+
+def allocate_skus(alloc: pd.DataFrame) -> pd.DataFrame:
+    """Chia đề xuất nhập của nhóm hàng xuống tối đa 8 mã bán chạy nhất.
+
+    Thị phần được chuẩn hoá lại trong 8 mã này (tổng = 100%), rồi chia số nguyên
+    theo phương pháp phần dư lớn nhất, để tổng số lượng của các mã đúng bằng đề
+    xuất của nhóm (không hụt, không dư do làm tròn).
+    """
+    a = alloc.copy()
+    a["share"] = a["qty"] / a.groupby("cat_l3")["qty"].transform("sum")
+    a["sku_forecast_week"] = a["forecast_week"] * a["share"]
+    raw = a["order_qty"] * a["share"]
+    base = np.floor(raw)
+    a["sku_order_qty"] = base
+    rest = (a["order_qty"] - base.groupby(a["cat_l3"]).transform("sum")).round().astype(int)
+    a["_frac"] = raw - base
+    for cat, g in a.groupby("cat_l3"):
+        k = int(rest.loc[g.index[0]])
+        if k > 0:
+            a.loc[g.sort_values("_frac", ascending=False).index[:k], "sku_order_qty"] += 1
+    return a.drop(columns=["unique_id", "_frac"])
 
 
 def models_in(df: pd.DataFrame, models: list[str]) -> list[str]:

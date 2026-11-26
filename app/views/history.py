@@ -26,7 +26,11 @@ st.markdown(
 
 real = hist[hist["kind"] == "Dự báo thật"]
 status = drift_status(real if len(real) else hist, info["holdout_wmape"])
-lib.alert("critical" if status["retrain"] else "good", f"<b>{status['status']}</b>")
+lib.alert("critical" if status["retrain"] else ("warning" if status.get("flagged_weeks") else "good"),
+          f"<b>{status['status']}</b>")
+if status.get("flagged_weeks"):
+    st.caption("Cột màu đỏ: tuần đã kích hoạt cảnh báo (sai số vượt ngưỡng hoặc |tracking signal| > 4). "
+               "Mỗi tuần được kiểm tra ngay khi có thực tế, nên cảnh báo đã được đưa ra vào đúng tuần đó.")
 if not len(real):
     lib.alert("info", "Chưa có dự báo thật nào đủ 7 ngày thực tế. Các tuần bên dưới là <b>8 tuần kiểm định được ghi lại "
             "theo đúng cơ chế snapshot</b> để minh hoạ. Khi bạn nạp dữ liệu tuần tiếp theo, dự báo thật sẽ xuất hiện ở đây.")
@@ -35,8 +39,10 @@ if len(hist):
     hist["week_start"] = pd.to_datetime(hist["week_start"])
     c1, c2 = st.columns(2)
     with c1:
+        flagged = set(status.get("flagged_weeks", []))
+        colors = [viz.CRITICAL if f"{d:%d/%m/%Y}" in flagged else viz.SERIES[0] for d in hist["week_start"]]
         fig = go.Figure()
-        fig.add_bar(x=hist["week_start"], y=hist["wmape"], marker_color=viz.SERIES[0], name="WMAPE tuần",
+        fig.add_bar(x=hist["week_start"], y=hist["wmape"], marker_color=colors, name="WMAPE tuần",
                     hovertemplate="%{y:.1%}")
         fig.add_hline(y=info["holdout_wmape"] * DRIFT_FACTOR, line_dash="dot", line_color=viz.CRITICAL,
                       annotation_text="Ngưỡng cảnh báo", annotation_position="top left")

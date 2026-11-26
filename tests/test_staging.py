@@ -134,3 +134,16 @@ def test_bulk_sku_frequency_and_reserve():
     assert m.loc["R", "bulk_frequency"] == "mot_lan"
     assert m.loc[["O", "R"], "reserve_qty"].eq(0).all()
     assert not {"invoice_id", "seller_code", "note"} & set(m.columns)
+
+
+def test_bulk_line_rule_does_not_look_ahead():
+    # Mã Z: lần đầu mua 60 cái (chưa có lịch sử -> không xét được quy tắc dòng), sau đó
+    # nhiều lần mua 1 cái, rồi lại mua 60 cái. Chỉ lần sau mới bị xếp vào đơn lớn,
+    # vì mức mua điển hình chỉ được tính từ các lần bán trước đó.
+    rows = [_line("HD300", "Z", 60, 1000, 800, sold_at="2026-01-01 09:00:00")]
+    rows += [_line(f"HD3{i:02d}", "Z", 1, 1000, 800, sold_at=f"2026-01-{i:02d} 09:00:00") for i in range(2, 12)]
+    rows += [_line("HD399", "Z", 60, 1000, 800, sold_at="2026-01-20 09:00:00")]
+    con = _staging(rows)
+    ch = con.execute("SELECT invoice_id, txn_channel FROM stg_sales_lines").df().set_index("invoice_id")["txn_channel"]
+    assert ch["HD300"] == "retail"
+    assert ch["HD399"] == "bulk"

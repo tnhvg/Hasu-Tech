@@ -11,9 +11,14 @@
 --   Tiềm năng   : doanh thu thấp, biên cao
 --   Cần xem xét : doanh thu thấp, biên thấp
 --   Thua lỗ     : lợi nhuận gộp âm
+--
+-- Viết thành macro category_margin(until_date, actual_cost_only) để phần kiểm
+-- định mô hình tính lại phân nhóm CHỈ từ dữ liệu trước mốc cắt (tránh rò rỉ dữ
+-- liệu tương lai vào mức phân vị τ của mô phỏng nhập hàng). Bảng mart dùng
+-- toàn bộ dữ liệu và giá vốn đã điền, vì đây là phân tích mô tả quá khứ.
 -- =====================================================================
 
-CREATE OR REPLACE TABLE mart_category_margin AS
+CREATE OR REPLACE MACRO category_margin(until_date, actual_cost_only) AS TABLE
 WITH c AS (
     SELECT
         cat_l1,
@@ -28,6 +33,8 @@ WITH c AS (
     FROM stg_sales_lines
     WHERE txn_channel <> 'internal' AND cost_fill_method IS NOT NULL
       AND NOT is_opening_promo   -- hàng tặng khai trương không phải hàng kinh doanh
+      AND sale_date <= until_date
+      AND (NOT actual_cost_only OR cost_fill_method = 'actual')
     GROUP BY ALL
     HAVING sum(line_revenue) > 0
 ),
@@ -49,3 +56,6 @@ SELECT
     END                                     AS quadrant
 FROM c, thresholds t
 ORDER BY c.revenue DESC;
+
+CREATE OR REPLACE TABLE mart_category_margin AS
+SELECT * FROM category_margin(DATE '9999-12-31', false);

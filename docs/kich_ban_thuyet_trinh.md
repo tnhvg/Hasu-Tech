@@ -5,12 +5,12 @@
 | Thời gian | Màn hình | Nói gì |
 |---|---|---|
 | 0:00–0:20 | README | "Cửa hàng tạp hoá BHS Đại Phúc có 2.515 mã hàng, chủ cửa hàng nhập hàng bằng kinh nghiệm. Em xây hệ thống trả lời câu hỏi: tuần tới nhập nhóm hàng nào, bao nhiêu." |
-| 0:20–0:45 | Chất lượng dữ liệu | "Trước khi phân tích, em đối soát doanh thu tính lại với KiotViet, lệch tối đa 6 đồng mỗi tháng. Em phát hiện hơn 1/3 doanh thu (36%) đến từ đơn lớn và đơn tổ chức, dù chỉ chiếm 1,8% hoá đơn, nên tách riêng khỏi nhu cầu bán lẻ." |
-| 0:45–1:20 | Phân tích kinh doanh | Ma trận biên lợi nhuận: "7 nhóm hàng cấp 2 đang bán lỗ, nhiều nhất là sữa bột và dầu ăn." Tab Tết: "Doanh thu tăng 1,76 lần nhưng số lượng chỉ 1,13 lần, nên nhập hàng Tết theo hệ số doanh thu sẽ dư." |
+| 0:20–0:45 | Chất lượng dữ liệu | "Trước khi phân tích, em đối soát doanh thu tính lại với KiotViet, lệch tối đa 6 đồng mỗi tháng. Em phát hiện hơn 1/3 doanh thu (36%) đến từ đơn lớn và đơn tổ chức, dù chỉ chiếm 1,7% hoá đơn, nên tách riêng khỏi nhu cầu bán lẻ." |
+| 0:45–1:20 | Phân tích kinh doanh | Ma trận biên lợi nhuận: "6 nhóm hàng cấp 2 đang bán lỗ, nặng nhất là dầu ăn; 103 dòng giá vốn nhập sai đơn vị đã được loại." Tab Tết: "Doanh thu tăng 1,74 lần nhưng số lượng chỉ 1,12 lần, nên nhập hàng Tết theo hệ số doanh thu sẽ dư." |
 | 1:20–2:00 | Dự báo & đề xuất nhập | "94% mã hàng có bán lẻ được bán dưới 10% số ngày, nên em dự báo ở cấp nhóm hàng, so sánh 12 mô hình bằng kiểm định trượt. Mỗi dòng có nhãn độ tin cậy, và số lượng đề xuất nhập dùng phân vị theo loại hàng." |
-| 2:00–2:25 | Giải thích dự báo | "SHAP cho biết vì sao dự báo ra con số này: bán gần đây tăng làm dự báo tăng 101%..." |
+| 2:00–2:25 | Giải thích dự báo | "SHAP cho biết vì sao dự báo ra con số này: xu hướng 7 ngày làm dự báo tăng 75%..." |
 | 2:25–2:50 | Lịch sử & đánh giá | "Mỗi lần chạy, dự báo được lưu lại. Khi nạp dữ liệu tuần mới, hệ thống đối chiếu và tự cảnh báo nếu mô hình kém đi." |
-| 2:50–3:00 | Tổng quan | "Độ chính xác tổng tuần 84%. Mô phỏng 8 tuần: giảm 11% hàng thiếu và 20% giá trị hàng dư so với cách nhập theo trung bình lịch sử." |
+| 2:50–3:00 | Tổng quan | "Độ chính xác tổng tuần 85%. Mô phỏng 8 tuần có chuyển tồn: so với cách nhẩm theo trung bình 28 ngày, hàng thiếu giảm 14% và tổng chi phí giảm 13%." |
 
 ## Câu hỏi nhà tuyển dụng hay hỏi, và ý chính để trả lời
 
@@ -18,16 +18,16 @@
 MAPE chia cho lượng bán thực tế từng ngày. Dữ liệu có rất nhiều ngày bán bằng 0 nên MAPE không tính được. WMAPE
 chia cho tổng lượng bán cả kỳ.
 
-**2. Mô hình của bạn chỉ tốt hơn mức nền ở 50% số nhóm hàng. Vậy có đáng dùng không?**
+**2. Mô hình của bạn chỉ tốt hơn mức nền ở khoảng một nửa số nhóm hàng. Vậy có đáng dùng không?**
 Có, nhưng phải nói đúng phạm vi. Ở cấp nhóm nhỏ theo tuần, nhu cầu gần như ngẫu nhiên nên không mô hình nào
-chính xác. Ở cấp ngành hàng và toàn cửa hàng, sai số giảm mạnh (24% và 16%), dù ở cấp toàn cửa hàng trung
-bình trượt 28 ngày còn tốt hơn (13%). Giá trị lớn nhất nằm ở chính sách nhập theo phân vị: mô phỏng giảm cả
-hàng thiếu lẫn hàng dư so với nhập theo trung bình lịch sử; so với trung bình 28 ngày thì ít thiếu hàng hơn
-nhưng dư nhiều hơn, vì nhóm ngôi sao được ưu tiên đủ hàng.
+chính xác, và mô hình không tốt hơn trung bình 28 ngày một cách có ý nghĩa thống kê (Wilcoxon p = 0,90). Ở cấp
+ngành hàng và toàn cửa hàng, sai số thấp hơn nhiều (29% và 15%). Giá trị lớn nhất nằm ở chính sách nhập theo phân vị:
+mô phỏng 8 tuần có chuyển tồn cho thấy so với cách nhẩm theo trung bình 28 ngày, hàng thiếu giảm 14% và tổng chi
+phí (lợi nhuận mất + hàng hỏng + chi phí vốn) giảm 13%.
 
 **3. Vì sao chọn mô hình kết hợp, trong khi LightGBM có điểm tốt nhất?**
 Chỉ được chọn mô hình trên 4 tuần "chọn mô hình". Ở đó mô hình kết hợp thắng; trên 8 tuần chấm điểm nó xếp
-thứ 4, kém LightGBM 2 điểm %, nhưng có thứ hạng trung bình tốt nhất qua hai giai đoạn. Nếu nhìn kết quả 8 tuần chấm
+thứ 4, kém LightGBM khoảng 1 điểm %, nhưng có thứ hạng trung bình tốt nhất qua hai giai đoạn. Nếu nhìn kết quả 8 tuần chấm
 điểm rồi mới chọn LightGBM, con số báo cáo sẽ bị đẹp giả (rò rỉ dữ liệu kiểm tra).
 
 **4. Bạn xử lý ngày cửa hàng đóng cửa thế nào?**
@@ -44,8 +44,8 @@ Giá chỉ quan sát được ở ngày có bán. Đưa vào sẽ làm mô hình
 hưởng giảm giá cho phần kịch bản, và cảnh báo rằng nó có thể bị phóng đại do khách mua theo thùng được giá sỉ.
 
 **7. Nếu có thêm thời gian, bạn sẽ làm gì?**
-(1) Lấy dữ liệu tồn kho và thời gian giao hàng để tính tồn kho an toàn thật. (2) Chạy thử Chronos (code đã sẵn
-sàng, máy chủ thử nghiệm chặn tải mô hình). (3) Gộp các nhóm hàng trùng nghĩa trong KiotViet. (4) Theo dõi vòng
+(1) Lấy dữ liệu tồn kho và thời gian giao hàng để tính tồn kho an toàn thật. (2) Chạy thử Chronos trên máy có mạng (code đã sẵn
+sàng; máy chủ đám mây dùng để chạy không tải được mô hình). (3) Gộp các nhóm hàng trùng nghĩa trong KiotViet. (4) Theo dõi vòng
 lặp đối chiếu qua vài tháng để công bố độ chính xác đã kiểm chứng.
 
 **8. Phát hiện kinh doanh nào bạn thấy giá trị nhất?**

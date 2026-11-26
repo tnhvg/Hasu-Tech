@@ -16,6 +16,12 @@
 --     (a) trung vị giá vốn > 0 của chính mã hàng đó;
 --     (b) nếu mã hàng chưa từng có giá vốn: giá bán x tỷ lệ giá vốn/giá bán
 --         trung vị của nhóm hàng. Cách điền được ghi ở cột cost_fill_method.
+--     Giá vốn lớn hơn 3 lần giá bán gần như chắc chắn là nhập sai đơn vị (ví dụ
+--     giá vốn của cả lốc 4 hộp hay cả túi 58 que gán cho 1 đơn vị bán): gắn cờ
+--     is_cost_suspect, coi như chưa biết giá vốn (không tính lợi nhuận).
+--     Đây là thông tin mô tả sản phẩm, dùng cho phân tích quá khứ (Chương 3), nên
+--     tính trên toàn kỳ. Phần kiểm định mô hình KHÔNG dùng giá vốn đã điền: mô
+--     phỏng nhập hàng chỉ dùng giá vốn thật trước mốc cắt (xem forecasting/run.py).
 --  5. Nhóm hàng: tách 3 cấp, sửa các giá trị rác/không chuẩn, cấp còn thiếu
 --     lấy theo cấp trên.
 --  6. Tên người bán được thay bằng mã NV01, NV02... để bảo vệ thông tin cá nhân.
@@ -42,7 +48,14 @@ category_fixes(raw_path, fixed_path) AS (
         ('Dưỡng Thể',         'Chăm sóc cá nhân>>Chăm sóc cơ thể>>Dưỡng thể'),
         ('Dung Dịch Vệ Sinh', 'Chăm sóc cá nhân>>Chăm sóc cơ thể>>Dung dịch vệ sinh'),
         ('Bánh{DEL}',         'Bánh, kẹo, snack>>Bánh>>Bánh Tổng Hợp'),
-        ('chưa khai báo',     'Chưa phân loại>>Chưa phân loại>>Chưa phân loại')
+        ('chưa khai báo',     'Chưa phân loại>>Chưa phân loại>>Chưa phân loại'),
+        -- Thuốc lá bị xếp vào ngành "Chăm sóc cá nhân": tách thành ngành riêng.
+        ('Chăm sóc cá nhân>>Gây Hại Sức Khỏe>>Thuốc Lá', 'Thuốc lá>>Thuốc lá>>Thuốc lá'),
+        -- Nhóm trùng do tạo lại có đánh số: gộp về nhóm gốc.
+        ('Sữa, sản phẩm từ sữa>>Sữa nước các loại>>Sữa tươi 1',
+                              'Sữa, sản phẩm từ sữa>>Sữa nước các loại>>Sữa tươi'),
+        -- Thiếu cấp 3 (nước tăng lực, trà đóng chai): đưa về nhóm Nước giải khát.
+        ('Đồ uống>>Nước ngọt', 'Đồ uống>>Nước ngọt>>Nước giải khát')
 ),
 
 base AS (
@@ -82,12 +95,16 @@ category_cost_ratio AS (
     GROUP BY category_clean
 ),
 
--- Số lượng mua điển hình của từng mã hàng, để phát hiện đơn số lượng lớn.
-sku_qty AS (
-    SELECT sku, median(quantity) AS median_qty
-    FROM base
-    WHERE quantity > 0
-    GROUP BY sku
+-- Số lượng mua điển hình của mã hàng "tại thời điểm bán" (point-in-time): chỉ dùng
+-- các lần bán TRƯỚC dòng đang xét. Quy tắc nhận diện đơn lớn quyết định dòng nào
+-- thuộc chuỗi bán lẻ mà mô hình học, nên không được dùng dữ liệu tương lai.
+history AS (
+    SELECT
+        b.invoice_id, b.sold_at, b.sku,
+        median(CASE WHEN b.quantity > 0 THEN b.quantity END) OVER (
+            PARTITION BY replace(b.sku, '{DEL}', '') ORDER BY b.sold_at, b.invoice_id
+            ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING)                   AS prior_median_qty
+    FROM base b
 ),
 
 -- Quy mô của cả hoá đơn, để phát hiện đơn đặt lớn gồm nhiều mặt hàng
@@ -150,24 +167,29 @@ lines AS (
         -- Ghi chú (giữ ở tầng staging, KHÔNG đưa ra ứng dụng vì có tên người thật)
         b.note,
         b.note_lc,
-        q.median_qty,
+        h.prior_median_qty AS median_qty,
         i.invoice_qty,
         i.invoice_value
     FROM base b
     LEFT JOIN seller_codes s USING (seller)
     LEFT JOIN sku_cost     c ON c.sku = b.sku
     LEFT JOIN category_cost_ratio r ON r.category_clean = b.category_clean
-    LEFT JOIN sku_qty      q ON q.sku = b.sku
+    LEFT JOIN history      h ON h.invoice_id = b.invoice_id AND h.sold_at = b.sold_at AND h.sku = b.sku
     LEFT JOIN invoice_size i ON i.invoice_id = b.invoice_id
 )
 
 SELECT
-    * EXCLUDE (note_lc, median_qty, invoice_qty, invoice_value),
+    * EXCLUDE (note_lc, median_qty, invoice_qty, invoice_value, unit_cost_filled, cost_fill_method),
+
+    -- Giá vốn nghi sai đơn vị: coi như chưa biết giá vốn
+    CASE WHEN cost_suspect THEN NULL ELSE unit_cost_filled END  AS unit_cost_filled,
+    CASE WHEN cost_suspect THEN NULL ELSE cost_fill_method END  AS cost_fill_method,
+    cost_suspect                                                AS is_cost_suspect,
 
     -- Doanh thu, giá vốn, lợi nhuận tính lại ở mức dòng
     quantity * unit_price                                       AS line_revenue,
-    quantity * unit_cost_filled                                 AS line_cogs,
-    quantity * (unit_price - unit_cost_filled)                  AS line_profit,
+    CASE WHEN NOT cost_suspect THEN quantity * unit_cost_filled END                AS line_cogs,
+    CASE WHEN NOT cost_suspect THEN quantity * (unit_price - unit_cost_filled) END AS line_profit,
 
     -- Cờ chất lượng / loại giao dịch
     invoice_type = 'return'                                     AS is_return,
@@ -189,8 +211,12 @@ SELECT
             THEN 'bulk'
         -- Đơn lớn, xét theo từng dòng. Ngưỡng 48 = 2 thùng 24: mua 1 thùng vẫn là
         -- hành vi bán lẻ bình thường ở cửa hàng tạp hoá, đặc biệt dịp lễ Tết.
+        -- median_qty chỉ tính trên các lần bán trước đó (không nhìn tương lai).
         WHEN invoice_type = 'sale' AND quantity >= 48 AND quantity >= 10 * median_qty
             THEN 'bulk'
         ELSE 'retail'
     END                                                         AS txn_channel
-FROM lines;
+FROM (
+    SELECT *, coalesce(unit_price > 0 AND unit_cost_filled > 3 * unit_price, false) AS cost_suspect
+    FROM lines
+);

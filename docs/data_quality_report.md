@@ -1,6 +1,6 @@
 # Báo cáo chất lượng dữ liệu
 
-_Sinh tự động bởi `python -m hasu.pipeline` lúc 06/10/2026 04:10._
+_Sinh tự động bởi `python -m hasu.pipeline` lúc 26/11/2026 08:14._
 
 ## 1. Tổng quan
 
@@ -46,15 +46,16 @@ Chênh lệch lớn nhất giữa các tháng: **6 đ** (do KiotViet làm tròn 
 | Số lượng lẻ (hàng cân theo kg) | 43 | 3.462.607 | 0,3% | Hợp lệ, giữ nguyên |
 | Thiếu thương hiệu | 19.255 | 844.329.803 | 63,3% | Điền "Không rõ"; không dùng thương hiệu làm biến dự báo |
 | Mã hàng bị xoá rồi tạo lại (hậu tố {DEL}) | 209 | 14.674.955 | 1,1% | Bỏ hậu tố để gộp lịch sử bán của bản cũ và bản mới; giữ cờ sku_deleted |
+| Giá vốn nghi sai đơn vị (giá vốn > 3 lần giá bán) | 103 | 4.318.979 | 0,3% | Gắn cờ is_cost_suspect; không tính lợi nhuận; cần đối chiếu hoá đơn nhập |
 | Bán chịu (ghi chú "nợ", "chưa tt") | 13 | 330.500 | 0,0% | Vẫn là nhu cầu thật; gắn cờ is_credit_sale |
 
-Cách điền giá vốn bị thiếu: `sku_median` 421 dòng, `category_ratio` 127 dòng, `không điền được` 4 dòng. Các dòng không điền được bị loại khỏi phân tích biên lợi nhuận.
+Cách điền giá vốn bị thiếu: `sku_median` 418 dòng, `category_ratio` 127 dòng, `không điền được` 7 dòng. Các dòng không điền được bị loại khỏi phân tích biên lợi nhuận.
 
 ## 4. Nhóm hàng
 
-- Sau làm sạch: **15 nhóm cấp 1, 67 nhóm cấp 2, 188 nhóm cấp 3**.
-- 81 dòng có nhóm hàng không chuẩn (nằm sai cấp, đã bị xoá, "chưa khai báo") được ánh xạ về đúng cây nhóm hàng.
-- 1.759 dòng chỉ có 1–2 cấp: cấp còn thiếu được lấy theo cấp trên (ví dụ `Thực phẩm đông mát>>Kem` → cấp 3 = `Kem`).
+- Sau làm sạch: **16 nhóm cấp 1, 67 nhóm cấp 2, 186 nhóm cấp 3**.
+- 2.477 dòng có nhóm hàng không chuẩn (nằm sai cấp, đã bị xoá, "chưa khai báo", thuốc lá bị xếp vào ngành chăm sóc cá nhân, nhóm trùng "Sữa tươi 1", nhóm thiếu cấp 3 "Đồ uống>>Nước ngọt") được ánh xạ về đúng cây nhóm hàng.
+- 1.696 dòng chỉ có 1–2 cấp: cấp còn thiếu được lấy theo cấp trên (ví dụ `Thực phẩm đông mát>>Kem` → cấp 3 = `Kem`).
 
 ## 5. Loại giao dịch: không phải dòng nào cũng là nhu cầu bán lẻ
 
@@ -62,8 +63,8 @@ Ghi chú hoá đơn và số lượng bất thường cho thấy một phần gi
 
 | Loại | Số dòng | Số hoá đơn | Tỷ lệ số lượng | Tỷ lệ doanh thu |
 |---|---|---|---|---|
-| Bán lẻ | 25.820 | 12.320 | 50,5% | 62,9% |
-| Đơn lớn (hoá đơn ≥ 100 sản phẩm hoặc ≥ 3 triệu đ; hoặc dòng ≥ 48 và ≥ 10 lần mức mua điển hình) | 1.033 | 206 | 42,9% | 31,9% |
+| Bán lẻ | 25.834 | 12.329 | 51,2% | 63,2% |
+| Đơn lớn (hoá đơn ≥ 100 sản phẩm hoặc ≥ 3 triệu đ; hoặc dòng ≥ 48 và ≥ 10 lần mức mua điển hình) | 1.019 | 192 | 42,2% | 31,5% |
 | Đơn tổ chức / công ty (theo ghi chú) | 157 | 16 | 6,4% | 4,4% |
 | Nội bộ: hàng mẫu, trả NCC, chuyển kho (theo ghi chú) | 58 | 13 | 0,2% | 0,9% |
 
@@ -82,6 +83,6 @@ Chỉ tính bán lẻ, trên các ngày cửa hàng mở cửa:
 
 - 94,1% mã hàng bán ra dưới 10% số ngày.
 - Chỉ 3 mã hàng bán ra từ 50% số ngày trở lên.
-- Ở nhóm hàng cấp 3: 16/182 nhóm bán ra từ 50% số ngày trở lên.
+- Ở nhóm hàng cấp 3: 16/180 nhóm bán ra từ 50% số ngày trở lên.
 
 → Cần dự báo phân tầng theo mức độ đầy đủ dữ liệu, và dùng mô hình cho nhu cầu gián đoạn (intermittent demand) ở các nhóm thưa.
