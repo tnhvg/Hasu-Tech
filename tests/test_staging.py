@@ -109,3 +109,28 @@ def test_usual_price_tie_takes_higher_price():
             for i, price in enumerate([10000, 9000, 10000, 9000], start=1)]
     con = _staging(rows, files=("01_stg_sales_lines.sql", "03_sku_month_price.sql"))
     assert con.execute("SELECT usual_price FROM sku_month_price WHERE sku = 'T'").fetchone()[0] == 10000
+
+
+def test_bulk_sku_frequency_and_reserve():
+    # Dữ liệu có 3 tháng (1, 2, 3/2026). Mã S có đơn sỉ ở 2/3 tháng -> thường xuyên;
+    # mã O được mua sỉ 2 lần nhưng cùng một tháng -> thỉnh thoảng; mã R chỉ 1 lần.
+    rows = [
+        _line("HD101", "S", 120, 10000, 8000, sold_at="2026-01-05 10:00:00"),
+        _line("HD102", "S", 200, 10000, 8000, sold_at="2026-02-10 10:00:00"),
+        _line("HD103", "R", 100, 5000, 4000, sold_at="2026-02-11 10:00:00"),
+        _line("HD104", "O", 100, 5000, 4000, sold_at="2026-01-20 10:00:00"),
+        _line("HD105", "O", 100, 5000, 4000, sold_at="2026-01-25 10:00:00"),
+        _line("HD201", "S", 1, 10000, 8000, sold_at="2026-03-01 10:00:00"),   # bán lẻ
+    ]
+    con = _staging(rows)
+    con.execute((SQL_DIR / "marts" / "08_mart_bulk_sku.sql").read_text(encoding="utf-8"))
+    m = con.execute("SELECT * FROM mart_bulk_sku").df().set_index("sku")
+
+    assert m.loc["S", "n_bulk_orders"] == 2
+    assert m.loc["S", "bulk_frequency"] == "thuong_xuyen"
+    assert m.loc["S", "reserve_qty"] == 160          # trung vị của 120 và 200
+    assert m.loc["S", "bulk_share_qty"] == pytest.approx(320 / 321)
+    assert m.loc["O", "bulk_frequency"] == "thinh_thoang"
+    assert m.loc["R", "bulk_frequency"] == "mot_lan"
+    assert m.loc[["O", "R"], "reserve_qty"].eq(0).all()
+    assert not {"invoice_id", "seller_code", "note"} & set(m.columns)

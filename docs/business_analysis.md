@@ -1,6 +1,6 @@
 # Phân tích kinh doanh — Cửa hàng BHS Đại Phúc
 
-_Sinh tự động bởi `python -m hasu.business_report` lúc 06/10/2026 04:10. Dữ liệu: 11/09/2025 – 30/06/2026. Mọi con số được truy vấn trực tiếp từ dữ liệu đã làm sạch (xem [báo cáo chất lượng dữ liệu](data_quality_report.md))._
+_Sinh tự động bởi `python -m hasu.business_report` lúc 26/11/2026 06:15. Dữ liệu: 11/09/2025 – 30/06/2026. Mọi con số được truy vấn trực tiếp từ dữ liệu đã làm sạch (xem [báo cáo chất lượng dữ liệu](data_quality_report.md))._
 
 **Nguyên tắc đo lường:** quyết định vận hành và tồn kho (nhập bao nhiêu, xếp ca) dùng **số lượng** và **số hoá đơn**; quyết định tài chính (định giá, chọn nhóm hàng) dùng **doanh thu** và **lợi nhuận**.
 
@@ -11,6 +11,7 @@ _Sinh tự động bởi `python -m hasu.business_report` lúc 06/10/2026 04:10.
 3. **7 nhóm hàng đang bán lỗ**, tập trung ở dầu ăn và các sản phẩm từ sữa. Riêng HASUKOOK dầu đậu nành NK Nga can 5L/3 (Can) được bán khoảng 200.000 đ trong khi giá vốn ghi nhận 280.000 đ, lỗ 5,6 triệu đ. Cần kiểm tra lại giá vốn hoặc giá bán.
 4. **Tết làm tăng doanh thu bán lẻ 1,76 lần nhưng số lượng chỉ tăng 1,13 lần** trong 14 ngày trước Tết: khách mua hàng đắt hơn chứ không mua nhiều món hơn hẳn (phù hợp với giả thuyết mua quà biếu, thùng nước, bánh kẹo hộp, nhưng dữ liệu chưa kiểm chứng được).
 5. **Cao điểm lúc 17h** (5,1 hoá đơn/giờ), thấp điểm 14h–15h. Chủ nhật vắng nhất (36 hoá đơn/ngày so với 45 các ngày khác).
+6. **41 mã hàng được mua sỉ thường xuyên** (có đơn sỉ ở ít nhất một nửa số tháng), chủ yếu là nước uống, cà phê, trà, giấy và đồ vệ sinh. Mô hình chỉ dự báo bán lẻ, nên với các mã này cần giữ thêm khoảng một đơn sỉ điển hình làm dự phòng (mục 8).
 
 ## 1. Xu hướng doanh thu và lợi nhuận
 
@@ -180,6 +181,49 @@ Xét 81 mã hàng bán đều (có bán ở ≥ 15% số ngày mở cửa). Vớ
 
 **Giới hạn:** đây là suy đoán từ dữ liệu bán. Hàng theo mùa (ví dụ kem vào mùa đông) và hàng ngừng kinh doanh cũng có biểu hiện giống hệt. Danh sách đầy đủ có trong ứng dụng để chủ cửa hàng xác nhận từng trường hợp.
 
+## 8. Mặt hàng hay được mua sỉ
+
+Mô hình dự báo chỉ dự báo kênh bán lẻ (xem báo cáo dự báo), vì đơn sỉ đến bất chợt và mỗi đơn rất lớn. Mục này trả lời câu hỏi còn lại: **những mặt hàng nào khách sỉ hay mua, mỗi lần khoảng bao nhiêu**, để cửa hàng giữ thêm hàng dự phòng ngoài phần dự báo bán lẻ. Đơn sỉ ở đây gồm đơn lớn và đơn của tổ chức; mỗi mã trong một hoá đơn sỉ tính là một lần mua.
+
+Phân loại theo số tháng có đơn sỉ trên 10 tháng dữ liệu: **thường xuyên** là có đơn sỉ ở ít nhất một nửa số tháng (từ 5 tháng trở lên), **thỉnh thoảng** là từ 2 lần mua trở lên nhưng chưa đủ nửa số tháng, **một lần** là chỉ được mua sỉ đúng một lần. Ngưỡng một nửa số tháng là lựa chọn của người phân tích để chủ cửa hàng dễ kiểm tra lại, không phải ngưỡng chuẩn.
+
+| Mức độ | Số mã | Số lần mua sỉ | Tỷ trọng doanh thu sỉ |
+|---|---|---|---|
+| Thường xuyên | 41 | 392 | 36,0% |
+| Thỉnh thoảng | 175 | 457 | 41,5% |
+| Một lần | 336 | 336 | 22,5% |
+
+**41 mã được mua sỉ thường xuyên** (các mã có số tháng nhiều nhất):
+
+| Mã hàng | Nhóm hàng cấp 3 | Số tháng có đơn sỉ | Số lần mua | SL mỗi lần (trung vị) | % SL bán qua kênh sỉ | Dự phòng gợi ý |
+|---|---|---|---|---|---|---|
+| Bánh Kenju Kem dẻo 186g (Túi) | Bánh Tổng Hợp | 9 | 16 | 33,5 | 97% | 34 |
+| Hasu Giấy ăn rút cao cấp gói 500 tờ/5x8 (Gói) | Chăm Sóc Cá Nhân Hasu | 9 | 16 | 50 | 83% | 50 |
+| Cà phê G7 2in1 - Hộp 15st 16g (24hộp/t) (Hộp) | Trà, Cà phê, cacao | 9 | 12 | 5,5 | 79% | 6 |
+| NRC SUTIKI Hương quế 3.6KG (Can) | Nhóm Tẩy Rửa Hasu | 9 | 9 | 3 | 79% | 3 |
+| Sua Lua Mach NESTLE MILO 12(4x180ml) Moi (Hộp) | Sữa ca cao | 8 | 16 | 48 | 63% | 48 |
+| Bánh Gạo An-Chà Bông14P_04Y23/10-Gói (Gói) | Bánh Tổng Hợp | 8 | 15 | 29 | 96% | 29 |
+| Cà phê G7 3in1 - Hộp 18 gói 16gr (Hộp) | Trà, Cà phê, cacao | 8 | 10 | 14 | 69% | 14 |
+| Cà phê G7 3in1 - Hộp 21 (Hộp) | Trà, Cà phê, cacao | 8 | 10 | 10 | 70% | 10 |
+| Trà gừng Hot Ginger ( Nhãn hiệu Cozy) (20gói *10g) (Hộp) | Trà | 8 | 10 | 2 | 75% | 2 |
+| Sữa đặc Ông Thọ tuýp 165gr/24 (Tuýp) | Sữa đặc | 8 | 9 | 5 | 61% | 5 |
+| Nước Mira pH9 550ml (Chai) | Nước Ion | 7 | 16 | 48 | 65% | 48 |
+| Đồ uống Coke 300ml 4x6 PetSF Tet Entry (Chai) | Nước giải khát | 7 | 12 | 72 | 95% | 72 |
+| Kẹo Oishi-85g (Gói(Thập Cẩm)) | Kẹo | 7 | 12 | 30 | 93% | 30 |
+| NESCAFE 3in1 Rang Dam Hop 24(18x16g) MYW (Hộp) | Trà, Coffee | 7 | 10 | 3 | 75% | 3 |
+| Khăn Giấy Rút Gấu Cao Cấp Hasu 300 Tờ (Gói) | Chăm Sóc Cá Nhân Hasu | 7 | 10 | 30 | 54% | 30 |
+
+**Nhận xét.**
+
+- Khách sỉ mua lặp lại một nhóm hàng khá ổn định: 19/41 mã thường xuyên là đồ uống (nước khoáng, nước ion, nước ngọt, cà phê, trà), số còn lại chủ yếu là giấy ăn, giấy vệ sinh, túi rác, cốc giấy và nước tẩy rửa. Đây là những thứ thường dùng cho văn phòng, tiếp khách và vệ sinh; dữ liệu không có thông tin khách nên đây chỉ là nhận định từ loại hàng.
+- Ở 36/41 mã thường xuyên, **hơn một nửa số lượng bán ra đi qua kênh sỉ** (trung vị 69%). Nếu chỉ nhập theo dự báo bán lẻ, các mã này rất dễ thiếu khi có đơn sỉ.
+- Số đơn sỉ mỗi tháng tăng dần: 12 đơn/tháng trong tháng 9–11/2025, lên 32 đơn/tháng trong tháng 4–6/2026, nên nhu cầu dự phòng có xu hướng tăng.
+- Giữ sẵn một đơn sỉ điển hình (trung vị số lượng mỗi lần mua) cho 41 mã này cần khoảng **13,5 triệu đ vốn** tính theo giá vốn: một khoản nhỏ so với doanh thu sỉ 483,7 triệu đ trong kỳ.
+
+**Cách dùng:** lượng nhập = dự báo bán lẻ (ứng dụng) + dự phòng sỉ cho các mã thường xuyên. Mã thỉnh thoảng và một lần không giữ dự phòng, chỉ nhập khi khách đặt trước. Đơn sỉ lớn bất thường (số lượng lớn nhất có thể gấp nhiều lần trung vị) vẫn cần khách báo trước vài ngày.
+
+**Giới hạn:** dữ liệu chỉ có 10 tháng và không có mã khách hàng, nên không biết các đơn lặp lại có phải cùng một khách hay không. Danh sách đầy đủ có trong ứng dụng (trang Phân tích, thẻ Mua sỉ).
+
 ## Khuyến nghị tổng hợp
 
 | # | Khuyến nghị | Căn cứ | Ưu tiên |
@@ -192,3 +236,4 @@ Xét 81 mã hàng bán đều (có bán ở ≥ 15% số ngày mở cửa). Vớ
 | 6 | Xếp ca theo cao điểm 16h–19h và 8h–12h; nhận hàng 13h–15h | Mục 3 | Thấp, làm ngay được |
 | 7 | Bày bật lửa cạnh quầy thuốc lá, mì cạnh xúc xích | Mục 6 | Thấp, làm ngay được |
 | 8 | Chuẩn hoá cây nhóm hàng trong KiotViet: sửa nhóm của bật lửa, gộp các nhóm trùng nghĩa (mì, kẹo, snack) | Báo cáo chất lượng dữ liệu, mục 4; mục 6 | Thấp, giúp mọi phân tích sau chính xác hơn |
+| 9 | Giữ hàng dự phòng bằng khoảng một đơn sỉ điển hình cho 41 mã hay được mua sỉ; mã khác chỉ nhập khi khách đặt trước | Mục 8 | Trung bình |

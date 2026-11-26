@@ -46,6 +46,9 @@ báo cấp cao đáng tin, chính sách nhập hàng theo phân vị, và khả 
 
 - **1,8% số hoá đơn (đơn lớn, đơn công ty) mang về 36% doanh thu**, biên lợi nhuận 5,6% so với 8,4% của bán lẻ.
   Đây là một kênh riêng, cần kế hoạch nhập và giá sỉ riêng.
+- **41 mã hàng được mua sỉ thường xuyên** (có đơn sỉ ở ít nhất 5/10 tháng), phần lớn là nước uống, cà phê, trà, giấy
+  và đồ vệ sinh; ở 36 mã, hơn một nửa số lượng bán ra đi qua kênh sỉ. Mô hình chỉ dự báo bán lẻ, nên các mã này được
+  gợi ý giữ thêm khoảng một đơn sỉ điển hình làm dự phòng (tổng khoảng 13,5 triệu đ vốn).
 - **Lượng khách bán lẻ giảm 26% từ tháng 5/2026 (từ 47 xuống 34 hoá đơn/ngày)** trong khi giá trị mỗi hoá đơn không đổi: vấn đề nằm ở lưu lượng khách.
 - **7 nhóm hàng cấp 2 bán lỗ**, tập trung ở sữa và dầu ăn. Riêng một mã dầu ăn bán thấp hơn giá vốn ghi nhận khoảng 29%.
 - **Tết: doanh thu ×1,76 nhưng số lượng chỉ ×1,13.** Nhập hàng Tết theo hệ số doanh thu sẽ dư gần gấp rưỡi.
@@ -59,7 +62,7 @@ báo cấp cao đáng tin, chính sách nhập hàng theo phân vị, và khả 
 ## Cách tiếp cận
 
 ```
-File Excel KiotViet ─► raw ─► staging ─► mart ─► phân tích (FP-Growth, nghi ngờ hết hàng)
+File Excel KiotViet ─► raw ─► staging ─► mart ─► phân tích (FP-Growth, nghi ngờ hết hàng, mua sỉ)
                        │       │          │
                        │       │          └► dự báo: kiểm định trượt 12 tuần ─► đề xuất nhập ─► snapshot
                        │       └ làm sạch, gắn cờ, ẩn danh người bán                               │
@@ -70,7 +73,7 @@ File Excel KiotViet ─► raw ─► staging ─► mart ─► phân tích (FP
 |---|---|
 | **Làm sạch** (`sql/staging`) | Khử trùng lặp theo mã HĐ + thời gian + mã hàng; tính lại doanh thu mức dòng (khớp KiotViet tới 6 đ/tháng); điền giá vốn thiếu; sửa cây nhóm hàng; tách **đơn lớn / đơn tổ chức / xuất nội bộ** khỏi nhu cầu bán lẻ; ẩn danh người bán |
 | **Lịch** (`dim_date`) | Ngày đóng cửa (Tết, lễ) không bị coi là nhu cầu bằng 0 |
-| **Phân tích** (`sql/marts`, `analysis.py`) | Xu hướng theo ngày mở cửa, ABC theo số lượng, giờ × thứ, ma trận doanh thu × biên, hệ số Tết theo số lượng và doanh thu, FP-Growth trên dữ liệu đã loại khuyến mãi, phát hiện nghi ngờ hết hàng bằng xác suất |
+| **Phân tích** (`sql/marts`, `analysis.py`) | Xu hướng theo ngày mở cửa, ABC theo số lượng, giờ × thứ, ma trận doanh thu × biên, hệ số Tết theo số lượng và doanh thu, FP-Growth trên dữ liệu đã loại khuyến mãi, phát hiện nghi ngờ hết hàng bằng xác suất, mặt hàng hay được mua sỉ và lượng dự phòng gợi ý |
 | **Dự báo** (`forecasting/`) | Lớp ngày thường + lớp ngày lễ; phân loại nhu cầu **Syntetos–Boylan**; 8 mô hình StatsForecast (Croston, ADIDA, IMAPA, TSB, AutoETS...) + **LightGBM toàn cục** + 3 mô hình kết hợp (+ **Chronos-Bolt** tuỳ chọn, chưa chạy được); chọn mô hình trên 4 tuần, chấm trên 8 tuần khác |
 | **Quyết định** (`policy.py`) | Khoảng dự báo **conformal**; phân vị τ theo loại nhóm hàng (ngôi sao 0,80 · bảo quản lâu 0,70 · dễ hư 0,55), nối phân tích biên lợi nhuận với mô hình |
 | **Giải thích** | SHAP cho LightGBM, quy đổi thành "% tác động" |
@@ -99,7 +102,7 @@ python -m hasu.business_report   # báo cáo phân tích kinh doanh + biểu đ�
 python -m hasu.forecasting.run   # kiểm định, dự báo 28 ngày, đề xuất nhập, SHAP (~1 phút)
 python -m hasu.forecast_report   # báo cáo mô hình dự báo
 streamlit run app/streamlit_app.py
-pytest                           # 26 bài kiểm thử
+pytest                           # 27 bài kiểm thử
 ```
 
 Không có file KiotViet? Chạy thẳng `streamlit run app/streamlit_app.py`, ứng dụng sẽ dùng dữ liệu demo.
@@ -115,7 +118,7 @@ sql/marts/           bảng tổng hợp cho phân tích và dự báo
 src/hasu/            ingest, pipeline, quality, analysis, báo cáo
 src/hasu/forecasting data, models, evaluate, policy, monitor, run
 app/                 ứng dụng Streamlit + dữ liệu demo
-tests/               kiểm thử: nạp, làm sạch, chỉ số, phân loại nhu cầu, drift
+tests/               kiểm thử: nạp, làm sạch, bảng mua sỉ, chỉ số, phân loại nhu cầu, drift
 docs/                báo cáo, biểu đồ, ảnh chụp, hướng dẫn, mockup, kịch bản thuyết trình
 ```
 

@@ -10,7 +10,7 @@ lib.header("Phân tích kinh doanh",
            "Quyết định vận hành dùng số lượng; quyết định tài chính dùng doanh thu và lợi nhuận.",
            section="Phân tích")
 
-tabs = st.tabs(["Xu hướng", "ABC", "Giờ × thứ", "Biên lợi nhuận", "Tết", "Giỏ hàng", "Nghi ngờ hết hàng"])
+tabs = st.tabs(["Xu hướng", "ABC", "Giờ × thứ", "Biên lợi nhuận", "Tết", "Giỏ hàng", "Nghi ngờ hết hàng", "Mua sỉ"])
 
 # ---------------------------------------------------------------- Xu hướng
 with tabs[0]:
@@ -168,3 +168,41 @@ with tabs[6]:
         "product_name": "Mã hàng", "cat_l3": "Nhóm hàng", "gap_start": "Từ", "gap_end": "Đến",
         "gap_open_days": "Số ngày không bán", "sell_day_ratio": st.column_config.NumberColumn("% ngày có bán", format="percent"),
         "status": "Đánh giá"})
+
+# ---------------------------------------------------------------- Mua sỉ
+with tabs[7]:
+    if not lib.has_table("mart_bulk_sku"):
+        lib.alert("warning", "Chưa có bảng mặt hàng mua sỉ. Hãy chạy lại pipeline: <code>python -m hasu.pipeline</code>.")
+    else:
+        bk = lib.q("SELECT * FROM mart_bulk_sku")
+        freq = bk[bk["bulk_frequency"] == "thuong_xuyen"]
+        n_months = int(bk["n_data_months"].iloc[0])
+        st.markdown("Mô hình chỉ dự báo **bán lẻ**. Bảng này cho biết mặt hàng nào khách sỉ (đơn lớn, đơn tổ chức) "
+                    "hay mua và mỗi lần khoảng bao nhiêu, để giữ thêm hàng dự phòng ngoài phần dự báo.")
+        lib.kpis([
+            {"label": "Mua sỉ thường xuyên", "value": f"{lib.num(len(freq))} mã", "icon": "repeat",
+             "note": f"Có đơn sỉ ở ≥ {(n_months + 1) // 2}/{n_months} tháng; chiếm "
+                     f"<b>{lib.pct(freq['bulk_revenue'].sum() / bk['bulk_revenue'].sum(), 0)}</b> doanh thu sỉ"},
+            {"label": "Hơn nửa số lượng đi qua kênh sỉ", "value": f"{int((freq['bulk_share_qty'] > 0.5).sum())} mã",
+             "icon": "warehouse", "tone": "orange", "note": "Trong nhóm thường xuyên: dễ thiếu nếu chỉ nhập theo dự báo bán lẻ"},
+            {"label": "Vốn giữ dự phòng", "value": lib.vnd(freq["reserve_value"].sum()), "icon": "savings",
+             "tone": "violet", "note": "Một đơn sỉ điển hình cho mỗi mã thường xuyên, tính theo giá vốn"},
+        ])
+        labels = {"thuong_xuyen": "Thường xuyên", "thinh_thoang": "Thỉnh thoảng", "mot_lan": "Một lần"}
+        pick = st.segmented_control("Mức độ mua sỉ", list(labels.values()), default="Thường xuyên")
+        key = {v: k for k, v in labels.items()}.get(pick or "Thường xuyên")
+        view = bk[bk["bulk_frequency"] == key][["product_name", "cat_l3", "n_bulk_months", "n_bulk_orders",
+                                                "median_qty_per_order", "max_qty_per_order", "bulk_share_qty",
+                                                "reserve_qty", "last_bulk_date"]]
+        with lib.card():
+            st.dataframe(view, hide_index=True, width="stretch", column_config={
+                "product_name": "Mã hàng", "cat_l3": "Nhóm hàng",
+                "n_bulk_months": "Số tháng có đơn sỉ", "n_bulk_orders": "Số lần mua sỉ",
+                "median_qty_per_order": st.column_config.NumberColumn("SL mỗi lần (trung vị)", format="%.1f"),
+                "max_qty_per_order": st.column_config.NumberColumn("SL lớn nhất", format="%.0f"),
+                "bulk_share_qty": st.column_config.ProgressColumn("% SL qua kênh sỉ", format="%.0f%%",
+                                                                  min_value=0, max_value=1),
+                "reserve_qty": st.column_config.NumberColumn("Dự phòng gợi ý", format="%.0f"),
+                "last_bulk_date": "Lần mua sỉ gần nhất"})
+        lib.note("Lượng nhập = dự báo bán lẻ + dự phòng gợi ý (chỉ cho mã thường xuyên). Mã thỉnh thoảng và một lần: "
+                 "nhập khi khách đặt trước. Ngưỡng \"một nửa số tháng\" là lựa chọn của người phân tích.")

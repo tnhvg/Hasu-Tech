@@ -183,7 +183,8 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
 
     add("## 1. Dữ liệu đầu vào và phân loại nhu cầu\n")
     add("- Mục tiêu: **số lượng bán lẻ** theo ngày của từng nhóm hàng cấp 3, đã loại đơn lớn, đơn tổ chức, "
-        "xuất nội bộ, hàng trả, hàng tặng (xem báo cáo chất lượng dữ liệu).\n"
+        "xuất nội bộ, hàng trả, hàng tặng (xem báo cáo chất lượng dữ liệu). Phần đơn sỉ được xử lý riêng bằng "
+        "lượng dự phòng cho các mã hay được mua sỉ (báo cáo phân tích kinh doanh, mục 8).\n"
         "- **Lớp ngày thường:** ngày đóng cửa và vùng 28 ngày quanh Tết (từ 14 ngày trước đến 13 ngày sau "
         "mùng 1) được thay bằng trung vị cùng thứ "
         "trong các tuần lân cận trước khi huấn luyện, để mô hình học đường nền không bị đột biến kéo lệch. "

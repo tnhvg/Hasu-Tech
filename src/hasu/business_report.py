@@ -193,6 +193,7 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     tet = q("SELECT * FROM mart_tet_effect")
     rules = q("SELECT * FROM mart_basket_rules")
     stock = q("SELECT * FROM mart_stockout_suspects")
+    bulk = q("SELECT * FROM mart_bulk_sku")
     daily = q("SELECT date, revenue, quantity, n_invoices FROM mart_daily_traffic ORDER BY 1")
     daily["date"] = pd.to_datetime(daily["date"])
     closed = pd.to_datetime(q("SELECT date FROM dim_date WHERE NOT is_open")["date"])
@@ -232,7 +233,8 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     store_margin = cm["store_margin"].iloc[0]
     milk = cm[cm["cat_l1"] == "Sữa, sản phẩm từ sữa"]
 
-    tt = tet[tet["cat_l1"] == "Toàn cửa hàng"].set_index("tet_window")
+    # reindex để thứ tự dòng luôn cố định (bảng SQL không đảm bảo thứ tự)
+    tt = tet[tet["cat_l1"] == "Toàn cửa hàng"].set_index("tet_window").reindex(["Trước Tết", "Sau Tết"])
     pre = tet[(tet["tet_window"] == "Trước Tết") & (tet["cat_l1"] != "Toàn cửa hàng")
               & (tet["rev_per_day"] > 50_000)].sort_values("rev_factor", ascending=False)
 
@@ -278,7 +280,11 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "hộp, nhưng dữ liệu chưa kiểm chứng được).")
     add(f"5. **Cao điểm lúc {peak_hour}h** ({num(by_hour.max(), 1)} hoá đơn/giờ), thấp điểm "
         f"{trough.idxmin()}h–15h. Chủ nhật vắng nhất ({num(by_day.min(), 0)} hoá đơn/ngày so với "
-        f"{num(by_day.drop(7).mean(), 0)} các ngày khác).\n")
+        f"{num(by_day.drop(7).mean(), 0)} các ngày khác).")
+    n_freq_bulk = int((bulk["bulk_frequency"] == "thuong_xuyen").sum())
+    add(f"6. **{n_freq_bulk} mã hàng được mua sỉ thường xuyên** (có đơn sỉ ở ít nhất một nửa số tháng), chủ yếu "
+        "là nước uống, cà phê, trà, giấy và đồ vệ sinh. Mô hình chỉ dự báo bán lẻ, nên với các mã này cần "
+        "giữ thêm khoảng một đơn sỉ điển hình làm dự phòng (mục 8).\n")
 
     # ---- 1. Xu hướng ----
     add("## 1. Xu hướng doanh thu và lợi nhuận\n")
@@ -460,6 +466,61 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "ngừng kinh doanh cũng có biểu hiện giống hệt. Danh sách đầy đủ có trong ứng dụng để chủ cửa hàng "
         "xác nhận từng trường hợp.\n")
 
+    # ---- 8. Mặt hàng hay được mua sỉ ----
+    add("## 8. Mặt hàng hay được mua sỉ\n")
+    freq = bulk[bulk["bulk_frequency"] == "thuong_xuyen"].sort_values(
+        ["n_bulk_months", "n_bulk_orders"], ascending=False)
+    n_data_months = int(bulk["n_data_months"].iloc[0])
+    bm = monthly[monthly["channel"] == "Đơn lớn / tổ chức"].set_index("year_month")["n_invoices"]
+    add("Mô hình dự báo chỉ dự báo kênh bán lẻ (xem báo cáo dự báo), vì đơn sỉ đến bất chợt và mỗi đơn "
+        "rất lớn. Mục này trả lời câu hỏi còn lại: **những mặt hàng nào khách sỉ hay mua, mỗi lần khoảng "
+        "bao nhiêu**, để cửa hàng giữ thêm hàng dự phòng ngoài phần dự báo bán lẻ. Đơn sỉ ở đây gồm đơn lớn "
+        "và đơn của tổ chức; mỗi mã trong một hoá đơn sỉ tính là một lần mua.\n")
+    add(f"Phân loại theo số tháng có đơn sỉ trên {n_data_months} tháng dữ liệu: **thường xuyên** là có đơn sỉ "
+        f"ở ít nhất một nửa số tháng (từ {(n_data_months + 1) // 2} tháng trở lên), **thỉnh thoảng** là từ 2 lần mua "
+        "trở lên nhưng chưa đủ nửa số tháng, **một lần** là chỉ được mua sỉ đúng một lần. Ngưỡng một nửa "
+        "số tháng là lựa chọn của người phân tích để chủ cửa hàng dễ kiểm tra lại, không phải ngưỡng chuẩn.\n")
+    labels = {"thuong_xuyen": "Thường xuyên", "thinh_thoang": "Thỉnh thoảng", "mot_lan": "Một lần"}
+    g = bulk.groupby("bulk_frequency").agg(n=("sku", "size"), orders=("n_bulk_orders", "sum"),
+                                           rev=("bulk_revenue", "sum")).reindex(list(labels))
+    add(md_table(pd.DataFrame({
+        "Mức độ": [labels[k] for k in g.index],
+        "Số mã": g["n"].map(num),
+        "Số lần mua sỉ": g["orders"].map(num),
+        "Tỷ trọng doanh thu sỉ": (g["rev"] / g["rev"].sum()).map(pct),
+    })))
+    add(f"\n**{len(freq)} mã được mua sỉ thường xuyên** (các mã có số tháng nhiều nhất):\n")
+    top_b = freq.head(15)
+    add(md_table(pd.DataFrame({
+        "Mã hàng": top_b["product_name"],
+        "Nhóm hàng cấp 3": top_b["cat_l3"],
+        "Số tháng có đơn sỉ": top_b["n_bulk_months"],
+        "Số lần mua": top_b["n_bulk_orders"],
+        "SL mỗi lần (trung vị)": top_b["median_qty_per_order"].map(lambda v: num(v, 1) if v % 1 else num(v)),
+        "% SL bán qua kênh sỉ": top_b["bulk_share_qty"].map(lambda v: pct(v, 0)),
+        "Dự phòng gợi ý": top_b["reserve_qty"].map(num),
+    })))
+    n_drink = int((freq["cat_l1"] == "Đồ uống").sum())
+    add(f"\n**Nhận xét.**\n\n"
+        f"- Khách sỉ mua lặp lại một nhóm hàng khá ổn định: {n_drink}/{len(freq)} mã thường xuyên là đồ uống "
+        "(nước khoáng, nước ion, nước ngọt, cà phê, trà), số còn lại chủ yếu là giấy ăn, giấy vệ sinh, túi rác, "
+        "cốc giấy và nước tẩy rửa. Đây là những thứ thường dùng cho văn phòng, tiếp khách và vệ sinh; dữ liệu "
+        "không có thông tin khách nên đây chỉ là nhận định từ loại hàng.\n"
+        f"- Ở {int((freq['bulk_share_qty'] > 0.5).sum())}/{len(freq)} mã thường xuyên, **hơn một nửa số lượng "
+        f"bán ra đi qua kênh sỉ** (trung vị {pct(freq['bulk_share_qty'].median(), 0)}). Nếu chỉ nhập theo dự "
+        "báo bán lẻ, các mã này rất dễ thiếu khi có đơn sỉ.\n"
+        f"- Số đơn sỉ mỗi tháng tăng dần: {num(bm.loc['2025-09':'2025-11'].mean())} đơn/tháng trong tháng 9–11/2025, "
+        f"lên {num(bm.loc['2026-04':'2026-06'].mean())} đơn/tháng trong tháng 4–6/2026, nên nhu cầu dự phòng "
+        "có xu hướng tăng.\n"
+        f"- Giữ sẵn một đơn sỉ điển hình (trung vị số lượng mỗi lần mua) cho {len(freq)} mã này cần khoảng "
+        f"**{mil(freq['reserve_value'].sum())} vốn** tính theo giá vốn: một khoản nhỏ so với doanh thu sỉ "
+        f"{mil(bulk['bulk_revenue'].sum())} trong kỳ.\n\n"
+        "**Cách dùng:** lượng nhập = dự báo bán lẻ (ứng dụng) + dự phòng sỉ cho các mã thường xuyên. Mã "
+        "thỉnh thoảng và một lần không giữ dự phòng, chỉ nhập khi khách đặt trước. Đơn sỉ lớn bất thường "
+        "(số lượng lớn nhất có thể gấp nhiều lần trung vị) vẫn cần khách báo trước vài ngày.\n\n"
+        "**Giới hạn:** dữ liệu chỉ có 10 tháng và không có mã khách hàng, nên không biết các đơn lặp lại có phải "
+        "cùng một khách hay không. Danh sách đầy đủ có trong ứng dụng (trang Phân tích, thẻ Mua sỉ).\n")
+
     # ---- Khuyến nghị ----
     add("## Khuyến nghị tổng hợp\n")
     add("| # | Khuyến nghị | Căn cứ | Ưu tiên |\n|---|---|---|---|\n"
@@ -470,7 +531,8 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "| 5 | Nhập hàng Tết theo hệ số số lượng từng nhóm, không theo hệ số doanh thu | Mục 5 | Theo mùa |\n"
         "| 6 | Xếp ca theo cao điểm 16h–19h và 8h–12h; nhận hàng 13h–15h | Mục 3 | Thấp, làm ngay được |\n"
         "| 7 | Bày bật lửa cạnh quầy thuốc lá, mì cạnh xúc xích | Mục 6 | Thấp, làm ngay được |\n"
-        "| 8 | Chuẩn hoá cây nhóm hàng trong KiotViet: sửa nhóm của bật lửa, gộp các nhóm trùng nghĩa (mì, kẹo, snack) | Báo cáo chất lượng dữ liệu, mục 4; mục 6 | Thấp, giúp mọi phân tích sau chính xác hơn |\n")
+        "| 8 | Chuẩn hoá cây nhóm hàng trong KiotViet: sửa nhóm của bật lửa, gộp các nhóm trùng nghĩa (mì, kẹo, snack) | Báo cáo chất lượng dữ liệu, mục 4; mục 6 | Thấp, giúp mọi phân tích sau chính xác hơn |\n"
+        f"| 9 | Giữ hàng dự phòng bằng khoảng một đơn sỉ điển hình cho {len(freq)} mã hay được mua sỉ; mã khác chỉ nhập khi khách đặt trước | Mục 8 | Trung bình |\n")
     return "\n".join(out)
 
 
