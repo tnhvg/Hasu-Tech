@@ -27,7 +27,8 @@ phí (lợi nhuận mất + hàng hỏng + chi phí vốn) giảm 13%.
 
 **3. Vì sao chọn mô hình kết hợp, trong khi LightGBM có điểm tốt nhất?**
 Chỉ được chọn mô hình trên 4 tuần "chọn mô hình". Ở đó mô hình kết hợp thắng; trên 8 tuần chấm điểm nó xếp
-thứ 4, kém LightGBM khoảng 1 điểm %, nhưng có thứ hạng trung bình tốt nhất qua hai giai đoạn. Nếu nhìn kết quả 8 tuần chấm
+thứ 4, kém LightGBM khoảng 1 điểm %. Thứ hạng các mô hình đứng đầu đảo qua lại giữa hai giai đoạn, và kiểm định thống kê
+cho thấy chênh lệch giữa chúng không có ý nghĩa (p = 0,90). Nếu nhìn kết quả 8 tuần chấm
 điểm rồi mới chọn LightGBM, con số báo cáo sẽ bị đẹp giả (rò rỉ dữ liệu kiểm tra).
 
 **4. Bạn xử lý ngày cửa hàng đóng cửa thế nào?**

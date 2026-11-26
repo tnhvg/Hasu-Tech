@@ -277,8 +277,9 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         f"chấm ({pct(lgb_hold)})? Vì quyết định chọn chỉ được dựa trên 4 tuần đầu. Ở đó LightGBM đứng sau "
         f"mô hình kết hợp. Mô hình được chọn xếp hạng {rank_sel} ở 4 tuần chọn và hạng {rank_hold} ở 8 tuần "
         f"chấm (kém LightGBM {num((ch['WMAPE'] - lgb_hold) * 100, 1)} điểm %): không phải mô hình tốt nhất trên "
-        "dữ liệu chấm điểm, nhưng có thứ hạng trung bình tốt nhất qua hai giai đoạn và gần như không lệch. Chọn "
-        "lại theo kết quả chấm điểm là dùng dữ liệu kiểm tra để ra quyết định, làm con số báo cáo lạc quan "
+        "dữ liệu chấm điểm, nhưng gần như không lệch. Thứ hạng của các mô hình đứng đầu đảo qua lại giữa hai "
+        "giai đoạn, cho thấy chênh lệch giữa chúng rất nhỏ so với dao động ngẫu nhiên (xem kiểm định bên dưới). "
+        "Chọn lại theo kết quả chấm điểm là dùng dữ liệu kiểm tra để ra quyết định, làm con số báo cáo lạc quan "
         "hơn thực tế.\n")
     add("**Chênh lệch có ý nghĩa thống kê không?** Với mỗi nhóm hàng, lấy sai số tuyệt đối trung bình theo tuần "
         "của mô hình được chọn trừ của mô hình so sánh, rồi kiểm định trên các nhóm hàng (gộp theo nhóm để xử "
