@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from hasu.forecasting.data import classify_demand, impute_abnormal_days, tet_offset
-from hasu.forecasting.evaluate import bias, confidence_label, tracking_signal, wmape
+from hasu.forecasting.evaluate import bias, confidence_label, select_champion, tracking_signal, wmape
 from hasu.forecasting.policy import service_class, simulate_orders
 
 
@@ -148,3 +148,15 @@ def test_sku_allocation_matches_group_order():
     out = allocate_skus(a)
     assert out["sku_order_qty"].sum() == 7
     assert out["share"].sum() == pytest.approx(1.0)
+
+
+def test_select_champion_skips_heavily_biased_model():
+    # Mô hình "thap" có WMAPE thấp hơn nhưng luôn dự báo thiếu 30% -> không được chọn
+    y = np.array([10.0, 2.0, 0.0, 30.0] * 3)
+    weekly = pd.DataFrame({
+        "phase": "selection", "y": y,
+        "thap": y * 0.7,
+        "can_bang": y + np.array([6.0, -6.0, 3.0, -3.0] * 3),  # WMAPE 43% > 30% nhưng không lệch
+    })
+    assert select_champion(weekly, ["thap", "can_bang"], max_abs_bias=0.10) == "can_bang"
+    assert select_champion(weekly, ["thap", "can_bang"], max_abs_bias=1.0) == "thap"

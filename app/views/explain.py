@@ -4,6 +4,7 @@ import streamlit as st
 
 import lib
 from hasu import viz
+from hasu.forecasting.models import ENSEMBLES
 
 lib.header("Giải thích dự báo",
            "SHAP phân rã dự báo của LightGBM thành đóng góp của từng yếu tố.", section="Dự báo")
@@ -12,9 +13,12 @@ if not lib.has_table("fc_shap_global"):
     st.stop()
 
 info = lib.q("SELECT * FROM fc_run_info").iloc[0]
-st.markdown(f"Mô hình đang dùng là **{info['champion_label']}**, tức trung bình của các mô hình thành phần. "
-            "Trang này giải thích thành phần **LightGBM**, thành phần duy nhất học từ nhiều yếu tố cùng lúc. "
-            "AutoETS và IMAPA chỉ dựa vào chuỗi lịch sử của chính nhóm hàng.")
+PARTS = ENSEMBLES.get(info["champion"], [info["champion"]])
+others = [p for p in PARTS if p != "LightGBM"]
+st.markdown(f"Mô hình đang dùng là **{info['champion_label']}**"
+            + (", tức trung bình của các mô hình thành phần. " if len(PARTS) > 1 else ". ")
+            + "Trang này giải thích thành phần **LightGBM**, thành phần duy nhất học từ nhiều yếu tố cùng lúc."
+            + (f" {', '.join(others)} chỉ dựa vào chuỗi lịch sử của chính nhóm hàng." if others else ""))
 
 g = lib.q("SELECT * FROM fc_shap_global ORDER BY mean_abs_shap")
 fig = go.Figure(go.Bar(x=g["mean_abs_shap"], y=g["group"], orientation="h", marker_color=viz.SERIES[0],
@@ -60,7 +64,7 @@ lib.show(fig, 400, title=f"{uid}, {lib.day_label(day)}: từ mức bán thườn
          yaxis=dict(autorange="reversed"), xaxis_title="Số lượng / ngày")
 if len(fc):
     r = fc.iloc[0]
-    parts = {k: r[k] for k in ["LightGBM", "AutoETS", "IMAPA"] if k in r and pd.notna(r[k])}
+    parts = {k: r[k] for k in PARTS if k in r and pd.notna(r[k])}
     lib.alert("good", "<b>Dự báo cuối cùng</b> là trung bình các thành phần: "
               + " · ".join(f"{k} {lib.num(v, 1)}" for k, v in parts.items())
               + f" → <b>{lib.num(r['forecast'], 1)} sản phẩm</b>.")

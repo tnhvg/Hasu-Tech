@@ -186,8 +186,8 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         f"Dữ liệu tới {pd.Timestamp(info['data_until']):%d/%m/%Y}._\n")
 
     add("## Kết quả chính\n")
-    add(f"- **Mô hình được chọn:** {info['champion_label']}, chọn trên 4 tuần đầu của kiểm định, "
-        "không nhìn vào 8 tuần dùng để chấm điểm.\n"
+    add(f"- **Mô hình được chọn:** {info['champion_label']}, có WMAPE thấp nhất trên 4 tuần đầu của kiểm định "
+        "trong các mô hình có |Bias| ≤ 10%, không nhìn vào 8 tuần dùng để chấm điểm.\n"
         f"- **Toàn cửa hàng:** sai số dự báo tuần (WMAPE) {pct(lv[('Toàn cửa hàng', champion)])}, "
         f"tức độ chính xác khoảng **{pct(1 - lv[('Toàn cửa hàng', champion)], 0)}**. Mức nền: "
         f"{pct(lv[('Toàn cửa hàng', baseline)])}. Lưu ý: ở cấp này trung bình trượt 28 ngày còn tốt hơn "
@@ -196,8 +196,10 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         f"{pct(bl['WMAPE'])} của mức nền, **giảm {pct(1 - ch['WMAPE'] / bl['WMAPE'], 0)} sai số**. "
         f"Độ lệch (bias) {pct(ch['Bias'])}, trong khi mức nền dự báo thừa {pct(bl['Bias'])}.\n"
         f"- **Kiểm định thống kê:** mô hình tốt hơn mức nền có ý nghĩa thống kê (Wilcoxon p = "
-        f"{num(s_bl.wilcoxon_p, 3)}), nhưng chênh lệch với trung bình trượt 28 ngày **không có ý nghĩa thống kê** "
-        f"(Wilcoxon p = {num(s_ma.wilcoxon_p, 2)}; Diebold–Mariano p = {num(s_ma.dm_p, 2)}).\n"
+        f"{num(s_bl.wilcoxon_p, 3)}); chênh lệch với trung bình trượt 28 ngày "
+        + ("**có ý nghĩa thống kê** ở mức 5% " if max(s_ma.wilcoxon_p, s_ma.dm_p) < 0.05
+           else "**không có ý nghĩa thống kê** ")
+        + f"(Wilcoxon p = {num(s_ma.wilcoxon_p, 3)}; Diebold–Mariano p = {num(s_ma.dm_p, 3)}).\n"
         f"- **Mô phỏng nhập hàng 8 tuần có chuyển tồn** (hàng bảo quản lâu bán tiếp tuần sau, hàng dễ hư hỏng "
         f"còn dư bị bỏ): nhập theo mô hình kết hợp phân vị có tổng chi phí (lợi nhuận mất do thiếu hàng + "
         f"hàng hỏng + chi phí vốn) **{mil(model_c.total_cost)}**, so với {mil(ma_c.total_cost)} của cách nhẩm "
@@ -205,9 +207,9 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     n_imp = round(info["share_improved"] * n_bt)
     add("**Nói thẳng về giới hạn:** chỉ "
         f"{pct(info['share_improved'], 0)} số nhóm hàng ({n_imp}/{n_bt} nhóm) có sai số thấp "
-        f"hơn mức nền khi xét riêng từng nhóm, mô hình chỉ tốt hơn trung bình trượt 28 ngày một chút và "
-        f"không có ý nghĩa thống kê ({pct(ch['WMAPE'])} so với {pct(ma['WMAPE'])}), ở cấp toàn cửa hàng còn "
-        f"kém trung bình trượt 28 ngày. Mức giảm {pct(1 - ch['WMAPE'] / bl['WMAPE'], 0)} so với mức nền một "
+        f"hơn mức nền khi xét riêng từng nhóm, mô hình chỉ tốt hơn trung bình trượt 28 ngày "
+        f"{num((ma['WMAPE'] - ch['WMAPE']) * 100, 1)} điểm phần trăm ({pct(ch['WMAPE'])} so với {pct(ma['WMAPE'])}), ở cấp toàn cửa hàng "
+        f"còn kém trung bình trượt 28 ngày. Mức giảm {pct(1 - ch['WMAPE'] / bl['WMAPE'], 0)} so với mức nền một "
         "phần là do lượng khách giảm khoảng một phần tư đúng trong 8 tuần chấm điểm (tháng 5–6/2026): trung "
         f"bình lịch sử không theo kịp nên dự báo thừa {pct(bl['Bias'])}. Với dữ liệu thưa như cửa hàng này, không mô hình nào dự báo chính xác từng "
         "nhóm hàng nhỏ theo tuần. Giá trị thực tế nằm ở: (1) dự báo tổng và nhóm lớn đáng tin cậy, "
@@ -444,12 +446,11 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "| Không có tồn kho, thời gian giao hàng | Mô phỏng chỉ so sánh tương đối; cần dữ liệu tồn kho để tính tồn kho an toàn |\n"
         "| Hết hàng chỉ suy đoán từ dữ liệu bán | Ứng dụng có danh sách để chủ cửa hàng xác nhận |\n"
         "| Dữ liệu rất thưa ở cấp nhóm nhỏ | Nhãn độ tin cậy; khuyến nghị dùng dự báo cấp cao hơn |\n"
-        "| Mô hình chỉ tốt hơn trung bình 28 ngày một chút; ở cấp toàn cửa hàng còn kém hơn | Thử chọn mô hình theo kiểu nhu cầu; dùng song song trung bình 28 ngày cho kế hoạch vốn tổng |\n"
+        "| Mô hình tốt hơn trung bình 28 ngày ở cấp nhóm hàng nhưng ở cấp toàn cửa hàng còn kém hơn | Dùng song song trung bình 28 ngày cho kế hoạch vốn tổng; thử chọn mô hình theo kiểu nhu cầu |\n"
         "| Vòng lặp tự đánh giá chưa kiểm chứng trên dữ liệu mới | Chạy với dữ liệu từ tháng 7/2026 |\n"
-        "| Mô hình không tốt hơn trung bình 28 ngày có ý nghĩa thống kê | Báo cáo đúng phạm vi; dùng giá trị ở chính sách nhập và giải thích |\n"
-        "| Chronos-Bolt chỉ được đối chiếu sau khi đã chốt mô hình; dùng riêng thì dự báo thiếu khoảng 25% "
-        "([chi tiết](chronos_comparison.md)) | Đưa tổ hợp LightGBM + AutoETS + IMAPA + Chronos vào danh sách dự tuyển, kiểm định lại trên dữ liệu từ tháng 7/2026 |
-")
+        "| Danh sách dự tuyển và ràng buộc độ lệch được bổ sung sau khi đã xem kết quả chấm điểm của lần đánh giá đầu | Kiểm định lại mô hình được chọn trên dữ liệu từ tháng 7/2026 |\n"
+        "| Chronos-Bolt cần PyTorch và tải mô hình (~183 MB), nên bản web công khai không chạy được Chronos "
+        "| Chạy cục bộ với `pip install -e \".[chronos]\"`; trên web, khi nạp dữ liệu mới hệ thống chọn trong các mô hình còn lại |\n")
     return "\n".join(out)
 
 

@@ -29,21 +29,27 @@ Thành công được đo bằng ba chỉ tiêu:
 
 | Chỉ tiêu (8 tuần kiểm định, đơn vị tuần) | Mô hình | Trung bình 28 ngày | Mức nền |
 |---|---|---|---|
-| WMAPE toàn cửa hàng | 14,5% (chính xác ~85%) | **14,3%** | 23,8% |
-| WMAPE ngành hàng cấp 1 | **29,1%** | 29,9% | 43,4% |
-| WMAPE nhóm hàng cấp 3 | **54,2%** | 56,4% | 73,1% |
-| Chênh lệch có ý nghĩa thống kê? (Wilcoxon, theo nhóm hàng) | – | Không (p = 0,90) | Có (p = 0,001) |
-| Tỷ lệ nhóm hàng có sai số thấp hơn mức nền | 53% (46/87 nhóm) | – | – |
-| Mô phỏng 8 tuần có chuyển tồn: tổng chi phí (lợi nhuận mất + hàng hỏng + chi phí vốn) | **6,8 triệu đ** | 7,9 triệu đ | 22,7 triệu đ |
+| WMAPE toàn cửa hàng | 16,2% (chính xác ~84%) | **14,3%** | 23,8% |
+| WMAPE ngành hàng cấp 1 | **28,9%** | 29,9% | 43,4% |
+| WMAPE nhóm hàng cấp 3 | **51,9%** | 56,4% | 73,1% |
+| Chênh lệch có ý nghĩa thống kê? (theo nhóm hàng) | – | Có (Wilcoxon p = 0,014; Diebold–Mariano p = 0,032) | Có (p < 0,001) |
+| Tỷ lệ nhóm hàng có sai số thấp hơn mức nền | 62% (54/87 nhóm) | – | – |
+| Mô phỏng 8 tuần có chuyển tồn: tổng chi phí (lợi nhuận mất + hàng hỏng + chi phí vốn) | **6,9 triệu đ** | 7,9 triệu đ | 22,7 triệu đ |
+
+Mô hình được chọn là **tổ hợp LightGBM + AutoETS + IMAPA + Chronos-Bolt**: WMAPE thấp nhất trên 4 tuần chọn trong 14
+mô hình dự tuyển có |Bias| ≤ 10%. Chronos-Bolt dùng riêng có WMAPE thấp hơn nữa nhưng dự báo thiếu khoảng 27% ngay ở
+giai đoạn chọn (thiếu 25% ở 8 tuần chấm), nên bị loại.
 
 Mọi tham số dùng trong kiểm định và mô phỏng (nhóm đủ dữ liệu, kiểu nhu cầu, phân nhóm biên lợi nhuận, giá vốn,
 nhận diện đơn lớn, nội suy ngày đóng cửa) chỉ lấy từ dữ liệu **trước mốc cắt**, nên không có rò rỉ dữ liệu tương lai.
 
-**Nói thẳng về giới hạn:** ở cấp nhóm hàng nhỏ theo tuần, nhu cầu gần như ngẫu nhiên. Mô hình chỉ tốt hơn trung
-bình trượt 28 ngày một chút (54,2% so với 56,4%) và **không có ý nghĩa thống kê**, chỉ thắng mức nền ở khoảng một
-nửa số nhóm, và ở cấp toàn cửa hàng trung bình trượt 28 ngày còn nhỉnh hơn. Mức giảm 26% so với mức nền một phần do
-lượng khách giảm đúng trong 8 tuần chấm điểm. Khi mô phỏng có chuyển tồn kho, chính sách nhập theo phân vị giảm
-14% hàng thiếu và 13% tổng chi phí so với cách nhẩm theo trung bình 28 ngày. Giá trị thực tế nằm ở dự
+**Nói thẳng về giới hạn:** ở cấp nhóm hàng nhỏ theo tuần, nhu cầu gần như ngẫu nhiên. Mô hình tốt hơn trung bình
+trượt 28 ngày 4,5 điểm phần trăm (51,9% so với 56,4%, có ý nghĩa thống kê), nhưng chỉ thắng mức nền ở 54/87 nhóm,
+và ở cấp toàn cửa hàng trung bình trượt 28 ngày còn tốt hơn (14,3% so với 16,2%). Danh sách dự tuyển có Chronos và
+ràng buộc độ lệch được bổ sung sau lần đánh giá đầu (khi đó mô hình được chọn là LightGBM + AutoETS + IMAPA, 54,2%),
+nên cần kiểm định lại trên dữ liệu mới. Mức giảm 29% so với mức nền một phần do lượng khách giảm đúng trong 8 tuần
+chấm điểm. Khi mô phỏng có chuyển tồn kho, chính sách nhập theo phân vị giảm 15% hàng thiếu và 13% tổng chi phí so
+với cách nhẩm theo trung bình 28 ngày. Giá trị thực tế nằm ở dự
 báo cấp cao đáng tin, chính sách nhập hàng theo phân vị, và khả năng giải thích, tự động hoá. Chi tiết trong
 [báo cáo mô hình](docs/forecast_report.md).
 
@@ -81,7 +87,7 @@ File Excel KiotViet ─► raw ─► staging ─► mart ─► phân tích (FP
 | **Làm sạch** (`sql/staging`) | Khử trùng lặp theo mã HĐ + thời gian + mã hàng; tính lại doanh thu mức dòng (khớp KiotViet tới 6 đ/tháng); điền giá vốn thiếu; sửa cây nhóm hàng; tách **đơn lớn / đơn tổ chức / xuất nội bộ** khỏi nhu cầu bán lẻ; ẩn danh người bán |
 | **Lịch** (`dim_date`) | Ngày đóng cửa (Tết, lễ) không bị coi là nhu cầu bằng 0 |
 | **Phân tích** (`sql/marts`, `analysis.py`) | Xu hướng theo ngày mở cửa, ABC theo số lượng, giờ × thứ, ma trận doanh thu × biên, hệ số Tết theo số lượng và doanh thu, FP-Growth trên dữ liệu đã loại khuyến mãi, phát hiện nghi ngờ hết hàng bằng xác suất, mặt hàng hay được mua sỉ và lượng dự phòng gợi ý |
-| **Dự báo** (`forecasting/`) | Lớp ngày thường + lớp ngày lễ; phân loại nhu cầu **Syntetos–Boylan**; 8 mô hình StatsForecast (Croston, ADIDA, IMAPA, TSB, AutoETS...) + **LightGBM toàn cục** + 3 mô hình kết hợp (+ **Chronos-Bolt** để đối chiếu, [kết quả](docs/chronos_comparison.md)); chọn mô hình trên 4 tuần, chấm trên 8 tuần khác |
+| **Dự báo** (`forecasting/`) | Lớp ngày thường + lớp ngày lễ; phân loại nhu cầu **Syntetos–Boylan**; 8 mô hình StatsForecast (Croston, ADIDA, IMAPA, TSB, AutoETS...) + **LightGBM toàn cục** + mô hình nền tảng **Chronos-Bolt** (zero-shot) + 4 mô hình kết hợp; chọn mô hình trên 4 tuần (WMAPE thấp nhất, |Bias| ≤ 10%), chấm trên 8 tuần khác |
 | **Quyết định** (`policy.py`) | Khoảng dự báo **conformal**; phân vị τ theo loại nhóm hàng (ngôi sao 0,80 · bảo quản lâu 0,70 · dễ hư 0,55), nối phân tích biên lợi nhuận với mô hình |
 | **Giải thích** | SHAP cho LightGBM, quy đổi thành "% tác động" |
 | **Vòng lặp** (`monitor.py`) | Lưu snapshot dự báo; khi có dữ liệu mới thì đối chiếu, tính WMAPE / bias / tracking signal, cảnh báo drift và tự huấn luyện lại (hiện mới minh hoạ trên dữ liệu kiểm định) |
@@ -106,12 +112,11 @@ pip install -e ".[dev]"
 # đặt file Excel "Báo cáo bán hàng theo lợi nhuận" xuất từ KiotViet vào data/raw/
 python -m hasu.pipeline          # nạp, làm sạch, tổng hợp, báo cáo chất lượng
 python -m hasu.business_report   # báo cáo phân tích kinh doanh + biểu đồ
-python -m hasu.forecasting.run   # kiểm định, dự báo 28 ngày, đề xuất nhập, SHAP (~1 phút)
+pip install -e ".[chronos]"      # Chronos-Bolt (PyTorch, tải ~183 MB từ Hugging Face lần đầu)
+python -m hasu.forecasting.run   # kiểm định 14 mô hình, dự báo 28 ngày, đề xuất nhập, SHAP (~5 phút)
 python -m hasu.forecast_report   # báo cáo mô hình dự báo
-pip install -e ".[chronos]"      # tuỳ chọn: Chronos-Bolt (tải ~183 MB từ Hugging Face)
-python -m hasu.forecasting.chronos_compare   # đối chiếu Chronos với 12 mô hình (~10 giây trên CPU)
 streamlit run app/streamlit_app.py
-pytest                           # 33 bài kiểm thử
+pytest                           # 34 bài kiểm thử
 ```
 
 Không có file KiotViet? Chạy thẳng `streamlit run app/streamlit_app.py`, ứng dụng sẽ dùng dữ liệu demo.
@@ -139,8 +144,8 @@ docs/                báo cáo, biểu đồ, ảnh chụp, hướng dẫn, mock
 | Không có dữ liệu tồn kho, thời gian giao hàng | Cần bổ sung để tính tồn kho an toàn; đề xuất hiện chưa trừ tồn |
 | Hết hàng chỉ suy đoán từ dữ liệu bán | Danh sách để chủ cửa hàng xác nhận |
 | Ảnh hưởng giảm giá lẫn với mua theo thùng | Kịch bản giảm giá hiển thị như mức trần, kèm cảnh báo |
-| Chronos-Bolt cho sai số cấp nhóm thấp nhất (50,6%) nhưng dự báo thiếu ~25% tổng lượng bán; chỉ được đối chiếu sau khi đã chốt mô hình | Tổ hợp LightGBM + AutoETS + IMAPA + Chronos (51,9%, lệch −5,8%) là ứng viên kiểm định tiếp trên dữ liệu mới ([chi tiết](docs/chronos_comparison.md)) |
-| Mô hình chỉ nhỉnh hơn trung bình 28 ngày; ở cấp toàn cửa hàng còn kém hơn | Chọn mô hình theo kiểu nhu cầu; dùng song song trung bình 28 ngày cho kế hoạch vốn tổng |
+| Chronos-Bolt cần PyTorch và tải mô hình nên bản web công khai không chạy được Chronos; danh sách dự tuyển có Chronos được bổ sung sau lần đánh giá đầu | Chạy cục bộ với `pip install -e ".[chronos]"`; kiểm định lại mô hình được chọn trên dữ liệu từ tháng 7/2026 |
+| Mô hình tốt hơn trung bình 28 ngày ở cấp nhóm hàng nhưng ở cấp toàn cửa hàng còn kém hơn | Chọn mô hình theo kiểu nhu cầu; dùng song song trung bình 28 ngày cho kế hoạch vốn tổng |
 | Một cửa hàng, chưa có đăng nhập; bản công khai chỉ giữ dữ liệu tải lên trong một phiên | Mở rộng: tài khoản và cơ sở dữ liệu riêng từng doanh nghiệp, mô hình toàn cục đa cửa hàng |
 
 ## Tài liệu

@@ -50,6 +50,8 @@ ENSEMBLES = {
     "Ens_LGB_IMAPA": ["LightGBM", "IMAPA"],
     "Ens_LGB_ETS_IMAPA": ["LightGBM", "AutoETS", "IMAPA"],
     "Ens_LGB_IMAPA_MA": ["LightGBM", "IMAPA", "MovingAvg28"],
+    # Chỉ có khi chạy được Chronos (cài gói tuỳ chọn và tải được mô hình)
+    "Ens_LGB_ETS_IMAPA_Chronos": ["LightGBM", "AutoETS", "IMAPA", "Chronos"],
 }
 
 # Tên hiển thị tiếng Việt
@@ -63,10 +65,11 @@ MODEL_LABELS = {
     "IMAPA": "IMAPA",
     "TSB": "TSB",
     "LightGBM": "LightGBM (toàn cục)",
-    "Chronos": "Chronos-Bolt (nền tảng)",
+    "Chronos": "Chronos-Bolt (mô hình nền tảng)",
     "Ens_LGB_IMAPA": "Kết hợp LightGBM + IMAPA",
     "Ens_LGB_ETS_IMAPA": "Kết hợp LightGBM + AutoETS + IMAPA",
     "Ens_LGB_IMAPA_MA": "Kết hợp LightGBM + IMAPA + TB 28 ngày",
+    "Ens_LGB_ETS_IMAPA_Chronos": "Kết hợp LightGBM + AutoETS + IMAPA + Chronos",
 }
 
 

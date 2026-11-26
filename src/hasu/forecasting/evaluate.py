@@ -79,15 +79,23 @@ def metrics_table(weekly: pd.DataFrame, model_cols: list[str], by: list[str] | N
     return pd.DataFrame(rows)
 
 
-def select_champion(weekly: pd.DataFrame, model_cols: list[str]) -> str:
+MAX_ABS_BIAS = 0.10
+
+
+def select_champion(weekly: pd.DataFrame, model_cols: list[str], max_abs_bias: float = MAX_ABS_BIAS) -> str:
     """Chọn MỘT mô hình có WMAPE thấp nhất trên các cửa sổ "selection".
 
+    Chỉ xét các mô hình có |Bias| trên giai đoạn chọn không quá `max_abs_bias`: dự báo
+    lệch một chiều không bù trừ được khi cộng lên các cấp trên và làm sai lượng nhập,
+    dù WMAPE ở cấp nhóm nhỏ có thể thấp (WMAPE ưu ái dự báo nghiêng về phía thấp khi
+    lượng bán lệch phải). Nếu không mô hình nào đạt, chọn theo WMAPE như cũ.
     Thử nghiệm cho thấy chọn riêng theo từng kiểu nhu cầu với chỉ 4 tuần là không
-    ổn định (mô hình thắng ở 4 tuần đầu thường không thắng ở 8 tuần sau), nên
-    chọn một mô hình chung, ưu tiên mô hình kết hợp vốn ổn định hơn.
+    ổn định, nên chọn một mô hình chung.
     """
     sel = weekly[weekly["phase"] == "selection"]
     m = metrics_table(sel, model_cols)
+    ok = m[m["Bias"].abs() <= max_abs_bias]
+    m = ok if len(ok) else m
     return str(m.loc[m["WMAPE"].idxmin(), "model"])
 
 

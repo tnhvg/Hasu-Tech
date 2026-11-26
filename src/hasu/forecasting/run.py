@@ -87,23 +87,35 @@ def backtest(d: pd.DataFrame, chronos=None) -> tuple[pd.DataFrame, list[str]]:
     return cv, models
 
 
-def horizon_ratio_quantiles(d: pd.DataFrame, groups: pd.Series, taus: list[float],
-                            n_windows: int = 9) -> pd.DataFrame:
+def horizon_ratio_quantiles(d: pd.DataFrame, groups: pd.Series, taus: list[float], champion: str,
+                            chronos=None, n_windows: int = 9) -> pd.DataFrame:
     """Hiệu chỉnh conformal riêng cho tuần dự báo thứ 1..4.
 
-    Kiểm định trượt với chân trời 28 ngày (bước 7 ngày) cho mô hình kết hợp
-    LightGBM + AutoETS + IMAPA, cộng theo tuần thứ k của chân trời, rồi tính phân
-    vị tỷ lệ thực tế / dự báo theo (kiểu nhu cầu, tuần thứ k). Độ bất định tăng
-    theo chân trời nên khoảng của tuần 4 rộng hơn tuần 1.
+    Kiểm định trượt với chân trời 28 ngày (bước 7 ngày) cho mô hình được chọn (hoặc
+    các thành phần của tổ hợp được chọn), cộng theo tuần thứ k của chân trời, rồi tính
+    phân vị tỷ lệ thực tế / dự báo theo (kiểu nhu cầu, tuần thứ k).
     """
-    sf = StatsForecast(models=[m for m in fm.STATS_MODELS if m.alias in ("AutoETS", "IMAPA")], freq="D", n_jobs=-1)
-    cv = sf.cross_validation(df=d[["unique_id", "ds", "y"]], h=HORIZON, step_size=H, n_windows=n_windows)
-    cvl = fm.lgbm_forecaster().cross_validation(df=fm.lgbm_frame(d), h=HORIZON, step_size=H, n_windows=n_windows,
-                                                static_features=["cat_l1"])
-    cv = cv.merge(cvl[["unique_id", "ds", "cutoff", "LightGBM"]], on=["unique_id", "ds", "cutoff"])
+    parts = fm.ENSEMBLES.get(champion, [champion])
+    stats = [m for m in fm.STATS_MODELS if m.alias in parts]
+    cv = None
+    if stats:
+        sf = StatsForecast(models=stats, freq="D", n_jobs=-1)
+        cv = sf.cross_validation(df=d[["unique_id", "ds", "y"]], h=HORIZON, step_size=H, n_windows=n_windows)
+        cv = cv.drop(columns="y")
+    if "LightGBM" in parts:
+        cvl = fm.lgbm_forecaster().cross_validation(df=fm.lgbm_frame(d), h=HORIZON, step_size=H, n_windows=n_windows,
+                                                    static_features=["cat_l1"])[["unique_id", "ds", "cutoff", "LightGBM"]]
+        cv = cvl if cv is None else cv.merge(cvl, on=["unique_id", "ds", "cutoff"])
+    if "Chronos" in parts:
+        if chronos is None:
+            raise ValueError("Mô hình được chọn cần Chronos nhưng chưa tải được Chronos")
+        last = d["ds"].max()
+        cutoffs = [last - pd.Timedelta(days=HORIZON + H * k) for k in range(n_windows)]
+        cvc = pd.concat([fm.chronos_predict(chronos, d[d["ds"] <= c], HORIZON).assign(cutoff=c) for c in cutoffs])
+        cv = cvc if cv is None else cv.merge(cvc, on=["unique_id", "ds", "cutoff"])
     cv = cv.merge(d[["unique_id", "ds", "y_raw", "is_closed"]], on=["unique_id", "ds"])
-    cv[["AutoETS", "IMAPA", "LightGBM"]] = cv[["AutoETS", "IMAPA", "LightGBM"]].clip(lower=0)
-    cv["fc"] = cv[["LightGBM", "AutoETS", "IMAPA"]].mean(axis=1)
+    cv[parts] = cv[parts].clip(lower=0)
+    cv["fc"] = cv[parts].mean(axis=1)
     cv["hweek"] = (cv["ds"] - cv["cutoff"]).dt.days.sub(1) // 7 + 1
     w = (cv[~cv["is_closed"]].groupby(["unique_id", "cutoff", "hweek"], as_index=False)
          .agg(y=("y_raw", "sum"), fc=("fc", "sum")))
@@ -141,7 +153,7 @@ def significance(hold: pd.DataFrame, champion: str, others: list[str]) -> pd.Dat
 # 4. Dự báo tương lai
 # ---------------------------------------------------------------------------
 
-def forecast_future(d: pd.DataFrame) -> tuple[pd.DataFrame, object, list[pd.DataFrame]]:
+def forecast_future(d: pd.DataFrame, chronos=None) -> tuple[pd.DataFrame, object, list[pd.DataFrame]]:
     sf = fm.stats_forecaster()
     fc = sf.forecast(df=d[["unique_id", "ds", "y"]], h=HORIZON)
     mf = fm.lgbm_forecaster()
@@ -154,6 +166,8 @@ def forecast_future(d: pd.DataFrame) -> tuple[pd.DataFrame, object, list[pd.Data
 
     fl = mf.predict(h=HORIZON, before_predict_callback=capture)
     fc = fc.merge(fl, on=["unique_id", "ds"])
+    if chronos is not None:
+        fc = fc.merge(fm.chronos_predict(chronos, d, HORIZON), on=["unique_id", "ds"])
     cols = [c for c in fc.columns if c not in ("unique_id", "ds")]
     fc[cols] = fc[cols].clip(lower=0)
     fm.add_ensembles(fc)
@@ -293,8 +307,7 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
     cv, models = backtest(d_bt, chronos)
     weekly = to_weekly(cv, models).merge(profile_bt[["unique_id", "demand_class", "cat_l1", "cat_l2"]],
                                          on="unique_id")
-    # Chronos chỉ là phương án đối chiếu (chạy sau khi đã chốt danh sách dự tuyển), không tham gia chọn mô hình
-    champion = select_champion(weekly, [m for m in models if m != "Chronos"])
+    champion = select_champion(weekly, models)
     log(f"  mô hình được chọn (trên 4 tuần đầu): {champion}")
     hold = weekly[weekly["phase"] == "holdout"]
 
@@ -332,7 +345,8 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
     per["improved"] = per["wmape"] < per["wmape_baseline"]
     profile = profile.merge(per, on="unique_id", how="left")
     profile["confidence"] = [confidence_label(w, c) for w, c in zip(profile["wmape"], profile["demand_class"])]
-    sig = significance(hold, champion, ["MovingAvg28", BASELINE, "LightGBM", *(["Chronos"] if "Chronos" in models else [])])
+    sig = significance(hold, champion, [m for m in ["MovingAvg28", BASELINE, "LightGBM", "Ens_LGB_ETS_IMAPA", "Chronos"]
+                                        if m in models and m != champion])
 
     log("3. Khoảng dự báo và mô phỏng nhập hàng")
     # Dự báo thật: phân nhóm biên lợi nhuận trên toàn bộ dữ liệu
@@ -378,8 +392,8 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
     # Hiệu chỉnh cuối cùng cho dự báo thật: tuần 1 trên cả 12 tuần kiểm định,
     # tuần 2-4 bằng kiểm định riêng với chân trời 28 ngày.
     rq_all = ratio_quantiles(weekly, champion, groups_bt, TAUS).assign(horizon_week=1)
-    if champion == "Ens_LGB_ETS_IMAPA":
-        rq_h = horizon_ratio_quantiles(d_bt, groups_bt, TAUS)
+    if champion in fm.ENSEMBLES or champion in ("LightGBM", "Chronos", "AutoETS", "IMAPA"):
+        rq_h = horizon_ratio_quantiles(d_bt, groups_bt, TAUS, champion, chronos)
         rq_all = pd.concat([rq_all, rq_h[rq_h["horizon_week"] > 1]], ignore_index=True)
     unit_cost = con.execute("""
         SELECT cat_l3, sum(quantity * unit_cost_filled) / sum(quantity) AS unit_cost
@@ -387,7 +401,7 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
         GROUP BY 1""").df().set_index("cat_l3")["unit_cost"]
 
     log("4. Dự báo 28 ngày tới")
-    fc, lgb_model, captured = forecast_future(d)
+    fc, lgb_model, captured = forecast_future(d, chronos)
     fc = apply_holiday_layer(fc, profile, fdata.holiday_factors(con), champion)
     fc["model"] = champion
     # Nhóm hàng chưa đủ dữ liệu: trung bình 8 tuần gần nhất, không dùng mô hình
@@ -432,7 +446,7 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
             GROUP BY 1, 2
         )
         SELECT *, qty / sum(qty) OVER (PARTITION BY cat_l3) AS share,
-               row_number() OVER (PARTITION BY cat_l3 ORDER BY qty DESC) AS rk
+               row_number() OVER (PARTITION BY cat_l3 ORDER BY qty DESC, sku) AS rk
         FROM r QUALIFY rk <= 8""").df()
     alloc = share.merge(plan[["unique_id", "order_qty", "forecast_week"]], left_on="cat_l3", right_on="unique_id")
     alloc = allocate_skus(alloc)
@@ -489,7 +503,7 @@ def allocate_skus(alloc: pd.DataFrame) -> pd.DataFrame:
     for cat, g in a.groupby("cat_l3"):
         k = int(rest.loc[g.index[0]])
         if k > 0:
-            a.loc[g.sort_values("_frac", ascending=False).index[:k], "sku_order_qty"] += 1
+            a.loc[g.sort_values(["_frac", "sku"], ascending=[False, True]).index[:k], "sku_order_qty"] += 1
     return a.drop(columns=["unique_id", "_frac"])
 
 
