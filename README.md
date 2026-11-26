@@ -81,7 +81,7 @@ File Excel KiotViet ─► raw ─► staging ─► mart ─► phân tích (FP
 | **Làm sạch** (`sql/staging`) | Khử trùng lặp theo mã HĐ + thời gian + mã hàng; tính lại doanh thu mức dòng (khớp KiotViet tới 6 đ/tháng); điền giá vốn thiếu; sửa cây nhóm hàng; tách **đơn lớn / đơn tổ chức / xuất nội bộ** khỏi nhu cầu bán lẻ; ẩn danh người bán |
 | **Lịch** (`dim_date`) | Ngày đóng cửa (Tết, lễ) không bị coi là nhu cầu bằng 0 |
 | **Phân tích** (`sql/marts`, `analysis.py`) | Xu hướng theo ngày mở cửa, ABC theo số lượng, giờ × thứ, ma trận doanh thu × biên, hệ số Tết theo số lượng và doanh thu, FP-Growth trên dữ liệu đã loại khuyến mãi, phát hiện nghi ngờ hết hàng bằng xác suất, mặt hàng hay được mua sỉ và lượng dự phòng gợi ý |
-| **Dự báo** (`forecasting/`) | Lớp ngày thường + lớp ngày lễ; phân loại nhu cầu **Syntetos–Boylan**; 8 mô hình StatsForecast (Croston, ADIDA, IMAPA, TSB, AutoETS...) + **LightGBM toàn cục** + 3 mô hình kết hợp (+ **Chronos-Bolt** tuỳ chọn, chưa chạy được); chọn mô hình trên 4 tuần, chấm trên 8 tuần khác |
+| **Dự báo** (`forecasting/`) | Lớp ngày thường + lớp ngày lễ; phân loại nhu cầu **Syntetos–Boylan**; 8 mô hình StatsForecast (Croston, ADIDA, IMAPA, TSB, AutoETS...) + **LightGBM toàn cục** + 3 mô hình kết hợp (+ **Chronos-Bolt** để đối chiếu, [kết quả](docs/chronos_comparison.md)); chọn mô hình trên 4 tuần, chấm trên 8 tuần khác |
 | **Quyết định** (`policy.py`) | Khoảng dự báo **conformal**; phân vị τ theo loại nhóm hàng (ngôi sao 0,80 · bảo quản lâu 0,70 · dễ hư 0,55), nối phân tích biên lợi nhuận với mô hình |
 | **Giải thích** | SHAP cho LightGBM, quy đổi thành "% tác động" |
 | **Vòng lặp** (`monitor.py`) | Lưu snapshot dự báo; khi có dữ liệu mới thì đối chiếu, tính WMAPE / bias / tracking signal, cảnh báo drift và tự huấn luyện lại (hiện mới minh hoạ trên dữ liệu kiểm định) |
@@ -108,6 +108,8 @@ python -m hasu.pipeline          # nạp, làm sạch, tổng hợp, báo cáo c
 python -m hasu.business_report   # báo cáo phân tích kinh doanh + biểu đồ
 python -m hasu.forecasting.run   # kiểm định, dự báo 28 ngày, đề xuất nhập, SHAP (~1 phút)
 python -m hasu.forecast_report   # báo cáo mô hình dự báo
+pip install -e ".[chronos]"      # tuỳ chọn: Chronos-Bolt (tải ~183 MB từ Hugging Face)
+python -m hasu.forecasting.chronos_compare   # đối chiếu Chronos với 12 mô hình (~10 giây trên CPU)
 streamlit run app/streamlit_app.py
 pytest                           # 33 bài kiểm thử
 ```
@@ -137,7 +139,7 @@ docs/                báo cáo, biểu đồ, ảnh chụp, hướng dẫn, mock
 | Không có dữ liệu tồn kho, thời gian giao hàng | Cần bổ sung để tính tồn kho an toàn; đề xuất hiện chưa trừ tồn |
 | Hết hàng chỉ suy đoán từ dữ liệu bán | Danh sách để chủ cửa hàng xác nhận |
 | Ảnh hưởng giảm giá lẫn với mua theo thùng | Kịch bản giảm giá hiển thị như mức trần, kèm cảnh báo |
-| Chưa chạy được Chronos: hệ thống được chạy trên máy chủ đám mây của công cụ Claude Code, nơi không cài được PyTorch và không tải được trọng số từ Hugging Face | Chạy trên máy có mạng: `pip install -e ".[chronos]"` rồi `python -m hasu.forecasting.run` |
+| Chronos-Bolt cho sai số cấp nhóm thấp nhất (50,6%) nhưng dự báo thiếu ~25% tổng lượng bán; chỉ được đối chiếu sau khi đã chốt mô hình | Tổ hợp LightGBM + AutoETS + IMAPA + Chronos (51,9%, lệch −5,8%) là ứng viên kiểm định tiếp trên dữ liệu mới ([chi tiết](docs/chronos_comparison.md)) |
 | Mô hình chỉ nhỉnh hơn trung bình 28 ngày; ở cấp toàn cửa hàng còn kém hơn | Chọn mô hình theo kiểu nhu cầu; dùng song song trung bình 28 ngày cho kế hoạch vốn tổng |
 | Một cửa hàng, chưa có đăng nhập; bản công khai chỉ giữ dữ liệu tải lên trong một phiên | Mở rộng: tài khoản và cơ sở dữ liệu riêng từng doanh nghiệp, mô hình toàn cục đa cửa hàng |
 

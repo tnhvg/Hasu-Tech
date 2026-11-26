@@ -447,7 +447,9 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "| Mô hình chỉ tốt hơn trung bình 28 ngày một chút; ở cấp toàn cửa hàng còn kém hơn | Thử chọn mô hình theo kiểu nhu cầu; dùng song song trung bình 28 ngày cho kế hoạch vốn tổng |\n"
         "| Vòng lặp tự đánh giá chưa kiểm chứng trên dữ liệu mới | Chạy với dữ liệu từ tháng 7/2026 |\n"
         "| Mô hình không tốt hơn trung bình 28 ngày có ý nghĩa thống kê | Báo cáo đúng phạm vi; dùng giá trị ở chính sách nhập và giải thích |\n"
-        "| Chưa thử được Chronos: hệ thống được chạy trên máy chủ đám mây của công cụ Claude Code, nơi không tải được trọng số mô hình từ Hugging Face | Code đã sẵn sàng; chạy lại trên máy có kết nối Hugging Face bằng `python -m hasu.forecasting.run` |\n")
+        "| Chronos-Bolt chỉ được đối chiếu sau khi đã chốt mô hình; dùng riêng thì dự báo thiếu khoảng 25% "
+        "([chi tiết](chronos_comparison.md)) | Đưa tổ hợp LightGBM + AutoETS + IMAPA + Chronos vào danh sách dự tuyển, kiểm định lại trên dữ liệu từ tháng 7/2026 |
+")
     return "\n".join(out)
 
 

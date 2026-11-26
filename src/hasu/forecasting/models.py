@@ -139,18 +139,28 @@ def load_chronos(model_id: str = "amazon/chronos-bolt-small"):
         return None
 
 
-def chronos_predict(pipeline, df: pd.DataFrame, h: int) -> pd.DataFrame:
-    """Dự báo trung vị h ngày cho mọi chuỗi trong df (cột unique_id, ds, y)."""
+def chronos_predict(pipeline, df: pd.DataFrame, h: int, point: str = "mean") -> pd.DataFrame:
+    """Dự báo h ngày cho mọi chuỗi trong df (cột unique_id, ds, y).
+
+    point="mean" lấy kỳ vọng, ước lượng bằng trung bình 9 phân vị 0,1 ... 0,9 mà
+    Chronos-Bolt xuất ra (giá trị "mean" của thư viện với Bolt chính là trung vị).
+    point="median" lấy trung vị theo ngày. Với chuỗi thưa, trung vị ngày thường bằng 0
+    nên khi cộng lên tuần sẽ dự báo thiếu nặng; vì vậy mặc định dùng kỳ vọng, cùng bản
+    chất với các mô hình còn lại.
+    """
     import torch
 
     ids, contexts, last = [], [], []
     for uid, g in df.groupby("unique_id", sort=False):
         ids.append(uid)
-        contexts.append(torch.tensor(g["y"].to_numpy(dtype=np.float32)))
+        # đi qua list thay vì mảng NumPy để chạy được cả khi PyTorch và NumPy lệch phiên bản
+        contexts.append(torch.tensor(g["y"].astype(float).tolist(), dtype=torch.float32))
         last.append(g["ds"].max())
-    quantiles, _ = pipeline.predict_quantiles(context=contexts, prediction_length=h, quantile_levels=[0.5])
+    levels = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    quantiles, _ = pipeline.predict_quantiles(context=contexts, prediction_length=h, quantile_levels=levels)
+    point_fc = quantiles.mean(dim=-1) if point == "mean" else quantiles[:, :, levels.index(0.5)]
     rows = []
-    for uid, q, ds0 in zip(ids, quantiles[:, :, 0].numpy(), last):
+    for uid, q, ds0 in zip(ids, point_fc.tolist(), last):
         for k in range(h):
             rows.append((uid, ds0 + pd.Timedelta(days=k + 1), max(float(q[k]), 0.0)))
     return pd.DataFrame(rows, columns=["unique_id", "ds", "Chronos"])

@@ -45,8 +45,8 @@ Giá chỉ quan sát được ở ngày có bán. Đưa vào sẽ làm mô hình
 hưởng giảm giá cho phần kịch bản, và cảnh báo rằng nó có thể bị phóng đại do khách mua theo thùng được giá sỉ.
 
 **7. Nếu có thêm thời gian, bạn sẽ làm gì?**
-(1) Lấy dữ liệu tồn kho và thời gian giao hàng để tính tồn kho an toàn thật. (2) Chạy thử Chronos trên máy có mạng (code đã sẵn
-sàng; máy chủ đám mây dùng để chạy không tải được mô hình). (3) Gộp các nhóm hàng trùng nghĩa trong KiotViet. (4) Theo dõi vòng
+(1) Lấy dữ liệu tồn kho và thời gian giao hàng để tính tồn kho an toàn thật. (2) Đưa tổ hợp có Chronos-Bolt vào danh sách dự tuyển
+và kiểm định lại trên dữ liệu mới (Chronos dùng riêng có sai số cấp nhóm thấp nhất nhưng dự báo thiếu khoảng 25%). (3) Gộp các nhóm hàng trùng nghĩa trong KiotViet. (4) Theo dõi vòng
 lặp đối chiếu qua vài tháng để công bố độ chính xác đã kiểm chứng.
 
 **8. Phát hiện kinh doanh nào bạn thấy giá trị nhất?**

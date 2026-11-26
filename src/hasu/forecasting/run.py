@@ -293,7 +293,8 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
     cv, models = backtest(d_bt, chronos)
     weekly = to_weekly(cv, models).merge(profile_bt[["unique_id", "demand_class", "cat_l1", "cat_l2"]],
                                          on="unique_id")
-    champion = select_champion(weekly, models)
+    # Chronos chỉ là phương án đối chiếu (chạy sau khi đã chốt danh sách dự tuyển), không tham gia chọn mô hình
+    champion = select_champion(weekly, [m for m in models if m != "Chronos"])
     log(f"  mô hình được chọn (trên 4 tuần đầu): {champion}")
     hold = weekly[weekly["phase"] == "holdout"]
 
@@ -331,7 +332,7 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
     per["improved"] = per["wmape"] < per["wmape_baseline"]
     profile = profile.merge(per, on="unique_id", how="left")
     profile["confidence"] = [confidence_label(w, c) for w, c in zip(profile["wmape"], profile["demand_class"])]
-    sig = significance(hold, champion, ["MovingAvg28", BASELINE, "LightGBM"])
+    sig = significance(hold, champion, ["MovingAvg28", BASELINE, "LightGBM", *(["Chronos"] if "Chronos" in models else [])])
 
     log("3. Khoảng dự báo và mô phỏng nhập hàng")
     # Dự báo thật: phân nhóm biên lợi nhuận trên toàn bộ dữ liệu
