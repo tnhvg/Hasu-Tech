@@ -8,7 +8,8 @@
    nhuận): chi phí hết hàng và chi phí tồn dư khác nhau giữa các nhóm.
 3. Mô phỏng nhập hàng trên các tuần holdout để so sánh các cách nhập, theo hai
    giả định: (a) một kỳ, hàng dư không mang sang tuần sau; (b) có chuyển tồn:
-   hàng bảo quản lâu được bán tiếp tuần sau, hàng dễ hư hỏng còn dư thì bỏ đi.
+   hàng còn dư được bán tiếp tuần sau theo nguyên tắc nhập trước – xuất trước,
+   và chỉ bị bỏ khi đã quá hạn dùng của nhóm hàng (SHELF_LIFE_WEEKS).
 """
 
 from __future__ import annotations
@@ -16,10 +17,21 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-# Nhóm hàng cấp 1 dễ hư hỏng / hạn dùng ngắn
-PERISHABLE_L1 = {
-    "Sữa, sản phẩm từ sữa", "Thực phẩm đông mát", "Rau, củ, trái cây", "Thịt, trứng, thủy hải sản tươi",
+# Hạn dùng ước lượng (tuần) của các nhóm hàng cấp 3 có hạn ngắn, dựa trên các mặt hàng
+# bán chạy nhất của nhóm. Nhóm không có trong danh sách coi là bảo quản lâu (vài tháng trở
+# lên: sữa tiệt trùng, sữa đặc, sữa bột, kem và đồ đông lạnh, hàng khô...), không hỏng
+# trong 8 tuần mô phỏng. Đây là giả định, cần chủ cửa hàng xác nhận.
+SHELF_LIFE_WEEKS = {
+    # Rau, trái cây, nấm tươi: vài ngày
+    "Rau lá khác": 1, "Nấm tươi": 1, "Rau, củ": 1, "Sản phẩm cân": 1, "Củ quả": 1,
+    "Trái cây": 1, "Trái cây trong nước": 1,
+    # Đồ tươi sơ chế, món chế biến sẵn dạng khay: vài ngày
+    "Thực phẩm sơ chế, tẩm ướp": 1, "Sơ chế, tẩm ướp": 1, "Thực phẩm chế biến sẵn": 1,
+    # Trứng, sữa chua, phô mai tươi: khoảng 3–4 tuần
+    "Trứng": 3, "Sữa chua": 4, "Sữa chua uống": 4, "Phô mai": 4,
 }
+# Nhóm có hạn dùng không quá ngưỡng này được xếp loại "Dễ hư hỏng" (τ thấp)
+PERISHABLE_MAX_WEEKS = 4
 
 SERVICE_POLICY = {
     "Ngôi sao": (0.80, "Biên cao, bán chạy: chi phí hết hàng cao hơn chi phí tồn dư"),
@@ -28,8 +40,12 @@ SERVICE_POLICY = {
 }
 
 
-def service_class(cat_l1: str, quadrant: str | None) -> str:
-    if cat_l1 in PERISHABLE_L1:
+def is_perishable(cat_l3: str) -> bool:
+    return SHELF_LIFE_WEEKS.get(cat_l3, np.inf) <= PERISHABLE_MAX_WEEKS
+
+
+def service_class(cat_l3: str, quadrant: str | None) -> str:
+    if is_perishable(cat_l3):
         return "Dễ hư hỏng"
     if quadrant == "Ngôi sao":
         return "Ngôi sao"
@@ -82,15 +98,17 @@ def simulate_orders(weekly: pd.DataFrame, policies: dict[str, pd.Series], unit_c
 HOLDING_RATE_WEEK = 0.01 * 12 / 52   # chi phí vốn 1%/tháng, quy ra tuần
 
 
-def simulate_inventory(weekly: pd.DataFrame, policies: dict[str, pd.Series], perishable: pd.Series,
+def simulate_inventory(weekly: pd.DataFrame, policies: dict[str, pd.Series], shelf_life: pd.Series,
                        unit_cost: pd.Series, unit_price: pd.Series,
                        holding_rate: float = HOLDING_RATE_WEEK) -> pd.DataFrame:
     """Mô phỏng nhiều kỳ có chuyển tồn (chính sách "đặt lên mức mục tiêu").
 
     Mỗi tuần, với mỗi nhóm hàng: mức mục tiêu S = số lượng của chính sách;
     lượng đặt = max(0, ⌈S⌉ − tồn đầu tuần); bán = min(nhu cầu, tồn + đặt).
-    Hàng bảo quản lâu còn dư được chuyển sang tuần sau, chịu chi phí vốn
-    holding_rate mỗi tuần; hàng dễ hư hỏng còn dư bị bỏ (mất trọn giá vốn).
+    Hàng còn dư được chuyển sang tuần sau và chịu chi phí vốn holding_rate mỗi tuần;
+    hàng được bán theo thứ tự nhập trước – xuất trước, lô nào đã nằm đủ số tuần
+    bằng hạn dùng (shelf_life, tính bằng tuần; NaN = bảo quản lâu) thì bị bỏ, mất
+    trọn giá vốn.
     Thiếu hàng được quy ra lợi nhuận gộp bị mất = số thiếu × (giá bán − giá vốn).
     Tồn đầu kỳ bằng 0 cho mọi chính sách.
     """
@@ -98,38 +116,46 @@ def simulate_inventory(weekly: pd.DataFrame, policies: dict[str, pd.Series], per
     cost = w["unique_id"].map(unit_cost).fillna(unit_cost.median()).to_numpy()
     price = w["unique_id"].map(unit_price).fillna(unit_price.median()).to_numpy()
     margin = np.maximum(price - cost, 0)
-    spoil = w["unique_id"].map(perishable).fillna(False).to_numpy(dtype=bool)
+    life = w["unique_id"].map(shelf_life).astype(float).fillna(np.inf).to_numpy()
     y = w["y"].to_numpy(dtype=float)
     uid = w["unique_id"].to_numpy()
     rows = []
     for name, target in policies.items():
         tgt = pd.Series(np.asarray(target, dtype=float), index=weekly.index)
         s_target = np.ceil(tgt.loc[w["index"]].to_numpy())
-        on_hand = 0.0
+        lots: list[list[float]] = []   # các lô tồn [số lượng, số tuần đã nằm trong kho]
         ordered = short = waste_u = 0.0
         lost_profit = waste_v = hold_v = 0.0
         demand_weeks = served_weeks = 0
         for i in range(len(w)):
             if i == 0 or uid[i] != uid[i - 1]:
-                on_hand = 0.0
+                lots = []
+            on_hand = sum(lot[0] for lot in lots)
             q = max(0.0, s_target[i] - on_hand)
+            if q > 0:
+                lots.append([q, 0])
             avail = on_hand + q
             sold = min(y[i], avail)
             miss = y[i] - sold
-            left = avail - sold
+            need = sold
+            for lot in lots:                       # bán lô cũ trước
+                take = min(lot[0], need)
+                lot[0] -= take
+                need -= take
+            lots = [lot for lot in lots if lot[0] > 1e-9]
             ordered += q
             short += miss
             lost_profit += miss * margin[i]
             if y[i] > 0:
                 demand_weeks += 1
                 served_weeks += miss <= 0.5
-            if spoil[i]:
-                waste_u += left
-                waste_v += left * cost[i]
-                on_hand = 0.0
-            else:
-                hold_v += left * cost[i] * holding_rate
-                on_hand = left
+            for lot in lots:
+                lot[1] += 1
+            expired = sum(lot[0] for lot in lots if lot[1] >= life[i])
+            lots = [lot for lot in lots if lot[1] < life[i]]
+            waste_u += expired
+            waste_v += expired * cost[i]
+            hold_v += sum(lot[0] for lot in lots) * cost[i] * holding_rate
         rows.append({
             "mode": "Nhiều kỳ (có chuyển tồn)",
             "policy": name,

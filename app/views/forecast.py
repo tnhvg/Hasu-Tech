@@ -29,6 +29,12 @@ lib.kpis([
      "value": lib.vnd(plan["order_value"].sum()), "note": f"{int((plan['order_qty'] > 0).sum())} nhóm hàng"},
 ])
 
+if not bool(info.get("chronos_used", True)):
+    lib.alert("info", "<b>Đang dùng mô hình dự phòng.</b> Máy chủ này không chạy được Chronos (cần PyTorch và tải "
+              "mô hình khoảng 183 MB), nên hệ thống chọn theo cùng quy tắc trong các mô hình còn lại: "
+              f"<b>{info['champion_label']}</b>. Mô hình đầy đủ có Chronos chỉ chạy được trên máy tính đã cài gói "
+              "<code>chronos</code> (xem README của dự án).")
+
 with st.expander("Cách đọc bảng này", icon=":material/help:"):
     st.markdown(
         "- **Dự báo tuần**: số lượng bán lẻ dự kiến (mức trung tâm).\n"

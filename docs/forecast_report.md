@@ -1,14 +1,14 @@
 # Mô hình dự báo nhu cầu
 
-_Sinh tự động bởi `python -m hasu.forecast_report` lúc 26/11/2026 22:22. Dữ liệu tới 30/06/2026._
+_Sinh tự động bởi `python -m hasu.forecast_report` lúc 27/11/2026 11:30. Dữ liệu tới 30/06/2026._
 
 ## Kết quả chính
 
 - **Mô hình được chọn:** Kết hợp LightGBM + AutoETS + IMAPA + Chronos, có WMAPE thấp nhất trên 4 tuần đầu của kiểm định trong các mô hình có |Bias| ≤ 10%, không nhìn vào 8 tuần dùng để chấm điểm.
 - **Toàn cửa hàng:** sai số dự báo tuần (WMAPE) 16,2%, tức độ chính xác khoảng **84%**. Mức nền: 23,8%. Lưu ý: ở cấp này trung bình trượt 28 ngày còn tốt hơn mô hình (14,3%).
 - **Nhóm hàng cấp 3** (đơn vị ra quyết định nhập hàng): WMAPE 51,9% so với 73,1% của mức nền, **giảm 29% sai số**. Độ lệch (bias) -5,8%, trong khi mức nền dự báo thừa 23,8%.
-- **Kiểm định thống kê:** mô hình tốt hơn mức nền có ý nghĩa thống kê (Wilcoxon p = 0,000); chênh lệch với trung bình trượt 28 ngày **có ý nghĩa thống kê** ở mức 5% (Wilcoxon p = 0,014; Diebold–Mariano p = 0,032).
-- **Mô phỏng nhập hàng 8 tuần có chuyển tồn** (hàng bảo quản lâu bán tiếp tuần sau, hàng dễ hư hỏng còn dư bị bỏ): nhập theo mô hình kết hợp phân vị có tổng chi phí (lợi nhuận mất do thiếu hàng + hàng hỏng + chi phí vốn) **6,9 triệu đ**, so với 7,9 triệu đ của cách nhẩm theo trung bình 28 ngày và 22,7 triệu đ của mức nền (mục 5).
+- **Kiểm định thống kê:** mô hình tốt hơn mức nền có ý nghĩa thống kê (Wilcoxon p = 0,000); chênh lệch với trung bình trượt 28 ngày **có ý nghĩa thống kê** ở mức 5% (Wilcoxon p = 0,014; Diebold–Mariano p = 0,017).
+- **Mô phỏng nhập hàng 8 tuần có chuyển tồn** (hàng dư bán tiếp tuần sau, chỉ bị bỏ khi quá hạn dùng của nhóm hàng): nhập theo mô hình kết hợp phân vị có tổng chi phí (lợi nhuận mất do thiếu hàng + hàng hỏng + chi phí vốn) **3,3 triệu đ**, so với 3,1 triệu đ của cách nhẩm theo trung bình 28 ngày và 7,2 triệu đ của mức nền (mục 5).
 
 **Nói thẳng về giới hạn:** chỉ 62% số nhóm hàng (54/87 nhóm) có sai số thấp hơn mức nền khi xét riêng từng nhóm, mô hình chỉ tốt hơn trung bình trượt 28 ngày 4,4 điểm phần trăm (51,9% so với 56,4%), ở cấp toàn cửa hàng còn kém trung bình trượt 28 ngày. Mức giảm 29% so với mức nền một phần là do lượng khách giảm khoảng một phần tư đúng trong 8 tuần chấm điểm (tháng 5–6/2026): trung bình lịch sử không theo kịp nên dự báo thừa 23,8%. Với dữ liệu thưa như cửa hàng này, không mô hình nào dự báo chính xác từng nhóm hàng nhỏ theo tuần. Giá trị thực tế nằm ở: (1) dự báo tổng và nhóm lớn đáng tin cậy, (2) chính sách nhập hàng theo phân vị, (3) giải thích được và tự động hoá được.
 
@@ -65,21 +65,21 @@ Bảng trên dùng toàn bộ dữ liệu, cho dự báo thật. Riêng **kiểm
 | Lặp lại tuần trước | 74,8% | 68,9% | 7,82 | 74,5% | -1,4% |
 | Mức nền: trung bình lịch sử | 78,1% | 73,1% | 8,29 | 64,0% | 23,8% |
 
-**Vì sao chọn mô hình kết hợp mà không chọn LightGBM** dù LightGBM có WMAPE thấp nhất trên 8 tuần chấm (53,0%)? Vì quyết định chọn chỉ được dựa trên 4 tuần đầu. Ở đó LightGBM đứng sau mô hình kết hợp. Mô hình được chọn xếp hạng 2 ở 4 tuần chọn và hạng 2 ở 8 tuần chấm (kém LightGBM -1,0 điểm %): không phải mô hình tốt nhất trên dữ liệu chấm điểm, nhưng gần như không lệch. Thứ hạng của các mô hình đứng đầu đảo qua lại giữa hai giai đoạn, cho thấy chênh lệch giữa chúng rất nhỏ so với dao động ngẫu nhiên (xem kiểm định bên dưới). Chọn lại theo kết quả chấm điểm là dùng dữ liệu kiểm tra để ra quyết định, làm con số báo cáo lạc quan hơn thực tế.
+**Quy tắc chọn:** WMAPE thấp nhất trên 4 tuần chọn trong các mô hình có |Bias| ≤ 10% cũng trên 4 tuần đó. Mô hình được chọn xếp hạng 2 theo WMAPE ở 4 tuần chọn và hạng 2 ở 8 tuần chấm. Mô hình nào lệch quá 10% bị loại dù WMAPE thấp, vì dự báo lệch một chiều không bù trừ được khi cộng lên các cấp trên và làm sai lượng nhập. Chọn lại theo kết quả chấm điểm là dùng dữ liệu kiểm tra để ra quyết định, làm con số báo cáo lạc quan hơn thực tế.
 
-**Chênh lệch có ý nghĩa thống kê không?** Với mỗi nhóm hàng, lấy sai số tuyệt đối trung bình theo tuần của mô hình được chọn trừ của mô hình so sánh, rồi kiểm định trên các nhóm hàng (gộp theo nhóm để xử lý tương quan giữa các tuần):
+**Chênh lệch có ý nghĩa thống kê không?** Hai kiểm định bổ sung cho nhau: (1) Wilcoxon theo nhóm hàng (sai số tuyệt đối trung bình theo tuần của mô hình được chọn trừ của mô hình so sánh, cho từng nhóm) cho biết mô hình tốt hơn ở bao nhiêu nhóm, nhưng giả định các nhóm độc lập; (2) Diebold–Mariano theo thời gian: mỗi ngày trong 8 tuần chấm, lấy chênh lệch sai số tuyệt đối trung bình trên các nhóm, rồi kiểm định trên chuỗi ngày với phương sai Newey–West (6 độ trễ) và hiệu chỉnh mẫu nhỏ Harvey–Leybourne–Newbold:
 
-| So với | Số nhóm | Tỷ lệ nhóm mô hình tốt hơn | Wilcoxon p | Diebold–Mariano p |
+| So với | Tỷ lệ nhóm mô hình tốt hơn | Wilcoxon p | Tỷ lệ ngày mô hình tốt hơn | Diebold–Mariano p |
 |---|---|---|---|---|
-| Trung bình trượt 28 ngày | 87 | 60,9% | 0,014 | 0,032 |
-| Mức nền: trung bình lịch sử | 87 | 69,0% | 0,000 | 0,001 |
-| LightGBM (toàn cục) | 87 | 66,7% | 0,002 | 0,411 |
-| Kết hợp LightGBM + AutoETS + IMAPA | 87 | 87,4% | 0,000 | 0,000 |
-| Chronos-Bolt (mô hình nền tảng) | 87 | 29,9% | 0,001 | 0,343 |
+| Trung bình trượt 28 ngày | 60,9% | 0,014 | 74,5% | 0,017 |
+| Mức nền: trung bình lịch sử | 69,0% | 0,000 | 98,2% | 0,000 |
+| LightGBM (toàn cục) | 66,7% | 0,002 | 63,6% | 0,394 |
+| Kết hợp LightGBM + AutoETS + IMAPA | 87,4% | 0,000 | 98,2% | 0,000 |
+| Chronos-Bolt (mô hình nền tảng) | 29,9% | 0,001 | 1,8% | 0,000 |
 
-Mô hình tốt hơn mức nền có ý nghĩa thống kê (p < 0,05), nhưng **không** tốt hơn trung bình trượt 28 ngày hay LightGBM đơn lẻ một cách có ý nghĩa thống kê. Vì vậy không nên quảng bá mô hình là "chính xác hơn hẳn cách nhẩm"; giá trị của nó nằm ở chính sách nhập hàng (mục 5), giải thích và tự động hoá.
+Mô hình tốt hơn mức nền có ý nghĩa thống kê; so với trung bình trượt 28 ngày, chênh lệch có ý nghĩa thống kê theo cả hai kiểm định. Dù vậy, mức chênh nhỏ so với phần sai số còn lại, nên giá trị chính vẫn nằm ở chính sách nhập hàng (mục 5), giải thích và tự động hoá.
 
-**Tracking signal theo nhóm hàng:** 25/87 nhóm có |TS| > 4 trên 8 tuần chấm, trong đó 18 nhóm dự báo thừa có hệ thống. Điều này khớp với việc lượng khách bán lẻ giảm trong tháng 5–6/2026: mô hình học từ các tháng trước nên chậm theo kịp đà giảm. Vòng lặp tự đánh giá (mục 8) dùng chính chỉ số này để cảnh báo và huấn luyện lại.
+**Tracking signal theo nhóm hàng:** 25/87 nhóm có |TS| > 4 trên 8 tuần chấm, trong đó 18 nhóm dự báo thừa và 7 nhóm dự báo thiếu có hệ thống. Số nhóm dự báo thừa nhiều hơn, nhưng Bias tổng vẫn có thể âm vì Bias tính theo sản lượng: vài nhóm bán chạy dự báo thiếu lấn át nhiều nhóm nhỏ dự báo thừa. Vòng lặp tự đánh giá (mục 8) dùng chính chỉ số này để cảnh báo và huấn luyện lại.
 
 **Theo kiểu nhu cầu (8 tuần chấm, WMAPE):**
 
@@ -141,16 +141,16 @@ Khoảng tương đối gần như không rộng ra theo tuần, vì sai số ch
 
 **Mô phỏng nhập hàng trên 8 tuần chấm điểm.** Mọi tham số (hệ số phân vị, τ, giá vốn, giá bán) chỉ lấy từ dữ liệu trước tuần chấm điểm đầu tiên. Số lượng đặt được làm tròn lên như trong ứng dụng. Service level chỉ tính trên các tuần có nhu cầu.
 
-*(a) Nhiều kỳ, có chuyển tồn* (gần thực tế hơn): mỗi tuần đặt lên mức mục tiêu = số lượng của chính sách trừ tồn đầu tuần; hàng bảo quản lâu còn dư bán tiếp tuần sau, chịu chi phí vốn 1%/tháng; hàng dễ hư hỏng còn dư bị bỏ. Hàng thiếu quy ra lợi nhuận gộp bị mất.
+*(a) Nhiều kỳ, có chuyển tồn* (gần thực tế hơn): mỗi tuần đặt lên mức mục tiêu = số lượng của chính sách trừ tồn đầu tuần; hàng còn dư bán tiếp tuần sau theo nguyên tắc nhập trước – xuất trước, chịu chi phí vốn 1%/tháng, và chỉ bị bỏ khi quá hạn dùng ước lượng của nhóm hàng (rau, trái cây, đồ tươi sơ chế: 1 tuần; trứng: 3 tuần; sữa chua, phô mai: 4 tuần; các nhóm còn lại như sữa tiệt trùng, sữa đặc, sữa bột, kem, đồ đông lạnh coi như không hỏng trong 8 tuần). Hàng thiếu quy ra lợi nhuận gộp bị mất.
 
 | Cách nhập | Tổng đặt | Hàng thiếu | Fill rate | Service level | Lợi nhuận mất | Hàng hỏng | Chi phí vốn | Tổng chi phí |
 |---|---|---|---|---|---|---|---|---|
-| Mức nền: trung bình lịch sử | 7.821 | 1.869 | 76,3% | 73,3% | 3,1 triệu đ | 19,5 triệu đ | 0,1 triệu đ | 22,7 triệu đ |
-| Trung bình 28 ngày (cách nhẩm) | 6.750 | 1.908 | 75,8% | 63,5% | 3,0 triệu đ | 4,8 triệu đ | 0,1 triệu đ | 7,9 triệu đ |
-| Mô hình: dự báo điểm | 6.415 | 2.142 | 72,9% | 63,5% | 3,4 triệu đ | 6,0 triệu đ | 0,1 triệu đ | 9,4 triệu đ |
-| Mô hình + phân vị theo nhóm hàng | 7.016 | 1.622 | 79,5% | 68,7% | 2,3 triệu đ | 4,4 triệu đ | 0,1 triệu đ | 6,9 triệu đ |
+| Mức nền: trung bình lịch sử | 6.632 | 1.869 | 76,3% | 73,3% | 3,1 triệu đ | 4,0 triệu đ | 0,1 triệu đ | 7,2 triệu đ |
+| Trung bình 28 ngày (cách nhẩm) | 6.286 | 1.895 | 76,0% | 63,9% | 3,0 triệu đ | 0,0 triệu đ | 0,1 triệu đ | 3,1 triệu đ |
+| Mô hình: dự báo điểm | 6.041 | 2.131 | 73,0% | 63,9% | 3,3 triệu đ | 1,0 triệu đ | 0,1 triệu đ | 4,4 triệu đ |
+| Mô hình + phân vị theo nhóm hàng | 7.048 | 1.448 | 81,7% | 71,5% | 2,2 triệu đ | 1,0 triệu đ | 0,1 triệu đ | 3,3 triệu đ |
 
-Có chuyển tồn, chính sách phân vị **tốt hơn cách nhẩm theo trung bình 28 ngày ở các chỉ số chính**: hàng thiếu giảm 15%, lợi nhuận mất giảm 22%, giá trị hàng hỏng giảm 9%, tổng chi phí giảm 13%; chỉ chi phí vốn nhỉnh hơn vì giữ nhiều hàng hơn. Mức nền có tổng chi phí cao nhất vì dự báo thừa nhiều, làm hỏng hàng dễ hư.
+Có chuyển tồn, so với cách nhẩm theo trung bình 28 ngày, chính sách phân vị: hàng thiếu giảm 24%, lợi nhuận mất giảm 25%, hàng hỏng 0,0 triệu đ → 1,0 triệu đ, chi phí vốn tăng 35%, tổng chi phí tăng 8%. Mức nền có tổng chi phí cao nhất vì dự báo thừa nhiều.
 
 *(b) Một kỳ, không chuyển tồn* (giả định bi quan: mọi hàng dư coi như mất trọn giá vốn):
 
@@ -159,11 +159,11 @@ Có chuyển tồn, chính sách phân vị **tốt hơn cách nhẩm theo trung
 | Mức nền: trung bình lịch sử | 10.136 | 1.871 | 4.111 | 76,3% | 73,3% | 65,8 triệu đ |
 | Trung bình 28 ngày (cách nhẩm) | 8.490 | 1.970 | 2.564 | 75,0% | 61,3% | 40,5 triệu đ |
 | Mô hình: dự báo điểm | 7.812 | 2.170 | 2.086 | 72,5% | 62,4% | 36,2 triệu đ |
-| Mô hình + phân vị theo nhóm hàng | 9.798 | 1.663 | 3.565 | 78,9% | 67,4% | 52,2 triệu đ |
+| Mô hình + phân vị theo nhóm hàng | 10.455 | 1.498 | 4.057 | 81,0% | 69,8% | 56,1 triệu đ |
 
-- So với **mức nền**: hàng thiếu giảm 11%, giá trị hàng dư giảm 21%.
-- So với **trung bình 28 ngày**: hàng thiếu giảm 16% nhưng hàng dư tăng 29%. Giả định này tính mọi hàng dư là mất trắng, kể cả nước ngọt hay hàng khô, nên phóng đại chi phí của việc nhập dư; vì vậy mô phỏng (a) là căn cứ chính.
-- **Service level** của chính sách phân vị (68,7% ở mô phỏng a) vẫn thấp hơn mức nền (73,3%): mức nền dự báo thừa đều nên ít tuần thiếu, đổi lại hàng hỏng nhiều nhất. Chính sách phân vị giảm tổng *lượng* hàng thiếu hơn là số tuần có thiếu hàng.
+- So với **mức nền**: hàng thiếu giảm 20%, giá trị hàng dư giảm 15%.
+- So với **trung bình 28 ngày**: hàng thiếu giảm 24% nhưng hàng dư tăng 39%. Giả định này tính mọi hàng dư là mất trắng, kể cả nước ngọt hay hàng khô, nên phóng đại chi phí của việc nhập dư; vì vậy mô phỏng (a) là căn cứ chính.
+- **Service level** của chính sách phân vị (71,5% ở mô phỏng a) vẫn thấp hơn mức nền (73,3%): mức nền dự báo thừa đều nên ít tuần thiếu, đổi lại hàng hỏng nhiều nhất. Chính sách phân vị giảm tổng *lượng* hàng thiếu hơn là số tuần có thiếu hàng.
 - **Còn thiếu so với thực tế:** chưa có tồn kho đầu kỳ thật, thời gian giao hàng và quy cách đóng thùng (phải đặt theo bội số thùng/lốc). Khi áp dụng thật: lượng đặt = max(0, mức mục tiêu − tồn hiện có), làm tròn lên theo quy cách thùng.
 
 ![Ví dụ dự báo](figures/15_vi_du_du_bao.png)

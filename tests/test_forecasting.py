@@ -70,9 +70,11 @@ def test_confidence_labels():
 
 
 def test_service_class_priorities():
-    assert service_class("Sữa, sản phẩm từ sữa", "Ngôi sao") == "Dễ hư hỏng"
-    assert service_class("Đồ uống", "Ngôi sao") == "Ngôi sao"
-    assert service_class("Đồ uống", "Lời mỏng") == "Bảo quản lâu"
+    # Xét theo hạn dùng của nhóm cấp 3, không theo cả ngành: sữa chua hạn ngắn, sữa tiệt trùng để lâu
+    assert service_class("Sữa chua", "Ngôi sao") == "Dễ hư hỏng"
+    assert service_class("Sữa tươi", "Ngôi sao") == "Ngôi sao"
+    assert service_class("Nước giải khát", "Ngôi sao") == "Ngôi sao"
+    assert service_class("Nước giải khát", "Lời mỏng") == "Bảo quản lâu"
 
 
 def test_simulation_counts_shortage_and_excess():
@@ -119,11 +121,11 @@ def test_inventory_simulation_carries_over_long_life_goods():
     w = pd.DataFrame({"unique_id": ["A", "A", "M", "M"], "cutoff": [1, 2, 1, 2], "y": [4.0, 10.0, 4.0, 10.0]})
     target = pd.Series([10.0, 10.0, 10.0, 10.0])
     cost, price = pd.Series({"A": 100.0, "M": 100.0}), pd.Series({"A": 150.0, "M": 150.0})
-    perishable = pd.Series({"A": False, "M": True})
-    a = simulate_inventory(w[w.unique_id == "A"], {"p": target[:2]}, perishable, cost, price, holding_rate=0).iloc[0]
+    shelf_life = pd.Series({"A": np.nan, "M": 1})   # A để lâu, M hạn 1 tuần
+    a = simulate_inventory(w[w.unique_id == "A"], {"p": target[:2]}, shelf_life, cost, price, holding_rate=0).iloc[0]
     # Hàng để lâu: dư 6 sau tuần 1 được bán tiếp, tuần 2 chỉ đặt thêm 4 -> không thiếu, không hỏng
     assert a.units_ordered == 14 and a.units_short == 0 and a.excess_value == 0
-    m = simulate_inventory(w[w.unique_id == "M"], {"p": target[2:]}, perishable, cost, price,
+    m = simulate_inventory(w[w.unique_id == "M"], {"p": target[2:]}, shelf_life, cost, price,
                            holding_rate=0).iloc[0]
     # Hàng dễ hư: dư 6 bị bỏ (600 đ), tuần 2 đặt lại 10
     assert m.units_ordered == 20 and m.excess_value == 600 and m.lost_profit == 0
@@ -160,3 +162,24 @@ def test_select_champion_skips_heavily_biased_model():
     })
     assert select_champion(weekly, ["thap", "can_bang"], max_abs_bias=0.10) == "can_bang"
     assert select_champion(weekly, ["thap", "can_bang"], max_abs_bias=1.0) == "thap"
+
+
+def test_inventory_simulation_spoils_only_after_shelf_life():
+    from hasu.forecasting.policy import simulate_inventory
+
+    # Hạn 2 tuần: tuần 1 nhập 10 bán 4, tuần 2 không ai mua -> 6 hộp quá hạn bị bỏ ở cuối tuần 2
+    w = pd.DataFrame({"unique_id": ["S"] * 3, "cutoff": [1, 2, 3], "y": [4.0, 0.0, 5.0]})
+    r = simulate_inventory(w, {"p": pd.Series([10.0, 10.0, 10.0])}, pd.Series({"S": 2}),
+                           pd.Series({"S": 100.0}), pd.Series({"S": 150.0}), holding_rate=0).iloc[0]
+    assert r.units_excess == 6 and r.excess_value == 600
+    assert r.units_ordered == 20 and r.units_short == 0
+
+
+def test_diebold_mariano_detects_consistent_difference():
+    from hasu.forecasting.evaluate import diebold_mariano
+
+    rng = np.random.default_rng(0)
+    stat, p = diebold_mariano(-1 + rng.normal(0, 1, 56), h=7)
+    assert stat < 0 and p < 0.01
+    _, p0 = diebold_mariano(rng.normal(0, 1, 56), h=7)
+    assert p0 > 0.05

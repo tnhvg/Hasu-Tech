@@ -200,8 +200,8 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         + ("**có ý nghĩa thống kê** ở mức 5% " if max(s_ma.wilcoxon_p, s_ma.dm_p) < 0.05
            else "**không có ý nghĩa thống kê** ")
         + f"(Wilcoxon p = {num(s_ma.wilcoxon_p, 3)}; Diebold–Mariano p = {num(s_ma.dm_p, 3)}).\n"
-        f"- **Mô phỏng nhập hàng 8 tuần có chuyển tồn** (hàng bảo quản lâu bán tiếp tuần sau, hàng dễ hư hỏng "
-        f"còn dư bị bỏ): nhập theo mô hình kết hợp phân vị có tổng chi phí (lợi nhuận mất do thiếu hàng + "
+        f"- **Mô phỏng nhập hàng 8 tuần có chuyển tồn** (hàng dư bán tiếp tuần sau, chỉ bị bỏ khi quá hạn dùng "
+        f"của nhóm hàng): nhập theo mô hình kết hợp phân vị có tổng chi phí (lợi nhuận mất do thiếu hàng + "
         f"hàng hỏng + chi phí vốn) **{mil(model_c.total_cost)}**, so với {mil(ma_c.total_cost)} của cách nhẩm "
         f"theo trung bình 28 ngày và {mil(base_c.total_cost)} của mức nền (mục 5).\n")
     n_imp = round(info["share_improved"] * n_bt)
@@ -275,31 +275,34 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
     lgb_hold = overall.set_index("model").loc["LightGBM", "WMAPE"]
     rank_hold = int(comp["WMAPE"].rank().loc[comp["model"] == champion].iloc[0])
     rank_sel = int(comp["WMAPE_sel"].rank().loc[comp["model"] == champion].iloc[0])
-    add(f"\n**Vì sao chọn mô hình kết hợp mà không chọn LightGBM** dù LightGBM có WMAPE thấp nhất trên 8 tuần "
-        f"chấm ({pct(lgb_hold)})? Vì quyết định chọn chỉ được dựa trên 4 tuần đầu. Ở đó LightGBM đứng sau "
-        f"mô hình kết hợp. Mô hình được chọn xếp hạng {rank_sel} ở 4 tuần chọn và hạng {rank_hold} ở 8 tuần "
-        f"chấm (kém LightGBM {num((ch['WMAPE'] - lgb_hold) * 100, 1)} điểm %): không phải mô hình tốt nhất trên "
-        "dữ liệu chấm điểm, nhưng gần như không lệch. Thứ hạng của các mô hình đứng đầu đảo qua lại giữa hai "
-        "giai đoạn, cho thấy chênh lệch giữa chúng rất nhỏ so với dao động ngẫu nhiên (xem kiểm định bên dưới). "
-        "Chọn lại theo kết quả chấm điểm là dùng dữ liệu kiểm tra để ra quyết định, làm con số báo cáo lạc quan "
-        "hơn thực tế.\n")
-    add("**Chênh lệch có ý nghĩa thống kê không?** Với mỗi nhóm hàng, lấy sai số tuyệt đối trung bình theo tuần "
-        "của mô hình được chọn trừ của mô hình so sánh, rồi kiểm định trên các nhóm hàng (gộp theo nhóm để xử "
-        "lý tương quan giữa các tuần):\n")
+    add(f"\n**Quy tắc chọn:** WMAPE thấp nhất trên 4 tuần chọn trong các mô hình có |Bias| ≤ 10% cũng trên 4 "
+        f"tuần đó. Mô hình được chọn xếp hạng {rank_sel} theo WMAPE ở 4 tuần chọn và hạng {rank_hold} ở 8 tuần "
+        "chấm. Mô hình nào lệch quá 10% bị loại dù WMAPE thấp, vì dự báo lệch một chiều không bù trừ được khi "
+        "cộng lên các cấp trên và làm sai lượng nhập. Chọn lại theo kết quả chấm điểm là dùng dữ liệu kiểm tra "
+        "để ra quyết định, làm con số báo cáo lạc quan hơn thực tế.\n")
+    add("**Chênh lệch có ý nghĩa thống kê không?** Hai kiểm định bổ sung cho nhau: (1) Wilcoxon theo nhóm hàng "
+        "(sai số tuyệt đối trung bình theo tuần của mô hình được chọn trừ của mô hình so sánh, cho từng nhóm) cho "
+        "biết mô hình tốt hơn ở bao nhiêu nhóm, nhưng giả định các nhóm độc lập; (2) Diebold–Mariano theo thời "
+        "gian: mỗi ngày trong 8 tuần chấm, lấy chênh lệch sai số tuyệt đối trung bình trên các nhóm, rồi kiểm "
+        "định trên chuỗi ngày với phương sai Newey–West (6 độ trễ) và hiệu chỉnh mẫu nhỏ Harvey–Leybourne–Newbold:\n")
     add(md_table(pd.DataFrame({
         "So với": [fm_label(m) for m in sig.index],
-        "Số nhóm": sig["n_series"].values,
         "Tỷ lệ nhóm mô hình tốt hơn": sig["share_series_better"].map(pct).values,
         "Wilcoxon p": sig["wilcoxon_p"].map(lambda v: num(v, 3)).values,
+        "Tỷ lệ ngày mô hình tốt hơn": sig["share_days_better"].map(pct).values,
         "Diebold–Mariano p": sig["dm_p"].map(lambda v: num(v, 3)).values,
     })))
-    add("\nMô hình tốt hơn mức nền có ý nghĩa thống kê (p < 0,05), nhưng **không** tốt hơn trung bình trượt 28 "
-        "ngày hay LightGBM đơn lẻ một cách có ý nghĩa thống kê. Vì vậy không nên quảng bá mô hình là \"chính xác "
-        "hơn hẳn cách nhẩm\"; giá trị của nó nằm ở chính sách nhập hàng (mục 5), giải thích và tự động hoá.\n")
+    sig_ma = max(s_ma.wilcoxon_p, s_ma.dm_p) < 0.05
+    add("\nMô hình tốt hơn mức nền có ý nghĩa thống kê; so với trung bình trượt 28 ngày, chênh lệch "
+        + ("có ý nghĩa thống kê theo cả hai kiểm định" if sig_ma else "**không** có ý nghĩa thống kê theo ít nhất "
+           "một kiểm định")
+        + ". Dù vậy, mức chênh nhỏ so với phần sai số còn lại, nên giá trị chính vẫn nằm ở chính sách nhập hàng "
+        "(mục 5), giải thích và tự động hoá.\n")
     add(f"**Tracking signal theo nhóm hàng:** {n_ts}/{n_bt} nhóm có |TS| > 4 trên 8 tuần chấm, trong đó "
-        f"{n_ts_pos} nhóm dự báo thừa có hệ thống. Điều này khớp với việc lượng khách bán lẻ giảm trong tháng "
-        "5–6/2026: mô hình học từ các tháng trước nên chậm theo kịp đà giảm. Vòng lặp tự đánh giá (mục 8) "
-        "dùng chính chỉ số này để cảnh báo và huấn luyện lại.\n")
+        f"{n_ts_pos} nhóm dự báo thừa và {n_ts - n_ts_pos} nhóm dự báo thiếu có hệ thống. Số nhóm dự báo thừa "
+        "nhiều hơn, nhưng Bias tổng vẫn có thể âm vì Bias tính theo sản lượng: vài nhóm bán chạy dự báo thiếu "
+        "lấn át nhiều nhóm nhỏ dự báo thừa. Vòng lặp tự đánh giá (mục 8) dùng chính chỉ số này để cảnh báo và "
+        "huấn luyện lại.\n")
     add("**Theo kiểu nhu cầu (8 tuần chấm, WMAPE):**\n")
     piv = by_cls.pivot(index="label", columns="scope", values="WMAPE")
     piv = piv[[c for c in ["erratic", "lumpy", "intermittent"] if c in piv.columns]].sort_values("erratic")
@@ -350,8 +353,10 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "lấy từ dữ liệu trước tuần chấm điểm đầu tiên. Số lượng đặt được làm tròn lên như trong ứng dụng. "
         "Service level chỉ tính trên các tuần có nhu cầu.\n")
     add("*(a) Nhiều kỳ, có chuyển tồn* (gần thực tế hơn): mỗi tuần đặt lên mức mục tiêu = số lượng của chính sách "
-        "trừ tồn đầu tuần; hàng bảo quản lâu còn dư bán tiếp tuần sau, chịu chi phí vốn 1%/tháng; hàng dễ hư "
-        "hỏng còn dư bị bỏ. Hàng thiếu quy ra lợi nhuận gộp bị mất.\n")
+        "trừ tồn đầu tuần; hàng còn dư bán tiếp tuần sau theo nguyên tắc nhập trước – xuất trước, chịu chi phí "
+        "vốn 1%/tháng, và chỉ bị bỏ khi quá hạn dùng ước lượng của nhóm hàng (rau, trái cây, đồ tươi sơ chế: 1 "
+        "tuần; trứng: 3 tuần; sữa chua, phô mai: 4 tuần; các nhóm còn lại như sữa tiệt trùng, sữa đặc, sữa bột, "
+        "kem, đồ đông lạnh coi như không hỏng trong 8 tuần). Hàng thiếu quy ra lợi nhuận gộp bị mất.\n")
     add(md_table(pd.DataFrame({
         "Cách nhập": simc["policy"],
         "Tổng đặt": simc["units_ordered"].map(num),
@@ -363,12 +368,17 @@ def build(con: duckdb.DuckDBPyConnection) -> str:
         "Chi phí vốn": simc["holding_cost"].map(mil),
         "Tổng chi phí": simc["total_cost"].map(mil),
     })))
-    add(f"\nCó chuyển tồn, chính sách phân vị **tốt hơn cách nhẩm theo trung bình 28 ngày ở các chỉ số chính**: "
-        f"hàng thiếu giảm {pct(1 - model_c.units_short / ma_c.units_short, 0)}, lợi nhuận mất giảm "
-        f"{pct(1 - model_c.lost_profit / ma_c.lost_profit, 0)}, giá trị hàng hỏng giảm "
-        f"{pct(1 - model_c.excess_value / ma_c.excess_value, 0)}, tổng chi phí giảm "
-        f"{pct(1 - model_c.total_cost / ma_c.total_cost, 0)}; chỉ chi phí vốn nhỉnh hơn vì giữ nhiều hàng hơn. "
-        "Mức nền có tổng chi phí cao nhất vì dự báo thừa nhiều, làm hỏng hàng dễ hư.\n")
+    def change(new, old):
+        if old == 0:
+            return f"{mil(old)} → {mil(new)}"
+        r = new / old - 1
+        return ("giảm " if r < 0 else "tăng ") + pct(abs(r), 0)
+
+    add(f"\nCó chuyển tồn, so với cách nhẩm theo trung bình 28 ngày, chính sách phân vị: hàng thiếu "
+        f"{change(model_c.units_short, ma_c.units_short)}, lợi nhuận mất {change(model_c.lost_profit, ma_c.lost_profit)}, "
+        f"hàng hỏng {change(model_c.excess_value, ma_c.excess_value)}, chi phí vốn "
+        f"{change(model_c.holding_cost, ma_c.holding_cost)}, tổng chi phí {change(model_c.total_cost, ma_c.total_cost)}. "
+        "Mức nền có tổng chi phí cao nhất vì dự báo thừa nhiều.\n")
     add("*(b) Một kỳ, không chuyển tồn* (giả định bi quan: mọi hàng dư coi như mất trọn giá vốn):\n")
     add(md_table(pd.DataFrame({
         "Cách nhập": sim1["policy"],

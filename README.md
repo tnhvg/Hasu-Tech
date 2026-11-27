@@ -32,9 +32,10 @@ Thành công được đo bằng ba chỉ tiêu:
 | WMAPE toàn cửa hàng | 16,2% (chính xác ~84%) | **14,3%** | 23,8% |
 | WMAPE ngành hàng cấp 1 | **28,9%** | 29,9% | 43,4% |
 | WMAPE nhóm hàng cấp 3 | **51,9%** | 56,4% | 73,1% |
-| Chênh lệch có ý nghĩa thống kê? (theo nhóm hàng) | – | Có (Wilcoxon p = 0,014; Diebold–Mariano p = 0,032) | Có (p < 0,001) |
+| Chênh lệch có ý nghĩa thống kê? | – | Có (Wilcoxon theo nhóm p = 0,014; Diebold–Mariano theo ngày p = 0,017) | Có (p < 0,001) |
 | Tỷ lệ nhóm hàng có sai số thấp hơn mức nền | 62% (54/87 nhóm) | – | – |
-| Mô phỏng 8 tuần có chuyển tồn: tổng chi phí (lợi nhuận mất + hàng hỏng + chi phí vốn) | **6,9 triệu đ** | 7,9 triệu đ | 22,7 triệu đ |
+| Mô phỏng 8 tuần có chuyển tồn: hàng thiếu (sản phẩm) | **1.448** | 1.895 | 1.869 |
+| Mô phỏng 8 tuần có chuyển tồn: tổng chi phí (lợi nhuận mất + hàng hỏng + chi phí vốn) | 3,3 triệu đ | **3,1 triệu đ** | 7,2 triệu đ |
 
 Mô hình được chọn là **tổ hợp LightGBM + AutoETS + IMAPA + Chronos-Bolt**: WMAPE thấp nhất trên 4 tuần chọn trong 14
 mô hình dự tuyển có |Bias| ≤ 10%. Chronos-Bolt dùng riêng có WMAPE thấp hơn nữa nhưng dự báo thiếu khoảng 27% ngay ở
@@ -48,8 +49,9 @@ trượt 28 ngày 4,5 điểm phần trăm (51,9% so với 56,4%, có ý nghĩa 
 và ở cấp toàn cửa hàng trung bình trượt 28 ngày còn tốt hơn (14,3% so với 16,2%). Danh sách dự tuyển có Chronos và
 ràng buộc độ lệch được bổ sung sau lần đánh giá đầu (khi đó mô hình được chọn là LightGBM + AutoETS + IMAPA, 54,2%),
 nên cần kiểm định lại trên dữ liệu mới. Mức giảm 29% so với mức nền một phần do lượng khách giảm đúng trong 8 tuần
-chấm điểm. Khi mô phỏng có chuyển tồn kho, chính sách nhập theo phân vị giảm 15% hàng thiếu và 13% tổng chi phí so
-với cách nhẩm theo trung bình 28 ngày. Giá trị thực tế nằm ở dự
+chấm điểm. Khi mô phỏng có chuyển tồn kho (hàng chỉ bị bỏ khi quá hạn dùng của nhóm hàng), chính sách nhập theo
+phân vị giảm 24% hàng thiếu và 25% lợi nhuận mất so với cách nhẩm theo trung bình 28 ngày, nhưng tổng chi phí cao hơn
+khoảng 7,5% (3,3 so với 3,1 triệu đ) vì có hàng hỏng ở các nhóm hạn ngắn (sữa chua, trứng, đồ tươi). Giá trị thực tế nằm ở dự
 báo cấp cao đáng tin, chính sách nhập hàng theo phân vị, và khả năng giải thích, tự động hoá. Chi tiết trong
 [báo cáo mô hình](docs/forecast_report.md).
 
@@ -88,7 +90,7 @@ File Excel KiotViet ─► raw ─► staging ─► mart ─► phân tích (FP
 | **Lịch** (`dim_date`) | Ngày đóng cửa (Tết, lễ) không bị coi là nhu cầu bằng 0 |
 | **Phân tích** (`sql/marts`, `analysis.py`) | Xu hướng theo ngày mở cửa, ABC theo số lượng, giờ × thứ, ma trận doanh thu × biên, hệ số Tết theo số lượng và doanh thu, FP-Growth trên dữ liệu đã loại khuyến mãi, phát hiện nghi ngờ hết hàng bằng xác suất, mặt hàng hay được mua sỉ và lượng dự phòng gợi ý |
 | **Dự báo** (`forecasting/`) | Lớp ngày thường + lớp ngày lễ; phân loại nhu cầu **Syntetos–Boylan**; 8 mô hình StatsForecast (Croston, ADIDA, IMAPA, TSB, AutoETS...) + **LightGBM toàn cục** + mô hình nền tảng **Chronos-Bolt** (zero-shot) + 4 mô hình kết hợp; chọn mô hình trên 4 tuần (WMAPE thấp nhất, |Bias| ≤ 10%), chấm trên 8 tuần khác |
-| **Quyết định** (`policy.py`) | Khoảng dự báo **conformal**; phân vị τ theo loại nhóm hàng (ngôi sao 0,80 · bảo quản lâu 0,70 · dễ hư 0,55), nối phân tích biên lợi nhuận với mô hình |
+| **Quyết định** (`policy.py`) | Khoảng dự báo **conformal**; phân vị τ theo loại nhóm hàng (ngôi sao 0,80 · bảo quản lâu 0,70 · hạn dùng ngắn 0,55, xác định theo hạn dùng của từng nhóm cấp 3), nối phân tích biên lợi nhuận với mô hình |
 | **Giải thích** | SHAP cho LightGBM, quy đổi thành "% tác động" |
 | **Vòng lặp** (`monitor.py`) | Lưu snapshot dự báo; khi có dữ liệu mới thì đối chiếu, tính WMAPE / bias / tracking signal, cảnh báo drift và tự huấn luyện lại (hiện mới minh hoạ trên dữ liệu kiểm định) |
 
@@ -116,7 +118,7 @@ pip install -e ".[chronos]"      # Chronos-Bolt (PyTorch, tải ~183 MB từ Hug
 python -m hasu.forecasting.run   # kiểm định 14 mô hình, dự báo 28 ngày, đề xuất nhập, SHAP (~5 phút)
 python -m hasu.forecast_report   # báo cáo mô hình dự báo
 streamlit run app/streamlit_app.py
-pytest                           # 34 bài kiểm thử
+pytest                           # 36 bài kiểm thử
 ```
 
 Không có file KiotViet? Chạy thẳng `streamlit run app/streamlit_app.py`, ứng dụng sẽ dùng dữ liệu demo.

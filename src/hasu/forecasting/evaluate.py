@@ -79,6 +79,27 @@ def metrics_table(weekly: pd.DataFrame, model_cols: list[str], by: list[str] | N
     return pd.DataFrame(rows)
 
 
+def diebold_mariano(d: np.ndarray, h: int) -> tuple[float, float]:
+    """Kiểm định Diebold–Mariano trên chuỗi chênh lệch tổn thất d_t theo thời gian.
+
+    Phương sai dài hạn ước lượng theo Newey–West với h−1 độ trễ (sai số dự báo h bước
+    tự tương quan tới bậc h−1), kèm hiệu chỉnh mẫu nhỏ Harvey–Leybourne–Newbold (1997);
+    p-value hai phía theo phân phối t với T−1 bậc tự do.
+    """
+    from scipy import stats
+
+    d = np.asarray(d, dtype=float)
+    t_len = len(d)
+    dc = d - d.mean()
+    gamma = [float(dc[k:] @ dc[:t_len - k]) / t_len for k in range(h)]
+    var = (gamma[0] + 2 * sum(gamma[1:])) / t_len
+    if var <= 0:
+        var = gamma[0] / t_len
+    dm = d.mean() / np.sqrt(var)
+    dm *= np.sqrt((t_len + 1 - 2 * h + h * (h - 1) / t_len) / t_len)
+    return float(dm), float(2 * stats.t.sf(abs(dm), df=t_len - 1))
+
+
 MAX_ABS_BIAS = 0.10
 
 

@@ -36,6 +36,7 @@ from hasu.forecasting.evaluate import (
     N_SELECTION,
     N_WINDOWS,
     confidence_label,
+    diebold_mariano,
     metrics_table,
     select_champion,
     to_weekly,
@@ -44,7 +45,7 @@ from hasu.forecasting.evaluate import (
 )
 from hasu.forecasting.monitor import save_snapshot
 from hasu.forecasting.policy import (
-    PERISHABLE_L1,
+    SHELF_LIFE_WEEKS,
     SERVICE_POLICY,
     ratio_quantiles,
     service_class,
@@ -125,27 +126,33 @@ def horizon_ratio_quantiles(d: pd.DataFrame, groups: pd.Series, taus: list[float
     return pd.concat(out, ignore_index=True)
 
 
-def significance(hold: pd.DataFrame, champion: str, others: list[str]) -> pd.DataFrame:
-    """Kiểm định chênh lệch sai số có ý nghĩa thống kê không.
+def significance(hold: pd.DataFrame, daily: pd.DataFrame, champion: str, others: list[str]) -> pd.DataFrame:
+    """Kiểm định chênh lệch sai số có ý nghĩa thống kê không (âm = mô hình được chọn tốt hơn).
 
-    Với mỗi nhóm hàng, lấy sai số tuyệt đối trung bình theo tuần của mô hình được
-    chọn trừ của mô hình so sánh (âm = mô hình được chọn tốt hơn). Gộp theo nhóm
-    hàng trước để xử lý tương quan giữa các tuần của cùng một nhóm, rồi dùng:
-      - kiểm định Wilcoxon dấu-hạng (không cần giả định phân phối chuẩn);
-      - kiểm định Diebold–Mariano dạng gộp: thống kê t trên chênh lệch trung bình
-        theo nhóm hàng.
+    - Wilcoxon dấu-hạng theo nhóm hàng: với mỗi nhóm, sai số tuyệt đối trung bình theo
+      tuần của mô hình được chọn trừ của mô hình so sánh. Cho biết mô hình tốt hơn ở bao
+      nhiêu nhóm, nhưng giả định các nhóm độc lập với nhau (thực tế các nhóm cùng chịu
+      biến động chung của cửa hàng trong cùng tuần).
+    - Diebold–Mariano theo thời gian: mỗi ngày mở cửa trong giai đoạn chấm điểm, lấy
+      chênh lệch sai số tuyệt đối trung bình trên các nhóm hàng (gộp chéo trước nên tương
+      quan giữa các nhóm cùng ngày đã nằm trong d_t), rồi kiểm định trên chuỗi d_t với
+      phương sai Newey–West (dự báo tối đa 7 bước).
     """
+    open_days = daily[~daily["is_closed"]]
     rows = []
     for o in others:
+        dd = (open_days.assign(diff=(open_days[champion] - open_days["y_raw"]).abs()
+                               - (open_days[o] - open_days["y_raw"]).abs())
+              .groupby("ds")["diff"].mean().sort_index())
+        dm, dm_p = diebold_mariano(dd.to_numpy(), H)
         dl = (hold.assign(diff=(hold[champion] - hold["y"]).abs() - (hold[o] - hold["y"]).abs())
               .groupby("unique_id")["diff"].mean())
         dl = dl[dl != 0]
         w = stats.wilcoxon(dl)
-        t = dl.mean() / (dl.std(ddof=1) / np.sqrt(len(dl)))
         rows.append({"model": champion, "compared_to": o, "n_series": int(len(dl)),
                      "mean_abs_err_diff": float(dl.mean()), "share_series_better": float((dl < 0).mean()),
-                     "wilcoxon_p": float(w.pvalue), "dm_stat": float(t),
-                     "dm_p": float(2 * stats.t.sf(abs(t), df=len(dl) - 1))})
+                     "wilcoxon_p": float(w.pvalue), "n_days": int(len(dd)),
+                     "share_days_better": float((dd < 0).mean()), "dm_stat": dm, "dm_p": dm_p})
     return pd.DataFrame(rows)
 
 
@@ -345,14 +352,15 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
     per["improved"] = per["wmape"] < per["wmape_baseline"]
     profile = profile.merge(per, on="unique_id", how="left")
     profile["confidence"] = [confidence_label(w, c) for w, c in zip(profile["wmape"], profile["demand_class"])]
-    sig = significance(hold, champion, [m for m in ["MovingAvg28", BASELINE, "LightGBM", "Ens_LGB_ETS_IMAPA", "Chronos"]
+    daily_hold = cv[cv["cutoff"].isin(hold["cutoff"].unique())]
+    sig = significance(hold, daily_hold, champion, [m for m in ["MovingAvg28", BASELINE, "LightGBM", "Ens_LGB_ETS_IMAPA", "Chronos"]
                                         if m in models and m != champion])
 
     log("3. Khoảng dự báo và mô phỏng nhập hàng")
     # Dự báo thật: phân nhóm biên lợi nhuận trên toàn bộ dữ liệu
     quad = con.execute("SELECT cat_l2, quadrant FROM mart_category_margin").df().set_index("cat_l2")["quadrant"]
     profile["quadrant"] = profile["cat_l2"].map(quad)
-    profile["service_class"] = [service_class(a, b) for a, b in zip(profile["cat_l1"], profile["quadrant"])]
+    profile["service_class"] = [service_class(a, b) for a, b in zip(profile["unique_id"], profile["quadrant"])]
     profile["tau"] = profile["service_class"].map(lambda s: SERVICE_POLICY[s][0])
     groups = profile.set_index("unique_id")["demand_class"]
 
@@ -364,7 +372,7 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
     quad_bt = con.execute("SELECT cat_l2, quadrant FROM category_margin(?, true)", [cut]).df() \
         .set_index("cat_l2")["quadrant"]
     meta_bt = profile_bt.set_index("unique_id")
-    sc_bt = pd.Series([service_class(a, quad_bt.get(b)) for a, b in zip(meta_bt["cat_l1"], meta_bt["cat_l2"])],
+    sc_bt = pd.Series([service_class(u, quad_bt.get(b)) for u, b in zip(meta_bt.index, meta_bt["cat_l2"])],
                       index=meta_bt.index)
     groups_bt = meta_bt["demand_class"]
     rq_sel = ratio_quantiles(weekly[weekly["phase"] == "selection"], champion, groups_bt, TAUS).set_index("grp")
@@ -384,10 +392,10 @@ def run_forecasting(con: duckdb.DuckDBPyConnection, use_chronos: bool = True, lo
         "Mô hình: dự báo điểm": hold[champion],
         "Mô hình + phân vị theo nhóm hàng": hold[champion] * np.array(mult),
     }
-    perishable = meta_bt["cat_l1"].isin(PERISHABLE_L1)
+    shelf_life = pd.Series(meta_bt.index, index=meta_bt.index).map(SHELF_LIFE_WEEKS)
     sim = pd.concat([
         simulate_orders(hold, policies, prices["unit_cost"]),
-        simulate_inventory(hold, policies, perishable, prices["unit_cost"], prices["unit_price"]),
+        simulate_inventory(hold, policies, shelf_life, prices["unit_cost"], prices["unit_price"]),
     ], ignore_index=True)
     # Hiệu chỉnh cuối cùng cho dự báo thật: tuần 1 trên cả 12 tuần kiểm định,
     # tuần 2-4 bằng kiểm định riêng với chân trời 28 ngày.
