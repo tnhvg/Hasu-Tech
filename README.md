@@ -133,7 +133,7 @@ src/hasu/            ingest, pipeline, quality, analysis, báo cáo
 src/hasu/forecasting data, models, evaluate, policy, monitor, run
 app/                 ứng dụng Streamlit + dữ liệu demo
 tests/               kiểm thử: nạp, làm sạch, bảng mua sỉ, chỉ số, phân loại nhu cầu, drift
-docs/                báo cáo, biểu đồ, ảnh chụp, hướng dẫn, mockup, kịch bản thuyết trình
+docs/                báo cáo, biểu đồ, ảnh chụp, hướng dẫn, mockup
 ```
 
 ## Giới hạn và hướng phát triển
@@ -152,4 +152,4 @@ docs/                báo cáo, biểu đồ, ảnh chụp, hướng dẫn, mock
 
 [Báo cáo phân tích kinh doanh](docs/business_analysis.md) · [Báo cáo mô hình dự báo](docs/forecast_report.md) ·
 [Báo cáo chất lượng dữ liệu](docs/data_quality_report.md) · [Hướng dẫn triển khai](docs/huong_dan_trien_khai.md) ·
-[Mockup với Google Stitch](docs/mockup_google_stitch.md) · [Kịch bản thuyết trình](docs/kich_ban_thuyet_trinh.md)
+[Mockup với Google Stitch](docs/mockup_google_stitch.md)
